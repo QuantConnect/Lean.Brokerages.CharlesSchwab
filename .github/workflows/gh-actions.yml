@@ -2,14 +2,18 @@ name: Build & Test
 
 on:
   push:
-    branches: ['*']
+    branches:
+      - "master"
+  pull_request:
+    branches:
+      - "master"
 
 jobs:
   build:
     runs-on: ubuntu-20.04
     env:
-        QC_TEMPLATE_BROKERAGE_KEY: ${{ secrets.QC_TEMPLATE_BROKERAGE_KEY }}
-        QC_TEMPLATE_BROKERAGE_SECRET: ${{ secrets.QC_TEMPLATE_BROKERAGE_SECRET }}
+      QC_TEMPLATE_BROKERAGE_KEY: ${{ secrets.QC_TEMPLATE_BROKERAGE_KEY }}
+      QC_TEMPLATE_BROKERAGE_SECRET: ${{ secrets.QC_TEMPLATE_BROKERAGE_SECRET }}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
