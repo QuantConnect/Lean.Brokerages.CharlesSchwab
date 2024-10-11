@@ -14,19 +14,19 @@
 */
 
 using NUnit.Framework;
-using QuantConnect.Interfaces;
 using QuantConnect.Util;
+using QuantConnect.Interfaces;
 
-namespace QuantConnect.Brokerages.Template.Tests
+namespace QuantConnect.Brokerages.CharlesSchwab.Tests
 {
-    [TestFixture, Ignore("This test requires a configured TemplateBrokerageFactory")]
-    public class TemplateBrokerageFactoryTests
+    [TestFixture]
+    public class CharlesSchwabBrokerageAdditionalTests
     {
         [Test]
-        public void InitializesFactoryFromComposer()
+        public void ParameterlessConstructorComposerUsage()
         {
-            using var factory = Composer.Instance.Single<IBrokerageFactory>(instance => instance.BrokerageType == typeof(TemplateBrokerage));
-            Assert.IsNotNull(factory);
+            var brokerage = Composer.Instance.GetExportedValueByTypeName<IDataQueueHandler>("CharlesSchwabBrokerage");
+            Assert.IsNotNull(brokerage);
         }
     }
 }

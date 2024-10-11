@@ -13,9 +13,9 @@
  * limitations under the License.
 */
 
-namespace QuantConnect.Brokerages.Template.Tests
+namespace QuantConnect.Brokerages.CharlesSchwab.Tests
 {
-    public class BybitBrokerageRegressionAlgorithm : TemplateFeatureRegressionAlgorithm
+    public class BybitBrokerageRegressionAlgorithm : CharlesSchwabFeatureRegressionAlgorithm
     {
         public override BrokerageName Brokerage { get; set; } = BrokerageName.Bybit;
         protected override string BrokerageSettingsURL { get; set; } = "https://raw.githubusercontent.com/QuantConnect/Lean.Brokerages.ByBit/master/bybit.json";

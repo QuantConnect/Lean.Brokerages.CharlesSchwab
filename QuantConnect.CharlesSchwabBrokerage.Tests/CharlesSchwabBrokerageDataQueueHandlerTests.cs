@@ -20,10 +20,10 @@ using QuantConnect.Tests;
 using QuantConnect.Logging;
 using QuantConnect.Data.Market;
 
-namespace QuantConnect.Brokerages.Template.Tests
+namespace QuantConnect.Brokerages.CharlesSchwab.Tests
 {
     [TestFixture]
-    public partial class TemplateBrokerageTests
+    public partial class CharlesSchwabBrokerageTests
     {
         private static TestCaseData[] TestParameters
         {
@@ -43,7 +43,7 @@ namespace QuantConnect.Brokerages.Template.Tests
         public void StreamsData(Symbol symbol, Resolution resolution, bool throwsException)
         {
             var cancelationToken = new CancellationTokenSource();
-            var brokerage = (TemplateBrokerage)Brokerage;
+            var brokerage = (CharlesSchwabBrokerage)Brokerage;
 
             SubscriptionDataConfig[] configs;
             if (resolution == Resolution.Tick)

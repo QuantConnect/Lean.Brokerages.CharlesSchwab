@@ -7,14 +7,14 @@
         <TargetFramework>net6.0</TargetFramework>
         <Copyright>Copyright ©  2021</Copyright>
         <OutputPath>bin\$(Configuration)\</OutputPath>
-        <Product>QuantConnect.Brokerages.Template.ToolBox</Product>
-        <AssemblyName>QuantConnect.Brokerages.Template.ToolBox</AssemblyName>
-        <RootNamespace>QuantConnect.Brokerages.Template.ToolBox</RootNamespace>
-        <AssemblyTitle>QuantConnect.Brokerages.Template.ToolBox</AssemblyTitle>
+        <Product>QuantConnect.Brokerages.CharlesSchwab.ToolBox</Product>
+        <AssemblyName>QuantConnect.Brokerages.CharlesSchwab.ToolBox</AssemblyName>
+        <RootNamespace>QuantConnect.Brokerages.CharlesSchwab.ToolBox</RootNamespace>
+        <AssemblyTitle>QuantConnect.Brokerages.CharlesSchwab.ToolBox</AssemblyTitle>
         <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-        <Description>QuantConnect LEAN Template Brokerage: Brokerage Template toolbox plugin for Lean</Description>
+        <Description>QuantConnect LEAN CharlesSchwab Brokerage: Brokerage CharlesSchwab toolbox plugin for Lean</Description>
     </PropertyGroup>
     <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
         <DebugType>full</DebugType>
