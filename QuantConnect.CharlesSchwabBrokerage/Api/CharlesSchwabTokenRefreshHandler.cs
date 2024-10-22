@@ -73,7 +73,6 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// </summary>
     private CharlesSchwabAccessToken _charlesSchwabAccessToken;
 
-
     /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabTokenRefreshHandler"/> class.
     /// This handler manages Charles Schwab OAuth token acquisition and refresh processes.
