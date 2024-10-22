@@ -141,7 +141,11 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
                 break;
             }
 
-            await Task.Delay(_retryInterval, cancellationToken);
+            // Wait for retry interval or cancellation request
+            if (cancellationToken.WaitHandle.WaitOne(_retryInterval))
+            {
+                break;
+            }
         }
 
         return response;
