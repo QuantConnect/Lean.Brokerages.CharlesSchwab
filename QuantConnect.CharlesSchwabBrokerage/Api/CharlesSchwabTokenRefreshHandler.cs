@@ -196,7 +196,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// <returns>The task result contains the JSON response as a string.</returns>
     private async Task<string> SendSignInAsync(Dictionary<string, string> payload, CancellationToken cancellationToken)
     {
-        using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/oauth/token") { Content = new FormUrlEncodedContent(payload) })
+        using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/v1/oauth/token") { Content = new FormUrlEncodedContent(payload) })
         {
             requestMessage.Headers.Add("Authorization", $"Basic {_encodedClientCredentials}");
             requestMessage.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
