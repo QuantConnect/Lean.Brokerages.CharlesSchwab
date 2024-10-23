@@ -46,7 +46,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// <summary>
     /// The base URL used for constructing API endpoints.
     /// </summary>
-    private readonly string _baseUrl;
+    private readonly string _baseOauthUrl;
 
     /// <summary>
     /// Represents the authorization code obtained from the URL during OAuth authentication.
@@ -62,6 +62,11 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// Represents the refresh token used to obtain a new access token when the current one expires.
     /// </summary>
     private string _refreshToken;
+
+    /// <summary>
+    /// The client ID for the OAuth authorization.
+    /// </summary>
+    private readonly string _clientId;
 
     /// <summary>
     /// Encoded client credentials for authentication, combining the client ID and client secret in a base64 format.
@@ -93,9 +98,10 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
         string authorizationCodeFromUrl,
         string refreshToken) : base(innerHandler)
     {
-        _baseUrl = baseUrl;
+        _clientId = clientId;
         _redirectUri = redirectUri;
         _refreshToken = refreshToken;
+        _baseOauthUrl = baseUrl + "/v1/oauth";
         _authorizationCodeFromUrl = authorizationCodeFromUrl;
         _encodedClientCredentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
     }
@@ -151,6 +157,15 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     }
 
     /// <summary>
+    /// Generates the authorization URL for initiating the OAuth 2.0 authorization process.
+    /// </summary>
+    /// <returns>A string representing the full authorization URL to be used for OAuth 2.0 authorization.</returns>
+    public string GetAuthorizationUrl()
+    {
+        return _baseOauthUrl + $"/authorize?client_id={_clientId}&redirect_uri={_redirectUri}";
+    }
+
+    /// <summary>
     /// Refreshes the access token using an expired refresh token.
     /// </summary>
     /// <param name="expiredRefreshToken">The expired refresh token to be exchanged for a new one.</param>
@@ -164,9 +179,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             { "refresh_token", expiredRefreshToken }
         };
 
-        var json = await SendSignInAsync(payload, cancellationToken);
-
-        return JsonConvert.DeserializeObject<CharlesSchwabAccessToken>(json);
+        return await SendSignInAsync<CharlesSchwabAccessToken>(payload, cancellationToken);
     }
 
     /// <summary>
@@ -183,27 +196,53 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             { "redirect_uri", _redirectUri }
         };
 
-        var json = await SendSignInAsync(payload, cancellationToken);
-
-        return JsonConvert.DeserializeObject<CharlesSchwabAccessToken>(json);
+        return await SendSignInAsync<CharlesSchwabAccessToken>(payload, cancellationToken);
     }
 
     /// <summary>
-    /// Sends an HTTP request to the Charles Schwab OAuth token endpoint with the provided payload.
+    /// Sends an HTTP POST request to the Charles Schwab OAuth token endpoint with the specified payload.
     /// </summary>
-    /// <param name="payload">The payload containing parameters for the OAuth token request.</param>
-    /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
-    /// <returns>The task result contains the JSON response as a string.</returns>
-    private async Task<string> SendSignInAsync(Dictionary<string, string> payload, CancellationToken cancellationToken)
+    /// <typeparam name="T">The type representing the expected deserialized JSON response.</typeparam>
+    /// <param name="payload">A dictionary containing the parameters required for the OAuth token request.</param>
+    /// <param name="cancellationToken">
+    /// A token to monitor for cancellation requests while waiting for the task to complete.
+    /// </param>
+    /// <returns>
+    /// A task that represents the asynchronous operation. The task result contains the deserialized JSON response of type <typeparamref name="T"/>.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when an error occurs during the OAuth request, providing details about the error.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if any other exception occurs while processing the response.
+    /// </exception>
+    private async Task<T> SendSignInAsync<T>(Dictionary<string, string> payload, CancellationToken cancellationToken) where T : class
     {
-        using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, _baseUrl + "/v1/oauth/token") { Content = new FormUrlEncodedContent(payload) })
+        using (var requestMessage = new HttpRequestMessage(HttpMethod.Post, _baseOauthUrl + "/token") { Content = new FormUrlEncodedContent(payload) })
         {
             requestMessage.Headers.Add("Authorization", $"Basic {_encodedClientCredentials}");
             requestMessage.Content.Headers.ContentType = new MediaTypeHeaderValue("application/x-www-form-urlencoded");
 
+            var content = new FormUrlEncodedContent(payload);
+
             var response = await base.SendAsync(requestMessage, cancellationToken);
 
-            return await response.Content.ReadAsStringAsync();
+            var jsonContent = await response.Content.ReadAsStringAsync();
+
+            try
+            {
+                return JsonConvert.DeserializeObject<T>(jsonContent);
+            }
+            catch (JsonSerializationException)
+            {
+                var errorResponse = JsonConvert.DeserializeObject<CharlesSchwabErrorResponse>(jsonContent);
+                throw new ArgumentException($"{nameof(CharlesSchwabTokenRefreshHandler)}.{nameof(SendSignInAsync)}: {errorResponse?.Error ?? "Unknown error"} - " +
+                               $"{errorResponse?.ErrorDescription ?? "No description"}.");
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"{nameof(CharlesSchwabTokenRefreshHandler)}.{nameof(SendSignInAsync)}: {ex.Message}");
+            }
         }
     }
 }

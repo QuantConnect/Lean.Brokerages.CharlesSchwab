@@ -13,7 +13,6 @@
  * limitations under the License.
 */
 
-
 using Moq;
 using System;
 using System.Net;
@@ -32,6 +31,21 @@ public class CharlesSchwabTokenRefreshHandlerTests
 {
     private string _baseUrl = Config.Get("charles-schwab-api-url");
     private string _redirectUrl = Config.Get("charles-schwab-redirect-url");
+
+    [Test]
+    public void GetAuthorizationUrl()
+    {
+        var clientId = Config.Get("charles-schwab-client-id");
+
+        var tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(new HttpClientHandler(), _baseUrl, clientId, string.Empty, _redirectUrl, string.Empty, string.Empty);
+
+        var authorizationUrl = tokenRefreshHandler.GetAuthorizationUrl();
+
+        Assert.IsNotNull(authorizationUrl);
+        Assert.IsNotEmpty(authorizationUrl);
+
+        Assert.Pass($"Charles Schwab, Authorization URL: {authorizationUrl}");
+    }
 
     [TestCase("NOT_EXPIRED_ACCESS_TOKEN_HERE")]
     public async Task GetAccessToken(string accessToken)
@@ -82,7 +96,7 @@ public class CharlesSchwabTokenRefreshHandlerTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
             {
-                if (request.RequestUri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[1] == "accounts")
+                if (request.RequestUri.AbsolutePath.Split('/', StringSplitOptions.RemoveEmptyEntries)[0] == "accounts")
                 {
                     switch (request.Headers.Authorization, accessToken)
                     {

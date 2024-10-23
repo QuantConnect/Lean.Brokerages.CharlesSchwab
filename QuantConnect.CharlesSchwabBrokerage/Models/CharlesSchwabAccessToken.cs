@@ -24,37 +24,37 @@ public class CharlesSchwabAccessToken
     /// <summary>
     /// The number of seconds the access token is valid for.
     /// </summary>
-    [JsonProperty("expires_in")]
+    [JsonProperty("expires_in", Required = Required.Always)]
     public int ExpiresInSec { get; }
 
     /// <summary>
     /// The type of access token (e.g., Bearer).
     /// </summary>
-    [JsonProperty("token_type")]
+    [JsonProperty("token_type", Required = Required.Always)]
     public string TokenType { get; }
 
     /// <summary>
     /// The scope of access granted by this token.
     /// </summary>
-    [JsonProperty("scope")]
+    [JsonProperty("scope", Required = Required.Always)]
     public string Scope { get; }
 
     /// <summary>
     /// The refresh token used to obtain a new access token (valid for 7 days).
     /// </summary>
-    [JsonProperty("refresh_token")]
+    [JsonProperty("refresh_token", Required = Required.Always)]
     public string RefreshToken { get; }
 
     /// <summary>
     /// The access token used to access a user's protected resources (valid for 30 minutes).
     /// </summary>
-    [JsonProperty("access_token")]
+    [JsonProperty("access_token", Required = Required.Always)]
     public string AccessToken { get; }
 
     /// <summary>
     /// The JSON Web Token (JWT) containing user information and claims.
     /// </summary>
-    [JsonProperty("id_token")]
+    [JsonProperty("id_token", Required = Required.Always)]
     public string IDToken { get; }
 
     /// <summary>
