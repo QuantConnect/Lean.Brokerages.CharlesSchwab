@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -79,7 +79,12 @@ public class CharlesSchwabApiClient
     /// <returns>A <see cref="CharlesSchwabSecuritiesAccount"/> containing the account's metadata and positions.</returns>
     private async Task<CharlesSchwabSecuritiesAccount> GetAccountByNumber(string accountNumber)
     {
-        return await RequestAsync<CharlesSchwabSecuritiesAccount>(HttpMethod.Get, _traderBaseUrl, $"/accounts/{accountNumber}?fields=positions");
+        return await RequestTraderAsync<CharlesSchwabSecuritiesAccount>(HttpMethod.Get, $"/accounts/{accountNumber}?fields=positions");
+    }
+
+    private async Task<T> RequestTraderAsync<T>(HttpMethod httpMethod, string endpoint)
+    {
+        return await RequestAsync<T>(httpMethod, _traderBaseUrl, endpoint);
     }
 
     /// <summary>
