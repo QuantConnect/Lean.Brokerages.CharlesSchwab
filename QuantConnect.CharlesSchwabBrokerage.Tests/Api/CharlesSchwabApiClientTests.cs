@@ -45,7 +45,7 @@ public class CharlesSchwabApiClientTests
 
         var apiClient = new CharlesSchwabApiClient(_baseUrl, _appKey, _secret, _accountNumber, _redirectUrl, authorizationCode, string.Empty, mockHandler.Object);
 
-        var result = await apiClient.GetAccountByNumber("123");
+        var result = await apiClient.GetAccountBalanceAndPosition();
 
         Assert.IsNotNull(result);
     }
