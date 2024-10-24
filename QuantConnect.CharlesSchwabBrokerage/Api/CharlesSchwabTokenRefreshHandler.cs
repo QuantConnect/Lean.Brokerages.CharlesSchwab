@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -162,7 +162,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// <returns>A string representing the full authorization URL to be used for OAuth 2.0 authorization.</returns>
     public string GetAuthorizationUrl()
     {
-        return _baseOauthUrl + $"/authorize?client_id={_clientId}&redirect_uri={_redirectUri}";
+        return _baseOauthUrl + $"/authorize?response_type=code&client_id={_clientId}&redirect_uri={_redirectUri}";
     }
 
     /// <summary>
