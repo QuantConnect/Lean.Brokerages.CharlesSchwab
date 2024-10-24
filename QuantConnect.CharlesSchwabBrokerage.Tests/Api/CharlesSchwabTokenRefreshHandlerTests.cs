@@ -35,9 +35,9 @@ public class CharlesSchwabTokenRefreshHandlerTests
     [Test]
     public void GetAuthorizationUrl()
     {
-        var clientId = Config.Get("charles-schwab-client-id");
+        var appKey = Config.Get("charles-schwab-app-key");
 
-        var tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(new HttpClientHandler(), _baseUrl, clientId, string.Empty, _redirectUrl, string.Empty, string.Empty);
+        var tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(new HttpClientHandler(), _baseUrl, appKey, string.Empty, _redirectUrl, string.Empty, string.Empty);
 
         var authorizationUrl = tokenRefreshHandler.GetAuthorizationUrl();
 

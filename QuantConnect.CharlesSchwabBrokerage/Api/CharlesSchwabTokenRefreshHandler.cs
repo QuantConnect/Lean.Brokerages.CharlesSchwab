@@ -64,9 +64,9 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     private string _refreshToken;
 
     /// <summary>
-    /// The client ID for the OAuth authorization.
+    /// The app Key for the OAuth authorization.
     /// </summary>
-    private readonly string _clientId;
+    private readonly string _appKey;
 
     /// <summary>
     /// Encoded client credentials for authentication, combining the client ID and client secret in a base64 format.
@@ -84,26 +84,26 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// </summary>
     /// <param name="innerHandler">The inner HTTP message handler responsible for sending HTTP requests.</param>
     /// <param name="baseUrl">The base URL for the Charles Schwab API.</param>
-    /// <param name="clientId">The client ID for the OAuth authorization.</param>
-    /// <param name="clientSecret">The client secret for the OAuth authorization.</param>
+    /// <param name="appKey">The app key for the OAuth authorization.</param>
+    /// <param name="secret">The secret for the OAuth authorization.</param>
     /// <param name="redirectUri">The redirect URI that matches the one registered with the Charles Schwab API.</param>
     /// <param name="authorizationCodeFromUrl">The authorization code obtained from the URL during the OAuth flow.</param>
     /// <param name="refreshToken">The refresh token used to obtain a new access token when the current one expires.</param>
     public CharlesSchwabTokenRefreshHandler(
         HttpMessageHandler innerHandler,
         string baseUrl,
-        string clientId,
-        string clientSecret,
+        string appKey,
+        string secret,
         string redirectUri,
         string authorizationCodeFromUrl,
         string refreshToken) : base(innerHandler)
     {
-        _clientId = clientId;
+        _appKey = appKey;
         _redirectUri = redirectUri;
         _refreshToken = refreshToken;
         _baseOauthUrl = baseUrl + "/v1/oauth";
         _authorizationCodeFromUrl = authorizationCodeFromUrl;
-        _encodedClientCredentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{clientId}:{clientSecret}"));
+        _encodedClientCredentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{appKey}:{secret}"));
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// <returns>A string representing the full authorization URL to be used for OAuth 2.0 authorization.</returns>
     public string GetAuthorizationUrl()
     {
-        return _baseOauthUrl + $"/authorize?response_type=code&client_id={_clientId}&redirect_uri={_redirectUri}";
+        return _baseOauthUrl + $"/authorize?response_type=code&client_id={_appKey}&redirect_uri={_redirectUri}";
     }
 
     /// <summary>
