@@ -82,6 +82,15 @@ public class CharlesSchwabApiClient
         return await RequestTraderAsync<CharlesSchwabSecuritiesAccount>(HttpMethod.Get, $"/accounts/{accountNumber}?fields=positions");
     }
 
+    /// <summary>
+    /// Sends an HTTP request to the trader API and deserializes the response into an object of type <typeparamref name="T"/>.
+    /// </summary>
+    /// <typeparam name="T">The type into which the response will be deserialized.</typeparam>
+    /// <param name="httpMethod">The HTTP method to use for the request (e.g., GET, POST).</param>
+    /// <param name="endpoint">The specific API endpoint including the path and query parameters.</param>
+    /// <returns>An object of type <typeparamref name="T"/> containing the deserialized response data.</returns>
+    /// <exception cref="ArgumentException">Thrown when the API returns an unsuccessful status code along with error details.</exception>
+    /// <exception cref="Exception">Thrown when there is an error during the HTTP request or response handling.</exception>
     private async Task<T> RequestTraderAsync<T>(HttpMethod httpMethod, string endpoint)
     {
         return await RequestAsync<T>(httpMethod, _traderBaseUrl, endpoint);
