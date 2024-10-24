@@ -30,27 +30,39 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
 [TestFixture]
 public class CharlesSchwabApiClientTests
 {
-    private string _baseUrl = Config.Get("charles-schwab-api-url");
-    private string _appKey = Config.Get("charles-schwab-app-key");
-    private string _secret = Config.Get("charles-schwab-secret");
-    private string _redirectUrl = Config.Get("charles-schwab-redirect-url");
-    private string _accountNumber = Config.Get("charles-schwab-account-number");
+    private string _accountNumber = Config.Get("charles-schwab-account-number", "123");
+    private CharlesSchwabApiClient _apiClient;
+
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
+    {
+        var baseUrl = Config.Get("charles-schwab-api-url");
+        var appKey = Config.Get("charles-schwab-app-key");
+        var secret = Config.Get("charles-schwab-secret");
+        var redirectUrl = Config.Get("charles-schwab-redirect-url");
+        
+        var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
+
+        var mockHandler = GetMockHttpMessageHandler();
+
+       _apiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, _accountNumber, redirectUrl, authorizationCode, string.Empty, mockHandler.Object);
+    }
 
     [Test]
     public async Task GetAccounts()
     {
-        var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
-
-        var mockHandler = GetMockHttpMessageHandler("123");
-
-        var apiClient = new CharlesSchwabApiClient(_baseUrl, _appKey, _secret, _accountNumber, _redirectUrl, authorizationCode, string.Empty, mockHandler.Object);
-
-        var result = await apiClient.GetAccountBalanceAndPosition();
-
+        var result = await _apiClient.GetAccountBalanceAndPosition();
         Assert.IsNotNull(result);
     }
 
-    private Mock<HttpClientHandler> GetMockHttpMessageHandler(string accessToken)
+    [Test]
+    public async Task GetOpenOrders()
+    {
+        var result = await _apiClient.GetOpenOrders();
+        Assert.IsNotNull(result);
+    }
+
+    private Mock<HttpClientHandler> GetMockHttpMessageHandler()
     {
         var mockHandler = new Mock<HttpClientHandler>(MockBehavior.Strict);
 
@@ -64,13 +76,19 @@ public class CharlesSchwabApiClientTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
             {
-                if (request.RequestUri.AbsolutePath.StartsWith("/trader/v1/accounts/"))
+                var requestUriAbsolutePath = request.RequestUri.AbsolutePath;
+                if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}?fields=positions"))
                 {
-                    var accountNumber = request.RequestUri.AbsolutePath.Split('/').Last();
-                    var jsonResponse = GetAccountJsonResponse(accountNumber);
                     return new HttpResponseMessage(HttpStatusCode.OK)
                     {
-                        Content = new StringContent(jsonResponse)
+                        Content = new StringContent(GetAccountJsonResponse())
+                    };
+                }
+                else if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}/orders"))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(GetOpenOrderJsonResponse())
                     };
                 }
 
@@ -80,13 +98,13 @@ public class CharlesSchwabApiClientTests
         return mockHandler;
     }
 
-    private string GetAccountJsonResponse(string accountNumber)
+    private string GetAccountJsonResponse()
     {
         return $@"
             {{
             ""securitiesAccount"": {{
             ""type"": ""CASH"",
-            ""accountNumber"": ""{accountNumber}"",
+            ""accountNumber"": ""{_accountNumber}"",
             ""roundTrips"": 0,
             ""isDayTrader"": false,
             ""isClosingOnlyRestricted"": false,
@@ -122,5 +140,90 @@ public class CharlesSchwabApiClientTests
               ""previousSessionShortQuantity"": 5,
               ""currentDayCost"": 777.77
             }}]}}}}";
+    }
+
+    private string GetOpenOrderJsonResponse()
+    {
+        return $@"
+[
+  {{
+    ""session"": ""NORMAL"",
+    ""duration"": ""DAY"",
+    ""orderType"": ""MARKET"",
+    ""cancelTime"": ""2024-10-24T16:41:34.564Z"",
+    ""complexOrderStrategyType"": ""NONE"",
+    ""quantity"": 0,
+    ""filledQuantity"": 0,
+    ""remainingQuantity"": 0,
+    ""requestedDestination"": ""INET"",
+    ""destinationLinkName"": ""string"",
+    ""releaseTime"": ""2024-10-24T16:41:34.564Z"",
+    ""stopPrice"": 0,
+    ""stopPriceLinkBasis"": ""MANUAL"",
+    ""stopPriceLinkType"": ""VALUE"",
+    ""stopPriceOffset"": 0,
+    ""stopType"": ""STANDARD"",
+    ""priceLinkBasis"": ""MANUAL"",
+    ""priceLinkType"": ""VALUE"",
+    ""price"": 0,
+    ""taxLotMethod"": ""FIFO"",
+    ""orderLegCollection"": [
+      {{
+        ""orderLegType"": ""EQUITY"",
+        ""legId"": 0,
+        ""instrument"": {{
+          ""cusip"": ""string"",
+          ""symbol"": ""string"",
+          ""description"": ""string"",
+          ""instrumentId"": 0,
+          ""netChange"": 0,
+          ""type"": ""SWEEP_VEHICLE""
+        }},
+        ""instruction"": ""BUY"",
+        ""positionEffect"": ""OPENING"",
+        ""quantity"": 0,
+        ""quantityType"": ""ALL_SHARES"",
+        ""divCapGains"": ""REINVEST"",
+        ""toSymbol"": ""string""
+      }}
+    ],
+    ""activationPrice"": 0,
+    ""specialInstruction"": ""ALL_OR_NONE"",
+    ""orderStrategyType"": ""SINGLE"",
+    ""orderId"": 0,
+    ""cancelable"": false,
+    ""editable"": false,
+    ""status"": ""AWAITING_PARENT_ORDER"",
+    ""enteredTime"": ""2024-10-24T16:41:34.564Z"",
+    ""closeTime"": ""2024-10-24T16:41:34.564Z"",
+    ""tag"": ""string"",
+    ""accountNumber"": ""{_accountNumber}"",
+    ""orderActivityCollection"": [
+      {{
+        ""activityType"": ""EXECUTION"",
+        ""executionType"": ""FILL"",
+        ""quantity"": 0,
+        ""orderRemainingQuantity"": 0,
+        ""executionLegs"": [
+          {{
+            ""legId"": 0,
+            ""price"": 0,
+            ""quantity"": 0,
+            ""mismarkedQuantity"": 0,
+            ""instrumentId"": 0,
+            ""time"": ""2024-10-24T16:41:34.564Z""
+          }}
+        ]
+      }}
+    ],
+    ""replacingOrderCollection"": [
+      ""string""
+    ],
+    ""childOrderStrategies"": [
+      ""string""
+    ],
+    ""statusDescription"": ""string""
+  }}
+]";
     }
 }
