@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -235,7 +235,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             }
             catch (JsonSerializationException)
             {
-                var errorResponse = JsonConvert.DeserializeObject<CharlesSchwabErrorResponse>(jsonContent);
+                var errorResponse = JsonConvert.DeserializeObject<CharlesSchwabTokenErrorResponse>(jsonContent);
                 throw new ArgumentException($"{nameof(CharlesSchwabTokenRefreshHandler)}.{nameof(SendSignInAsync)}: {errorResponse?.Error ?? "Unknown error"} - " +
                                $"{errorResponse?.ErrorDescription ?? "No description"}.");
             }
