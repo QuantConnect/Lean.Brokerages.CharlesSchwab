@@ -17,9 +17,11 @@ using System;
 using QuantConnect.Data;
 using QuantConnect.Util;
 using QuantConnect.Orders;
-using QuantConnect.Interfaces;
+using QuantConnect.Logging;
 using QuantConnect.Securities;
+using QuantConnect.Configuration;
 using System.Collections.Generic;
+using QuantConnect.Brokerages.CharlesSchwab.Api;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
@@ -35,24 +37,49 @@ public partial class CharlesSchwabBrokerage : Brokerage
     public override bool IsConnected { get; }
 
     /// <summary>
-    /// Parameterless constructor for brokerage
+    /// Indicates whether the initialization process has already been completed.
     /// </summary>
-    /// <remarks>This parameterless constructor is required for brokerages implementing <see cref="IDataQueueHandler"/></remarks>
-    public CharlesSchwabBrokerage()
-        : this(Composer.Instance.GetPart<IDataAggregator>())
+    private bool _isInitialized;
+
+    /// <summary>
+    /// CharlesSchwab api client implementation.
+    /// </summary>
+    private CharlesSchwabApiClient _charlesSchwabApiClient;
+
+    public CharlesSchwabBrokerage() : base("CharlesSchwab")
     {
     }
 
-    /// <summary>
-    /// Creates a new instance
-    /// </summary>
-    /// <param name="aggregator">consolidate ticks</param>
-    public CharlesSchwabBrokerage(IDataAggregator aggregator) : base("CharlesSchwab")
+    public CharlesSchwabBrokerage(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
+        string refreshToken) : base("CharlesSchwab")
     {
-        _aggregator = aggregator;
+        Initialize(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
+    }
+
+    protected void Initialize(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
+        string refreshToken)
+    {
+        if (_isInitialized)
+        {
+            return;
+        }
+        _isInitialized = true;
+
+        _aggregator = Composer.Instance.GetPart<IDataAggregator>();
+        if (_aggregator == null)
+        {
+            // toolbox downloader case
+            var aggregatorName = Config.Get("data-aggregator", "QuantConnect.Lean.Engine.DataFeeds.AggregationManager");
+            Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(Initialize)}: found no data aggregator instance, creating {aggregatorName}");
+            _aggregator = Composer.Instance.GetExportedValueByTypeName<IDataAggregator>(aggregatorName);
+        }
+
+
         _subscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager();
         _subscriptionManager.SubscribeImpl += (s, t) => Subscribe(s);
         _subscriptionManager.UnsubscribeImpl += (s, t) => Unsubscribe(s);
+
+        _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
         // Useful for some brokerages:
 
@@ -82,7 +109,28 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// <returns>The current holdings from the account</returns>
     public override List<Holding> GetAccountHoldings()
     {
-        throw new NotImplementedException();
+        var positions = _charlesSchwabApiClient.GetAccountBalanceAndPosition().SynchronouslyAwaitTaskResult().Positions;
+
+        var holdings = new List<Holding>();
+        foreach (var position in positions )
+        {
+            // TODO: SymbolMapper
+            var leanSymbol = Symbol.Create(position.Instrument.Symbol, SecurityType.Equity, Market.USA);
+
+            holdings.Add(new Holding()
+            {
+                AveragePrice = position.AveragePrice,
+                CurrencySymbol = Currencies.USD,
+                MarketValue = position.MarketValue,
+                // TODO: Api Response received sign with quantity?
+                Quantity = position.ShortQuantity != 0 ? position.ShortQuantity : position.LongQuantity,
+                Symbol = leanSymbol,
+                UnrealizedPnL = position.CurrentDayProfitLoss,
+                UnrealizedPnLPercent = position.CurrentDayProfitLossPercentage
+            });
+        }
+
+        return holdings;
     }
 
     /// <summary>

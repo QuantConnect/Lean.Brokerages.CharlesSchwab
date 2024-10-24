@@ -26,12 +26,12 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     /// <summary>
     /// Count number of subscribers for each channel (Symbol, Socket) pair
     /// </summary>
-    private readonly EventBasedDataQueueHandlerSubscriptionManager _subscriptionManager;
+    private EventBasedDataQueueHandlerSubscriptionManager _subscriptionManager;
 
     /// <summary>
     /// Aggregates ticks and bars based on given subscriptions.
     /// </summary>
-    private readonly IDataAggregator _aggregator;
+    private IDataAggregator _aggregator;
 
     /// <summary>
     /// Sets the job we're subscribing for
