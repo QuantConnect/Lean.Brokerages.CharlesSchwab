@@ -14,10 +14,16 @@
 */
 
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 
+/// <summary>
+/// Represents an error response from the Charles Schwab API.
+/// </summary>
+/// <param name="Error">The error message returned by the API.</param>
+/// <param name="ErrorDescription">A collection of detailed error descriptions returned by the API.</param>
 public record CharlesSchwabErrorResponse(
-    [property: JsonProperty("error")] string Error,
-    [property: JsonProperty("error_description")] string ErrorDescription
-    );
+[property: JsonProperty("message")] string Error,
+[property: JsonProperty("errors")] IReadOnlyCollection<string> ErrorDescription
+);
