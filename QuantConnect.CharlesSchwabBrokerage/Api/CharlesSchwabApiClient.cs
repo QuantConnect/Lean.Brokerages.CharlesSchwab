@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -17,7 +17,9 @@ using System;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Api;
 
@@ -61,6 +63,17 @@ public class CharlesSchwabApiClient
         var httpClient = httpClientHandler ?? new HttpClientHandler();
         var tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(httpClient, baseUrl, appKey, secret, redirectUri, authorizationCodeFromUrl, refreshToken);
         _httpClient = new(tokenRefreshHandler);
+    }
+
+    public async Task<IReadOnlyCollection<CharlesSchwabOrder>> GetOpenOrders()
+    {
+        // Docs remark: Date must be within 60 days from today's date.
+        var fromEnteredTime = DateTime.UtcNow.AddDays(-60).ToIso8601Invariant();
+        var toEnteredTime = DateTime.UtcNow.ToIso8601Invariant();
+
+        return await RequestTraderAsync<IReadOnlyCollection<CharlesSchwabOrder>>(
+            HttpMethod.Get,
+            $"/accounts/{_accountNumber}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}&status={CharlesSchwabOrderStatus.Working.ToStringInvariant().ToUpperInvariant()}");
     }
 
     /// <summary>
