@@ -78,7 +78,7 @@ public record Position(
     [property: JsonProperty("settledLongQuantity")] int SettledLongQuantity,
     [property: JsonProperty("settledShortQuantity")] int SettledShortQuantity,
     [property: JsonProperty("agedQuantity")] int AgedQuantity,
-    [property: JsonProperty("instrument")] Instrument Instrument,
+    [property: JsonProperty("instrument")] CharlesSchwabInstrument Instrument,
     [property: JsonProperty("marketValue")] decimal MarketValue,
     [property: JsonProperty("maintenanceRequirement")] decimal MaintenanceRequirement,
     [property: JsonProperty("averageLongPrice")] decimal AverageLongPrice,
@@ -91,22 +91,3 @@ public record Position(
     [property: JsonProperty("previousSessionShortQuantity")] int PreviousSessionShortQuantity,
     [property: JsonProperty("currentDayCost")] decimal CurrentDayCost
     );
-
-/// <summary>
-/// Represents a financial instrument held in a position.
-/// </summary>
-/// <param name="Cusip">The CUSIP identifier for the instrument.</param>
-/// <param name="Symbol">The symbol of the instrument.</param>
-/// <param name="Description">The description of the instrument.</param>
-/// <param name="InstrumentId">The unique instrument identifier.</param>
-/// <param name="NetChange">The net change in value of the instrument.</param>
-/// <param name="Type">The type of the instrument (e.g., SWEEP_VEHICLE).</param>
-public record Instrument(
-    [property: JsonProperty("cusip")] string Cusip,
-    [property: JsonProperty("symbol")] string Symbol,
-    [property: JsonProperty("description")] string Description,
-    [property: JsonProperty("instrumentId")] int InstrumentId,
-    [property: JsonProperty("netChange")] decimal NetChange,
-    [property: JsonProperty("type")] string Type
-    );
-
