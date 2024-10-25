@@ -13,94 +13,91 @@
  * limitations under the License.
 */
 
+using Moq;
+using System.Net;
+using Moq.Protected;
+using System.Net.Http;
 using NUnit.Framework;
+using System.Threading;
 using System.Threading.Tasks;
 using QuantConnect.Configuration;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
-using Moq.Protected;
-using Moq;
-using System.Net.Http;
-using System.Threading;
-using System;
-using System.Net;
-using System.Linq;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
 
 [TestFixture]
 public class CharlesSchwabApiClientTests
 {
-    private string _accountNumber = Config.Get("charles-schwab-account-number", "123");
-    private CharlesSchwabApiClient _apiClient;
+  private string _accountNumber = Config.Get("charles-schwab-account-number", "123");
+  private CharlesSchwabApiClient _apiClient;
 
-    [OneTimeSetUp]
-    public void OneTimeSetUp()
-    {
-        var baseUrl = Config.Get("charles-schwab-api-url");
-        var appKey = Config.Get("charles-schwab-app-key");
-        var secret = Config.Get("charles-schwab-secret");
-        var redirectUrl = Config.Get("charles-schwab-redirect-url");
-        
-        var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
+  [OneTimeSetUp]
+  public void OneTimeSetUp()
+  {
+    var baseUrl = Config.Get("charles-schwab-api-url");
+    var appKey = Config.Get("charles-schwab-app-key");
+    var secret = Config.Get("charles-schwab-secret");
+    var redirectUrl = Config.Get("charles-schwab-redirect-url");
 
-        var mockHandler = GetMockHttpMessageHandler();
+    var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
 
-       _apiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, _accountNumber, redirectUrl, authorizationCode, string.Empty, mockHandler.Object);
-    }
+    var mockHandler = GetMockHttpMessageHandler();
 
-    [Test]
-    public async Task GetAccounts()
-    {
-        var result = await _apiClient.GetAccountBalanceAndPosition();
-        Assert.IsNotNull(result);
-    }
+    _apiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, _accountNumber, redirectUrl, authorizationCode, string.Empty, mockHandler.Object);
+  }
 
-    [Test]
-    public async Task GetOpenOrders()
-    {
-        var result = await _apiClient.GetOpenOrders();
-        Assert.IsNotNull(result);
-    }
+  [Test]
+  public async Task GetAccounts()
+  {
+    var result = await _apiClient.GetAccountBalanceAndPosition();
+    Assert.IsNotNull(result);
+  }
 
-    private Mock<HttpClientHandler> GetMockHttpMessageHandler()
-    {
-        var mockHandler = new Mock<HttpClientHandler>(MockBehavior.Strict);
+  [Test]
+  public async Task GetOpenOrders()
+  {
+    var result = await _apiClient.GetOpenOrders();
+    Assert.IsNotNull(result);
+  }
 
-        mockHandler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
+  private Mock<HttpClientHandler> GetMockHttpMessageHandler()
+  {
+    var mockHandler = new Mock<HttpClientHandler>(MockBehavior.Strict);
 
-        mockHandler
-            .Protected()
-            .Setup<Task<HttpResponseMessage>>(
-                "SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
-            .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
+    mockHandler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
+
+    mockHandler
+        .Protected()
+        .Setup<Task<HttpResponseMessage>>(
+        "SendAsync",
+        ItExpr.IsAny<HttpRequestMessage>(),
+        ItExpr.IsAny<CancellationToken>())
+        .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
+        {
+          var requestUriAbsolutePath = request.RequestUri.AbsolutePath;
+          if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}?fields=positions"))
+          {
+            return new HttpResponseMessage(HttpStatusCode.OK)
             {
-                var requestUriAbsolutePath = request.RequestUri.AbsolutePath;
-                if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}?fields=positions"))
-                {
-                    return new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(GetAccountJsonResponse())
-                    };
-                }
-                else if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}/orders"))
-                {
-                    return new HttpResponseMessage(HttpStatusCode.OK)
-                    {
-                        Content = new StringContent(GetOpenOrderJsonResponse())
-                    };
-                }
+              Content = new StringContent(GetAccountJsonResponse())
+            };
+          }
+          else if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}/orders"))
+          {
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+              Content = new StringContent(GetOpenOrderJsonResponse())
+            };
+          }
+          return new HttpResponseMessage(HttpStatusCode.BadRequest);
+        });
 
-                return new HttpResponseMessage(HttpStatusCode.BadRequest);
-            });
+    return mockHandler;
+  }
 
-        return mockHandler;
-    }
-
-    private string GetAccountJsonResponse()
-    {
-        return $@"
+  private string GetAccountJsonResponse()
+  {
+    return $@"
             {{
             ""securitiesAccount"": {{
             ""type"": ""CASH"",
@@ -140,90 +137,78 @@ public class CharlesSchwabApiClientTests
               ""previousSessionShortQuantity"": 5,
               ""currentDayCost"": 777.77
             }}]}}}}";
-    }
+  }
 
     private string GetOpenOrderJsonResponse()
     {
         return $@"
-[
-  {{
-    ""session"": ""NORMAL"",
-    ""duration"": ""DAY"",
-    ""orderType"": ""MARKET"",
-    ""cancelTime"": ""2024-10-24T16:41:34.564Z"",
-    ""complexOrderStrategyType"": ""NONE"",
-    ""quantity"": 0,
-    ""filledQuantity"": 0,
-    ""remainingQuantity"": 0,
-    ""requestedDestination"": ""INET"",
-    ""destinationLinkName"": ""string"",
-    ""releaseTime"": ""2024-10-24T16:41:34.564Z"",
-    ""stopPrice"": 0,
-    ""stopPriceLinkBasis"": ""MANUAL"",
-    ""stopPriceLinkType"": ""VALUE"",
-    ""stopPriceOffset"": 0,
-    ""stopType"": ""STANDARD"",
-    ""priceLinkBasis"": ""MANUAL"",
-    ""priceLinkType"": ""VALUE"",
-    ""price"": 0,
-    ""taxLotMethod"": ""FIFO"",
-    ""orderLegCollection"": [
-      {{
-        ""orderLegType"": ""EQUITY"",
-        ""legId"": 0,
-        ""instrument"": {{
-          ""cusip"": ""string"",
-          ""symbol"": ""string"",
-          ""description"": ""string"",
-          ""instrumentId"": 0,
-          ""netChange"": 0,
-          ""type"": ""SWEEP_VEHICLE""
-        }},
-        ""instruction"": ""BUY"",
-        ""positionEffect"": ""OPENING"",
-        ""quantity"": 0,
-        ""quantityType"": ""ALL_SHARES"",
-        ""divCapGains"": ""REINVEST"",
-        ""toSymbol"": ""string""
-      }}
-    ],
-    ""activationPrice"": 0,
-    ""specialInstruction"": ""ALL_OR_NONE"",
-    ""orderStrategyType"": ""SINGLE"",
-    ""orderId"": 0,
-    ""cancelable"": false,
-    ""editable"": false,
-    ""status"": ""AWAITING_PARENT_ORDER"",
-    ""enteredTime"": ""2024-10-24T16:41:34.564Z"",
-    ""closeTime"": ""2024-10-24T16:41:34.564Z"",
-    ""tag"": ""string"",
-    ""accountNumber"": ""{_accountNumber}"",
-    ""orderActivityCollection"": [
-      {{
-        ""activityType"": ""EXECUTION"",
-        ""executionType"": ""FILL"",
-        ""quantity"": 0,
-        ""orderRemainingQuantity"": 0,
-        ""executionLegs"": [
-          {{
-            ""legId"": 0,
-            ""price"": 0,
-            ""quantity"": 0,
-            ""mismarkedQuantity"": 0,
-            ""instrumentId"": 0,
-            ""time"": ""2024-10-24T16:41:34.564Z""
-          }}
-        ]
-      }}
-    ],
-    ""replacingOrderCollection"": [
-      ""string""
-    ],
-    ""childOrderStrategies"": [
-      ""string""
-    ],
-    ""statusDescription"": ""string""
-  }}
-]";
+    [ {{
+        ""session"": ""NORMAL"",
+        ""duration"": ""DAY"",
+        ""orderType"": ""MARKET"",
+        ""cancelTime"": ""2024-10-24T16:41:34.564Z"",
+        ""complexOrderStrategyType"": ""NONE"",
+        ""quantity"": 1,
+        ""filledQuantity"": 2,
+        ""remainingQuantity"": 3,
+        ""requestedDestination"": ""INET"",
+        ""destinationLinkName"": ""somewhere"",
+        ""releaseTime"": ""2024-10-24T16:41:34.564Z"",
+        ""stopPrice"": 223.65,
+        ""stopPriceLinkBasis"": ""MANUAL"",
+        ""stopPriceLinkType"": ""VALUE"",
+        ""stopPriceOffset"": 0.22,
+        ""stopType"": ""STANDARD"",
+        ""priceLinkBasis"": ""MANUAL"",
+        ""priceLinkType"": ""VALUE"",
+        ""price"": 220.11,
+        ""taxLotMethod"": ""FIFO"",
+        ""orderLegCollection"": [ {{
+            ""orderLegType"": ""EQUITY"",
+            ""legId"": 1,
+            ""instrument"": {{
+                ""cusip"": ""777"",
+                ""symbol"": ""ABC"",
+                ""description"": ""Alphabet"",
+                ""instrumentId"": 1,
+                ""netChange"": 43.2,
+                ""type"": ""SWEEP_VEHICLE""
+            }},
+            ""instruction"": ""BUY"",
+            ""positionEffect"": ""OPENING"",
+            ""quantity"": 1,
+            ""quantityType"": ""ALL_SHARES"",
+            ""divCapGains"": ""REINVEST"",
+            ""toSymbol"": ""ABC""
+        }}],
+        ""activationPrice"": 200,
+        ""specialInstruction"": ""ALL_OR_NONE"",
+        ""orderStrategyType"": ""SINGLE"",
+        ""orderId"": 123,
+        ""cancelable"": true,
+        ""editable"": true,
+        ""status"": ""WORKING"",
+        ""enteredTime"": ""2024-10-24T16:41:34.564Z"",
+        ""closeTime"": ""2024-10-24T16:41:34.564Z"",
+        ""tag"": ""MockOrder"",
+        ""accountNumber"": ""{_accountNumber}"",
+        ""orderActivityCollection"": [ {{
+            ""activityType"": ""EXECUTION"",
+            ""executionType"": ""FILL"",
+            ""quantity"": 3,
+            ""orderRemainingQuantity"": 2,
+            ""executionLegs"": [ {{
+                ""legId"": 1,
+                ""price"": 22.22,
+                ""quantity"": 1,
+                ""mismarkedQuantity"": 3,
+                ""instrumentId"": 777,
+                ""time"": ""2024-10-24T16:41:34.564Z""
+            }} ]
+        }} ],
+        ""replacingOrderCollection"": [ ""string"" ],
+        ""childOrderStrategies"": [ ""string"" ],
+        ""statusDescription"": ""string""
+    }}]";
     }
 }
