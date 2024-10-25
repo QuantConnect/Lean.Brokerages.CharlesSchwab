@@ -74,7 +74,7 @@ public class CharlesSchwabApiClientTests
         ItExpr.IsAny<CancellationToken>())
         .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
         {
-          var requestUriAbsolutePath = request.RequestUri.AbsolutePath;
+          var requestUriAbsolutePath = request.RequestUri.PathAndQuery;
           if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}?fields=positions"))
           {
             return new HttpResponseMessage(HttpStatusCode.OK)
