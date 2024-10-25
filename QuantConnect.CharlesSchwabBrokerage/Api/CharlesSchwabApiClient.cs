@@ -85,8 +85,8 @@ public class CharlesSchwabApiClient
     /// <summary>
     /// Retrieves the balance and positions of the securities account.
     /// </summary>
-    /// <returns>A <see cref="SecuritiesAccountMetaData"/> object that represents the account balance and positions.</returns>
-    public async Task<SecuritiesAccountMetaData> GetAccountBalanceAndPosition()
+    /// <returns>A <see cref="SecuritiesAccount"/> object that represents the account balance and positions.</returns>
+    public async Task<SecuritiesAccount> GetAccountBalanceAndPosition()
     {
         return (await GetAccountByNumber(_accountNumber)).SecuritiesAccount;
     }
