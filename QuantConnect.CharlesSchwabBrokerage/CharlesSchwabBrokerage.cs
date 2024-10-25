@@ -22,6 +22,7 @@ using QuantConnect.Securities;
 using QuantConnect.Configuration;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
@@ -100,7 +101,39 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// <returns>The open orders returned from IB</returns>
     public override List<Order> GetOpenOrders()
     {
-        throw new NotImplementedException();
+        var brokerageOpenOrders = _charlesSchwabApiClient.GetOpenOrders().SynchronouslyAwaitTaskResult();
+        var leanOrders = new List<Order>();
+        foreach (var brokerageOrder in brokerageOpenOrders)
+        {
+            var leanOrder = default(Order);
+
+            var leg = brokerageOrder.OrderLegCollection[0];
+            // TODO: SymbolMapper
+            var leanSymbol = Symbol.Create(leg.Instrument.Symbol, SecurityType.Equity, Market.USA);
+            switch (brokerageOrder.OrderType)
+            {
+                case CharlesSchwabOrderType.Market:
+                    leanOrder = new MarketOrder(leanSymbol, leg.Quantity, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    break;
+                case CharlesSchwabOrderType.Limit:
+                    leanOrder = new LimitOrder(leanSymbol, leg.Quantity, brokerageOrder.Price, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    break;
+                case CharlesSchwabOrderType.Stop:
+                    leanOrder = new StopMarketOrder(leanSymbol, leg.Quantity, brokerageOrder.StopPrice, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    break;
+                case CharlesSchwabOrderType.StopLimit:
+                    leanOrder = new StopLimitOrder(leanSymbol, leg.Quantity, brokerageOrder.StopPrice, brokerageOrder.Price, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    break;
+                // TODO: case CharlesSchwabOrderType.TrailingStop:
+                case CharlesSchwabOrderType.MarketOnClose:
+                    leanOrder = new MarketOnCloseOrder(leanSymbol, leg.Quantity, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    break;
+            }
+            // TODO: Validate the ternary conditional operator
+            leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? OrderStatus.PartiallyFilled : OrderStatus.Submitted;
+            leanOrder.BrokerId.Add(brokerageOrder.OrderId.ToStringInvariant());
+        }
+        return leanOrders;
     }
 
     /// <summary>
@@ -112,7 +145,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
         var positions = _charlesSchwabApiClient.GetAccountBalanceAndPosition().SynchronouslyAwaitTaskResult().Positions;
 
         var holdings = new List<Holding>();
-        foreach (var position in positions )
+        foreach (var position in positions)
         {
             // TODO: SymbolMapper
             var leanSymbol = Symbol.Create(position.Instrument.Symbol, SecurityType.Equity, Market.USA);
