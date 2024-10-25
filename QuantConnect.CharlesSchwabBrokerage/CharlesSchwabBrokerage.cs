@@ -172,7 +172,8 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// <returns>The current cash balance for each currency available for trading</returns>
     public override List<CashAmount> GetCashBalance()
     {
-        throw new NotImplementedException();
+        var currentBalance = _charlesSchwabApiClient.GetAccountBalanceAndPosition().SynchronouslyAwaitTaskResult().CurrentBalances;
+        return new List<CashAmount>() { new CashAmount(currentBalance.CashBalance, Currencies.USD) };
     }
 
     /// <summary>
