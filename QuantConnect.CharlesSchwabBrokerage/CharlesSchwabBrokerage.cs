@@ -22,6 +22,7 @@ using QuantConnect.Securities;
 using QuantConnect.Configuration;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
+using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
@@ -51,6 +52,11 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// CharlesSchwab api client implementation.
     /// </summary>
     private CharlesSchwabApiClient _charlesSchwabApiClient;
+
+    /// <summary>
+    /// Provides the mapping between Lean symbols and brokerage specific symbols.
+    /// </summary>
+    private CharlesSchwabBrokerageSymbolMapper _symbolMapper;
 
     public CharlesSchwabBrokerage() : base(MarketName)
     {
@@ -84,6 +90,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
         _subscriptionManager.SubscribeImpl += (s, t) => Subscribe(s);
         _subscriptionManager.UnsubscribeImpl += (s, t) => Unsubscribe(s);
 
+        _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
         // Useful for some brokerages:
@@ -112,8 +119,8 @@ public partial class CharlesSchwabBrokerage : Brokerage
             var leanOrder = default(Order);
 
             var leg = brokerageOrder.OrderLegCollection[0];
-            // TODO: SymbolMapper
-            var leanSymbol = Symbol.Create(leg.Instrument.Symbol, SecurityType.Equity, Market.USA);
+            // TODO: What about Market ?? 
+            var leanSymbol = _symbolMapper.GetLeanSymbol(leg.Instrument.Symbol, leg.OrderLegType.ConvertCharlesSchwabAssetTypeToLeanSecurityType(), Market.USA);
             switch (brokerageOrder.OrderType)
             {
                 case CharlesSchwabOrderType.Market:
@@ -152,7 +159,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
         foreach (var position in positions)
         {
             // TODO: SymbolMapper
-            var leanSymbol = Symbol.Create(position.Instrument.Symbol, SecurityType.Equity, Market.USA);
+            var leanSymbol = _symbolMapper.GetLeanSymbol(position.Instrument.Symbol, SecurityType.Equity, Market.USA);
 
             holdings.Add(new Holding()
             {
