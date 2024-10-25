@@ -33,6 +33,11 @@ namespace QuantConnect.Brokerages.CharlesSchwab;
 public partial class CharlesSchwabBrokerage : Brokerage
 {
     /// <summary>
+    /// Represents the name of the market or broker being used, in this case, "Charles Schwab".
+    /// </summary>
+    private static readonly string MarketName = "CharlesSchwab"; /// TODO: Replace this with the reference to the market name from Lean, like `Market.CharlesSchwab`.
+
+    /// <summary>
     /// Returns true if we're currently connected to the broker
     /// </summary>
     public override bool IsConnected { get; }
@@ -47,12 +52,12 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// </summary>
     private CharlesSchwabApiClient _charlesSchwabApiClient;
 
-    public CharlesSchwabBrokerage() : base("CharlesSchwab")
+    public CharlesSchwabBrokerage() : base(MarketName)
     {
     }
 
     public CharlesSchwabBrokerage(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
-        string refreshToken) : base("CharlesSchwab")
+        string refreshToken) : base(MarketName)
     {
         Initialize(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
     }
@@ -69,7 +74,6 @@ public partial class CharlesSchwabBrokerage : Brokerage
         _aggregator = Composer.Instance.GetPart<IDataAggregator>();
         if (_aggregator == null)
         {
-            // toolbox downloader case
             var aggregatorName = Config.Get("data-aggregator", "QuantConnect.Lean.Engine.DataFeeds.AggregationManager");
             Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(Initialize)}: found no data aggregator instance, creating {aggregatorName}");
             _aggregator = Composer.Instance.GetExportedValueByTypeName<IDataAggregator>(aggregatorName);
