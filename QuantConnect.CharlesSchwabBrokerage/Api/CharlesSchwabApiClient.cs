@@ -65,6 +65,12 @@ public class CharlesSchwabApiClient
         _httpClient = new(tokenRefreshHandler);
     }
 
+    /// <summary>
+    /// Retrieves a collection of open orders for the account.
+    /// </summary>
+    /// <returns>
+    ///The read-only collection of open <see cref="CharlesSchwabOrder"/> objects.
+    /// </returns>
     public async Task<IReadOnlyCollection<CharlesSchwabOrder>> GetOpenOrders()
     {
         // Docs remark: Date must be within 60 days from today's date.
