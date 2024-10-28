@@ -14,26 +14,149 @@
 */
 
 using System;
+using NodaTime;
 using QuantConnect.Data;
+using QuantConnect.Util;
+using QuantConnect.Logging;
+using QuantConnect.Data.Market;
 using System.Collections.Generic;
+using QuantConnect.Data.Consolidators;
+using QuantConnect.Brokerages.CharlesSchwab.Models;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
 public partial class CharlesSchwabBrokerage
 {
     /// <summary>
-    /// Gets the history for the requested symbols
-    /// <see cref="IBrokerage.GetHistory(Data.HistoryRequest)"/>
+    /// Indicates whether the warning for invalid <see cref="SecurityType"/> has been fired.
     /// </summary>
-    /// <param name="request">The historical data request</param>
-    /// <returns>An enumerable of bars covering the span specified in the request</returns>
+    private volatile bool _unsupportedSecurityTypeWarningFired;
+
+    /// <summary>
+    /// Indicates whether the warning for invalid <see cref="Resolution"/> has been fired.
+    /// </summary>
+    private volatile bool _unsupportedResolutionTypeWarningFired;
+
+    /// <summary>
+    /// Indicates whether the warning for invalid <see cref="TickType"/> has been fired.
+    /// </summary>
+    private volatile bool _unsupportedTickTypeTypeWarningFired;
+
+    /// <summary>
+    /// Gets the historical data for the requested symbols.
+    /// </summary>
+    /// <param name="request">The historical data request.</param>
+    /// <returns>An enumerable of bars covering the span specified in the request, or null if unsupported types are encountered.</returns>
     public override IEnumerable<BaseData> GetHistory(HistoryRequest request)
     {
-        if (!CanSubscribe(request.Symbol))
+        if (request.Symbol.SecurityType is not (SecurityType.Equity or SecurityType.Future or SecurityType.Index))
         {
-            return null; // Should consistently return null instead of an empty enumerable
+            if (!_unsupportedSecurityTypeWarningFired)
+            {
+                _unsupportedSecurityTypeWarningFired = true;
+                Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: Unsupported SecurityType '{request.Symbol.SecurityType}' for symbol '{request.Symbol}'");
+            }
+            return null;
         }
 
-        throw new NotImplementedException();
+        if (request.Resolution < Resolution.Minute)
+        {
+            if (!_unsupportedResolutionTypeWarningFired)
+            {
+                _unsupportedResolutionTypeWarningFired = true;
+                Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: Unsupported Resolution '{request.Resolution}'");
+            }
+            return null;
+        }
+
+        if (request.TickType != TickType.Trade)
+        {
+            if (!_unsupportedTickTypeTypeWarningFired)
+            {
+                _unsupportedTickTypeTypeWarningFired = true;
+                Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: Unsupported TickType '{request.TickType}'");
+            }
+            return null;
+        }
+
+        return GetTradeBarByResolution(request.Resolution, request.Symbol, request.StartTimeUtc, request.EndTimeUtc, request.IncludeExtendedMarketHours,
+            request.ExchangeHours.TimeZone);
+    }
+
+    /// <summary>
+    /// Retrieves historical trade bars based on the specified resolution.
+    /// </summary>
+    /// <param name="resolution">The resolution of the data, such as Minute, Hour, or Daily.</param>
+    /// <param name="symbol">The symbol for which historical data is requested.</param>
+    /// <param name="startDateTime">The start date and time of the requested historical data period, in UTC.</param>
+    /// <param name="endDateTime">The end date and time of the requested historical data period, in UTC.</param>
+    /// <param name="includeExtendedMarketHours">Indicates whether to include data from extended market hours.</param>
+    /// <param name="exchangeHoursTimeZone">The time zone of the exchange for accurate date-time conversion.</param>
+    /// <returns>An enumerable of <see cref="TradeBar"/> objects for the requested period, resolution, and symbol.</returns>
+    /// <exception cref="NotSupportedException">Thrown if an unsupported <see cref="Resolution"/> type is provided.</exception>
+    private IEnumerable<BaseData> GetTradeBarByResolution(Resolution resolution, Symbol symbol, DateTime startDateTime, DateTime endDateTime, bool includeExtendedMarketHours, DateTimeZone exchangeHoursTimeZone)
+    {
+        var brokerageSymbol = _symbolMapper.GetBrokerageSymbol(symbol);
+
+        var histories = (resolution switch
+        {
+            Resolution.Minute => _charlesSchwabApiClient.GetMinutePriceHistory(brokerageSymbol, startDateTime, endDateTime, includeExtendedMarketHours),
+            Resolution.Daily => _charlesSchwabApiClient.GetDailyPriceHistory(brokerageSymbol, startDateTime, endDateTime, includeExtendedMarketHours),
+            Resolution.Hour => _charlesSchwabApiClient.GetThirtyMinutesPriceHistory(brokerageSymbol, startDateTime, endDateTime, includeExtendedMarketHours),
+            _ => throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetTradeBarByResolution)}: Unsupported time Resolution type '{resolution}'")
+        }).SynchronouslyAwaitTaskResult().Candles;
+
+        var period = resolution.ToTimeSpan();
+        if (resolution == Resolution.Hour)
+        {
+            return GetTradeBarWithUsingConsolidator(ConvertCandlesToTradeBars(histories, symbol, period, exchangeHoursTimeZone), period);
+        }
+        else
+        {
+            return ConvertCandlesToTradeBars(histories, symbol, period, exchangeHoursTimeZone);
+        }
+    }
+
+    /// <summary>
+    /// Converts a collection of candles into trade bars based on the specified period and exchange time zone.
+    /// </summary>
+    /// <param name="candles">The collection of <see cref="CharlesSchwabCandle"/> data points to convert.</param>
+    /// <param name="symbol">The symbol for the generated trade bars.</param>
+    /// <param name="period">The time span representing the duration of each trade bar.</param>
+    /// <param name="exchangeHoursTimeZone">The exchange's time zone for converting the candle date-time from UTC to local time.</param>
+    /// <returns>An enumerable of <see cref="TradeBar"/> instances representing the candles.</returns>
+    private static IEnumerable<BaseData> ConvertCandlesToTradeBars(IReadOnlyCollection<CharlesSchwabCandle> candles, Symbol symbol, TimeSpan period, DateTimeZone exchangeHoursTimeZone)
+    {
+        foreach (var candle in candles)
+        {
+            yield return new TradeBar(candle.DateTime.ConvertFromUtc(exchangeHoursTimeZone), symbol, candle.Open, candle.High, candle.Low, candle.Close, candle.Volume, period);
+        }
+    }
+
+    /// <summary>
+    /// Consolidates trade bars to the specified period and returns the consolidated data.
+    /// </summary>
+    /// <param name="tradeBars">The enumerable of trade bars to be consolidated.</param>
+    /// <param name="period">The target period for consolidation.</param>
+    /// <returns>An enumerable of consolidated <see cref="BaseData"/>.</returns>
+    private IEnumerable<BaseData> GetTradeBarWithUsingConsolidator(IEnumerable<BaseData> tradeBars, TimeSpan period)
+    {
+        var consolidatedData = default(BaseData);
+        var tradeBarConsolidator = new TradeBarConsolidator(period);
+        EventHandler<TradeBar> onHourTradeBarConsolidator = (_, tradeBar) => { consolidatedData = tradeBar; };
+        tradeBarConsolidator.DataConsolidated += onHourTradeBarConsolidator;
+
+        foreach (var tradeBar in tradeBars)
+        {
+            tradeBarConsolidator.Update(tradeBar);
+            if (consolidatedData != null)
+            {
+                yield return consolidatedData;
+                consolidatedData = null;
+            }
+        }
+
+        tradeBarConsolidator.DataConsolidated -= onHourTradeBarConsolidator;
+        tradeBarConsolidator.DisposeSafely();
     }
 }
