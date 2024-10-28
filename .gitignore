@@ -50,6 +50,7 @@
 */Docker/*
 *Algorithm.Python/Lib/*
 */[Ee]xtensions/*
+!QuantConnect.CharlesSchwabBrokerage/Extensions/*
 !**/Libraries/*
 
 # C Debug Binaries
