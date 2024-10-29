@@ -229,7 +229,7 @@ public class CharlesSchwabApiClient
 
                 if (!responseMessage.IsSuccessStatusCode)
                 {
-                    var errorResponse = JsonConvert.DeserializeObject<CharlesSchwabErrorResponse>(jsonContent);
+                    var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
                     throw new ArgumentException($"{nameof(CharlesSchwabApiClient)}.{nameof(RequestAsync)}: {errorResponse.Error} - " +
                                    $"{string.Join('\n', errorResponse.ErrorDescription)}.");
                 }
