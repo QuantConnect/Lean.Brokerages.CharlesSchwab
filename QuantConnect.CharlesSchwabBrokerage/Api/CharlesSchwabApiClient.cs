@@ -142,10 +142,10 @@ public class CharlesSchwabApiClient
     /// Retrieves a meta data account by account number.
     /// </summary>
     /// <param name="accountNumber">The account number to retrieve information for.</param>
-    /// <returns>A <see cref="CharlesSchwabSecuritiesAccount"/> containing the account's metadata and positions.</returns>
-    private async Task<CharlesSchwabSecuritiesAccount> GetAccountByNumber(string accountNumber)
+    /// <returns>A <see cref="SecuritiesAccountResponse"/> containing the account's metadata and positions.</returns>
+    private async Task<SecuritiesAccountResponse> GetAccountByNumber(string accountNumber)
     {
-        return await RequestTraderAsync<CharlesSchwabSecuritiesAccount>(HttpMethod.Get, $"/accounts/{accountNumber}?fields=positions");
+        return await RequestTraderAsync<SecuritiesAccountResponse>(HttpMethod.Get, $"/accounts/{accountNumber}?fields=positions");
     }
 
     /// <summary>

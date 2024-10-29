@@ -27,7 +27,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <param name="AggregatedBalance">
 /// The aggregated balance of the account, which includes liquidation values and other high-level account balance information.
 /// </param>
-public record CharlesSchwabSecuritiesAccount(
+public record SecuritiesAccountResponse(
     [property: JsonProperty("securitiesAccount")] SecuritiesAccount SecuritiesAccount,
     [property: JsonProperty("aggregatedBalance")] AggregatedBalance AggregatedBalance
     );
