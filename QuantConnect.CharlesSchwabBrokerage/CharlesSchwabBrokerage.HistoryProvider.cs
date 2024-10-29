@@ -129,12 +129,12 @@ public partial class CharlesSchwabBrokerage
     /// <summary>
     /// Converts a collection of candles into trade bars based on the specified period and exchange time zone.
     /// </summary>
-    /// <param name="candles">The collection of <see cref="CharlesSchwabCandle"/> data points to convert.</param>
+    /// <param name="candles">The collection of <see cref="CandleResponse"/> data points to convert.</param>
     /// <param name="symbol">The symbol for the generated trade bars.</param>
     /// <param name="period">The time span representing the duration of each trade bar.</param>
     /// <param name="exchangeHoursTimeZone">The exchange's time zone for converting the candle date-time from UTC to local time.</param>
     /// <returns>An enumerable of <see cref="TradeBar"/> instances representing the candles.</returns>
-    private static IEnumerable<BaseData> ConvertCandlesToTradeBars(IReadOnlyCollection<CharlesSchwabCandle> candles, Symbol symbol, TimeSpan period, DateTimeZone exchangeHoursTimeZone)
+    private static IEnumerable<BaseData> ConvertCandlesToTradeBars(IReadOnlyCollection<Candle> candles, Symbol symbol, TimeSpan period, DateTimeZone exchangeHoursTimeZone)
     {
         foreach (var candle in candles)
         {

@@ -50,7 +50,7 @@ public class CharlesSchwabApiResponseJsonConverterTests
 ""empty"": false
 }";
 
-        var candles = JsonConvert.DeserializeObject<CharlesSchwabCandles>(jsonResponse);
+        var candles = JsonConvert.DeserializeObject<CandleResponse>(jsonResponse);
 
         Assert.IsNotNull(candles);
     }

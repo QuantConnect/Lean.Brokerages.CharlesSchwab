@@ -26,8 +26,8 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <param name="Candles">The list of candlestick data.</param>
 /// <param name="Symbol">The symbol for which the data is retrieved.</param>
 /// <param name="Empty">Indicates if the candle data is empty or not.</param>
-public record CharlesSchwabCandles(
-    [JsonProperty("candles")] IReadOnlyCollection<CharlesSchwabCandle> Candles,
+public record CandleResponse(
+    [JsonProperty("candles")] IReadOnlyCollection<Candle> Candles,
     [JsonProperty("symbol")] string Symbol,
     [JsonProperty("empty")] bool Empty);
 
@@ -40,7 +40,7 @@ public record CharlesSchwabCandles(
 /// <param name="Close">The closing price of the candle.</param>
 /// <param name="Volume">The total volume of transactions during the candle period.</param>
 /// <param name="DateTime">The timestamp of the candlestick, in Unix time converted to <see cref="DateTime"/>.</param>
-public record CharlesSchwabCandle(
+public record Candle(
     [JsonProperty("open")] decimal Open,
     [JsonProperty("high")] decimal High,
     [JsonProperty("low")] decimal Low,

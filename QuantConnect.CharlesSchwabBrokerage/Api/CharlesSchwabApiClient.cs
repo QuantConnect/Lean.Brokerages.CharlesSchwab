@@ -80,7 +80,7 @@ public class CharlesSchwabApiClient
     /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.</param>
     /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
     /// <returns>The task result contains the historical price data aggregated by minute.</returns>
-    public async Task<CharlesSchwabCandles> GetMinutePriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
+    public async Task<CandleResponse> GetMinutePriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
     {
         return await GetPriceHistory(symbol, startDateUtc, endDateUtc, "minute", 1, needExtendedHoursData);
     }
@@ -93,7 +93,7 @@ public class CharlesSchwabApiClient
     /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.</param>
     /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
     /// <returns>The task result contains the historical price data aggregated by 30-minute intervals.</returns>
-    public async Task<CharlesSchwabCandles> GetThirtyMinutesPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
+    public async Task<CandleResponse> GetThirtyMinutesPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
     {
         return await GetPriceHistory(symbol, startDateUtc, endDateUtc, "minute", 30, needExtendedHoursData);
     }
@@ -107,7 +107,7 @@ public class CharlesSchwabApiClient
     /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.</param>
     /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
     /// <returns>The task result contains the historical price data aggregated by daily intervals.</returns>
-    public async Task<CharlesSchwabCandles> GetDailyPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
+    public async Task<CandleResponse> GetDailyPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
     {
         return await GetPriceHistory(symbol, startDateUtc, endDateUtc, "daily", 1, needExtendedHoursData, "month");
     }
@@ -161,7 +161,7 @@ public class CharlesSchwabApiClient
     /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
     /// <param name="periodType">Optional: The period for which the data is requested (e.g., day, month, year, ytd). Defaults to null.</param>
     /// <returns>The task result contains the historical price data for the specified symbol.</returns>
-    private async Task<CharlesSchwabCandles> GetPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, string frequencyType,
+    private async Task<CandleResponse> GetPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, string frequencyType,
         int frequency, bool needExtendedHoursData, string periodType = null)
     {
         var breakPoint = new StringBuilder($"/pricehistory?symbol={symbol}");
@@ -176,7 +176,7 @@ public class CharlesSchwabApiClient
         breakPoint.Append("&endDate=" + Time.DateTimeToUnixTimeStampMilliseconds(endDateUtc));
         breakPoint.Append("&needExtendedHoursData=" + needExtendedHoursData);
 
-        return await RequestMarketDataAsync<CharlesSchwabCandles>(HttpMethod.Get, breakPoint.ToString());
+        return await RequestMarketDataAsync<CandleResponse>(HttpMethod.Get, breakPoint.ToString());
     }
 
     /// <summary>
