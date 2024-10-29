@@ -17,7 +17,12 @@ using Newtonsoft.Json;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 
-public record CharlesSchwabTokenErrorResponse(
+/// <summary>
+/// Represents an token error response from the Charles Schwab API.
+/// </summary>
+/// <param name="Error">The error message returned by the API.</param>
+/// <param name="ErrorDescription">A detailed error descriptions returned by the API.</param>
+public record AccessTokenErrorResponse(
     [property: JsonProperty("error")] string Error,
     [property: JsonProperty("error_description")] string ErrorDescription
     );

@@ -235,7 +235,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             }
             catch (JsonSerializationException)
             {
-                var errorResponse = JsonConvert.DeserializeObject<CharlesSchwabTokenErrorResponse>(jsonContent);
+                var errorResponse = JsonConvert.DeserializeObject<AccessTokenErrorResponse>(jsonContent);
                 throw new ArgumentException($"{nameof(CharlesSchwabTokenRefreshHandler)}.{nameof(SendSignInAsync)}: {errorResponse?.Error ?? "Unknown error"} - " +
                                $"{errorResponse?.ErrorDescription ?? "No description"}.");
             }
