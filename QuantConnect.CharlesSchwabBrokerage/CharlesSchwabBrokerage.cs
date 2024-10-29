@@ -119,8 +119,8 @@ public partial class CharlesSchwabBrokerage : Brokerage
             var leanOrder = default(Order);
 
             var leg = brokerageOrder.OrderLegCollection[0];
-            // TODO: What about Market ?? 
-            var leanSymbol = _symbolMapper.GetLeanSymbol(leg.Instrument.Symbol, leg.OrderLegType.ConvertAssetTypeToSecurityType(), Market.USA);
+            var instrument = leg.Instrument;
+            var leanSymbol = _symbolMapper.GetLeanSymbol(instrument.Symbol, instrument.AssetType.ConvertAssetTypeToSecurityType(), Market.USA);
             switch (brokerageOrder.OrderType)
             {
                 case CharlesSchwabOrderType.Market:
@@ -158,16 +158,14 @@ public partial class CharlesSchwabBrokerage : Brokerage
         var holdings = new List<Holding>();
         foreach (var position in positions)
         {
-            // TODO: SymbolMapper
-            var leanSymbol = _symbolMapper.GetLeanSymbol(position.Instrument.Symbol, SecurityType.Equity, Market.USA);
+            var leanSymbol = _symbolMapper.GetLeanSymbol(position.Instrument.Symbol, position.Instrument.AssetType.ConvertAssetTypeToSecurityType(), Market.USA);
 
             holdings.Add(new Holding()
             {
                 AveragePrice = position.AveragePrice,
                 CurrencySymbol = Currencies.USD,
                 MarketValue = position.MarketValue,
-                // TODO: Api Response received sign with quantity?
-                Quantity = position.ShortQuantity != 0 ? position.ShortQuantity : position.LongQuantity,
+                Quantity = position.ShortQuantity != 0 ? decimal.Negate(position.ShortQuantity) : position.LongQuantity,
                 Symbol = leanSymbol,
                 UnrealizedPnL = position.CurrentDayProfitLoss,
                 UnrealizedPnLPercent = position.CurrentDayProfitLossPercentage

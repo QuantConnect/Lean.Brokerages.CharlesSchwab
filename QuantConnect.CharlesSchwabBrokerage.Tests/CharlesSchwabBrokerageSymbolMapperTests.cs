@@ -17,6 +17,8 @@ using System;
 using NUnit.Framework;
 using QuantConnect.Tests;
 using System.Collections.Generic;
+using QuantConnect.Brokerages.CharlesSchwab.Extensions;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
 
@@ -34,10 +36,30 @@ public class CharlesSchwabBrokerageSymbolMapperTests
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
     }
 
-    [Test]
-    public void ReturnsCorrectLeanSymbol()
+    [TestCase("F", AssetType.Equity, "F", null, null, null)]
+    [TestCase("AAPL", AssetType.Equity, "AAPL", null, null, null)]
+    [TestCase("F     241101C00010500", AssetType.Option, "F", 10.5, "2024/11/01", OptionRight.Call, Description = "FORD MTR CO DEL 11/01/2024 $10.5 Call")]
+    [TestCase("GOOGL 250815C00180000", AssetType.Option, "GOOGL", 180, "2025/08/15", OptionRight.Call, Description = "GOOGL 08/15/2025 180.00 C")]
+    public void ReturnsCorrectLeanSymbol(string brokerageSymbol, AssetType assetType, string expectedSymbol, decimal? expectedStrike, DateTime? expectedExpiryDateTime, OptionRight? expectedOptionRight)
     {
+        var leanSymbol = _symbolMapper.GetLeanSymbol(brokerageSymbol, assetType.ConvertAssetTypeToSecurityType(), Market.USA);
 
+        Assert.IsNotNull(leanSymbol);
+
+        switch (leanSymbol.SecurityType)
+        {
+            case SecurityType.Equity:
+                Assert.AreEqual(expectedSymbol, leanSymbol.Value);
+                break;
+            case SecurityType.Option:
+                Assert.AreEqual(expectedSymbol, leanSymbol.Underlying.Value);
+                Assert.AreEqual(expectedStrike, leanSymbol.ID.StrikePrice);
+                Assert.AreEqual(expectedExpiryDateTime, leanSymbol.ID.Date);
+                Assert.AreEqual(expectedOptionRight, leanSymbol.ID.OptionRight);
+                break;
+            default:
+                throw new NotImplementedException($"{nameof(CharlesSchwabBrokerageSymbolMapperTests)}.{nameof(ReturnsCorrectLeanSymbol)}: SecurityType '{leanSymbol.SecurityType}' is not implemented.");
+        }
     }
 
     private static IEnumerable<TestCaseData> LeanSymbolTestCases
