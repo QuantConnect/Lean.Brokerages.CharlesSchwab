@@ -14,23 +14,26 @@
 */
 
 using Newtonsoft.Json;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 
 /// <summary>
 /// Represents a financial instrument held in a position.
 /// </summary>
-/// <param name="Cusip">The CUSIP identifier for the instrument.</param>
-/// <param name="Symbol">The symbol of the instrument.</param>
-/// <param name="Description">The description of the instrument.</param>
-/// <param name="InstrumentId">The unique instrument identifier.</param>
-/// <param name="NetChange">The net change in value of the instrument.</param>
-/// <param name="Type">The type of the instrument (e.g., SWEEP_VEHICLE).</param>
+/// <param name="AssetType">The type of asset (e.g., stock, bond) associated with the instrument.</param>
+/// <param name="Cusip">The CUSIP (Committee on Uniform Securities Identification Procedures) identifier for the instrument, which uniquely identifies a financial security.</param>
+/// <param name="Symbol">The ticker symbol of the instrument, representing the trading identifier used on exchanges.</param>
+/// <param name="Description">A brief description of the instrument, providing additional context or details.</param>
+/// <param name="InstrumentId">A unique identifier for the instrument, used for tracking and management purposes.</param>
+/// <param name="NetChange">The net change in value of the instrument since the previous trading session, indicating the price movement.</param>
+/// <param name="Type">The specific type of financial instrument (e.g., SWEEP_VEHICLE), indicating its functionality or category.</param>
 public record Instrument(
-    [property: JsonProperty("cusip")] string Cusip,
-    [property: JsonProperty("symbol")] string Symbol,
-    [property: JsonProperty("description")] string Description,
-    [property: JsonProperty("instrumentId")] int InstrumentId,
-    [property: JsonProperty("netChange")] decimal NetChange,
-    [property: JsonProperty("type")] string Type
+    [JsonProperty("assetType")] AssetType AssetType,
+    [JsonProperty("cusip")] string Cusip,
+    [JsonProperty("symbol")] string Symbol,
+    [JsonProperty("description")] string Description,
+    [JsonProperty("instrumentId")] int InstrumentId,
+    [JsonProperty("netChange")] decimal NetChange,
+    [JsonProperty("type")] string Type
     );
