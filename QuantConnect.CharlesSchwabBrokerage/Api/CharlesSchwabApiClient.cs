@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Linq;
 using System.Text;
 using System.Net.Http;
 using Newtonsoft.Json;
@@ -35,9 +36,9 @@ public class CharlesSchwabApiClient
     private readonly HttpClient _httpClient;
 
     /// <summary>
-    /// The account number associated with the Charles Schwab account.
+    /// The account hash number associated with the Charles Schwab account.
     /// </summary>
-    private readonly string _accountNumber;
+    private readonly Lazy<string> _accountHashNumber;
 
     /// <summary>
     /// The base URL for the Charles Schwab Trader API.
@@ -65,8 +66,10 @@ public class CharlesSchwabApiClient
     {
         _traderBaseUrl = baseUrl + "/trader/v1";
         _marketDataBaseUrl = baseUrl + "/marketdata/v1";
-        _accountNumber = accountNumber;
-
+        _accountHashNumber = new Lazy<string>(() =>
+        {
+            return GetAccountNumbers().SynchronouslyAwaitTaskResult().Single(an => an.AccountNumber == accountNumber).HashValue;
+        });
         var httpClient = httpClientHandler ?? new HttpClientHandler();
         var tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(httpClient, baseUrl, appKey, secret, redirectUri, authorizationCodeFromUrl, refreshToken);
         _httpClient = new(tokenRefreshHandler);
@@ -126,7 +129,7 @@ public class CharlesSchwabApiClient
 
         return await RequestTraderAsync<IReadOnlyCollection<OrderResponse>>(
             HttpMethod.Get,
-            $"/accounts/{_accountNumber}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}&status={CharlesSchwabOrderStatus.Working.ToStringInvariant().ToUpperInvariant()}");
+            $"/accounts/{_accountHashNumber}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}&status={CharlesSchwabOrderStatus.Working.ToStringInvariant().ToUpperInvariant()}");
     }
 
     /// <summary>
@@ -135,17 +138,28 @@ public class CharlesSchwabApiClient
     /// <returns>A <see cref="SecuritiesAccount"/> object that represents the account balance and positions.</returns>
     public async Task<SecuritiesAccount> GetAccountBalanceAndPosition()
     {
-        return (await GetAccountByNumber(_accountNumber)).SecuritiesAccount;
+        return (await GetAccountByNumber(_accountHashNumber.Value)).SecuritiesAccount;
     }
 
     /// <summary>
     /// Retrieves a meta data account by account number.
     /// </summary>
-    /// <param name="accountNumber">The account number to retrieve information for.</param>
+    /// <param name="accountHashNumber">The account hash number to retrieve information for.</param>
     /// <returns>A <see cref="SecuritiesAccountResponse"/> containing the account's metadata and positions.</returns>
-    private async Task<SecuritiesAccountResponse> GetAccountByNumber(string accountNumber)
+    private async Task<SecuritiesAccountResponse> GetAccountByNumber(string accountHashNumber)
     {
-        return await RequestTraderAsync<SecuritiesAccountResponse>(HttpMethod.Get, $"/accounts/{accountNumber}?fields=positions");
+        return await RequestTraderAsync<SecuritiesAccountResponse>(HttpMethod.Get, $"/accounts/{accountHashNumber}?fields=positions");
+    }
+
+    /// <summary>
+    /// Retrieves a read-only collection of account numbers and their hash values from the API.
+    /// </summary>
+    /// <returns>
+    /// A read-only collection of <see cref="AccountNumberResponse"/> objects, each containing an account number and its hash value.
+    /// </returns>
+    private async Task<IReadOnlyCollection<AccountNumberResponse>> GetAccountNumbers()
+    {
+        return await RequestTraderAsync<IReadOnlyCollection<AccountNumberResponse>>(HttpMethod.Get, "/accounts/accountNumbers");
     }
 
     /// <summary>

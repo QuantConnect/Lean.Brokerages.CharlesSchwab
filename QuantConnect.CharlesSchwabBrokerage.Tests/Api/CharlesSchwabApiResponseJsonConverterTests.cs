@@ -15,6 +15,7 @@
 
 using Newtonsoft.Json;
 using NUnit.Framework;
+using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
@@ -53,5 +54,25 @@ public class CharlesSchwabApiResponseJsonConverterTests
         var candles = JsonConvert.DeserializeObject<CandleResponse>(jsonResponse);
 
         Assert.IsNotNull(candles);
+    }
+
+    [Test]
+    public void DeserializeAccountNumbersResponse()
+    {
+        var jsonResponse = @"
+[
+  {
+    ""accountNumber"": ""123"",
+    ""hashValue"": ""zxV23""
+  },
+  {
+    ""accountNumber"": ""456"",
+    ""hashValue"": ""maspod2""
+  },
+]";
+        var accountNumbers = JsonConvert.DeserializeObject<IReadOnlyCollection<AccountNumberResponse>>(jsonResponse);
+
+        Assert.IsNotNull(accountNumbers);
+        Assert.Greater(accountNumbers.Count, 0);
     }
 }
