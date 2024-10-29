@@ -23,28 +23,32 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 /// Defines the various session types for Charles Schwab trading.
 /// </summary>
 [JsonConverter(typeof(StringEnumConverter))]
-public enum CharlesSchwabSessionType
+public enum SessionType
 {
     /// <summary>
     /// The normal session type.
+    /// 9:30 a.m. ET – 4 p.m. ET
     /// </summary>
     [EnumMember(Value = "NORMAL")]
     Normal = 0,
 
     /// <summary>
     /// The AM session type.
+    /// Extended A.M.7:00 a.m. ET - 9:25 a.m. ET
     /// </summary>
     [EnumMember(Value = "AM")]
     Am = 1,
 
     /// <summary>
     /// The PM session type.
+    /// Extended P.M.: 4:05 p.m. ET - 8:00 p.m. ET
     /// </summary>
     [EnumMember(Value = "PM")]
     Pm = 2,
 
     /// <summary>
     /// The seamless session type, used for continuous trading across sessions.
+    /// 7 a.m. ET – 8 p.m. ET 
     /// </summary>
     [EnumMember(Value = "SEAMLESS")]
     Seamless = 3

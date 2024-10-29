@@ -60,8 +60,8 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <param name="ChildOrderStrategies">A collection of child order strategies associated with the main order.</param>
 /// <param name="StatusDescription">An description related to the order status.</param>
 public record OrderResponse(
-    [property: JsonProperty("session")] CharlesSchwabSessionType Session,
-    [property: JsonProperty("duration")] CharlesSchwabDuration Duration,
+    [property: JsonProperty("session")] SessionType Session,
+    [property: JsonProperty("duration")] Duration Duration,
     [property: JsonProperty("orderType")] CharlesSchwabOrderType OrderType,
     [property: JsonProperty("cancelTime")] DateTime CancelTime,
     [property: JsonProperty("complexOrderStrategyType")] string ComplexOrderStrategyType,
@@ -73,7 +73,7 @@ public record OrderResponse(
     [property: JsonProperty("releaseTime")] DateTime ReleaseTime,
     [property: JsonProperty("stopPrice")] decimal StopPrice,
     [property: JsonProperty("stopPriceLinkBasis")] string StopPriceLinkBasis,
-    [property: JsonProperty("stopPriceLinkType")] string StopPriceLinkType,
+    [property: JsonProperty("stopPriceLinkType")] StopPriceLinkType StopPriceLinkType,
     [property: JsonProperty("stopPriceOffset")] decimal StopPriceOffset,
     [property: JsonProperty("stopType")] string StopType,
     [property: JsonProperty("priceLinkBasis")] string PriceLinkBasis,
@@ -148,7 +148,7 @@ public record OrderLeg(
     [property: JsonProperty("orderLegType")] AssetType OrderLegType,
     [property: JsonProperty("legId")] int LegId,
     [property: JsonProperty("instrument")] Instrument Instrument,
-    [property: JsonProperty("instruction")] CharlesSchwabInstruction Instruction,
+    [property: JsonProperty("instruction")] Instruction Instruction,
     [property: JsonProperty("positionEffect")] string PositionEffect,
     [property: JsonProperty("quantity")] decimal Quantity,
     [property: JsonProperty("quantityType")] string QuantityType,

@@ -118,29 +118,41 @@ public partial class CharlesSchwabBrokerage : Brokerage
         {
             var leanOrder = default(Order);
 
+            var orderProperties = new CharlesSchwabOrderProperties()
+            {
+                ExtendedRegularTradingHours = brokerageOrder.Session != SessionType.Normal ? true : false
+            };
+
+            if (!orderProperties.GetLeanTimeInForce(brokerageOrder.Duration, brokerageOrder.CancelTime))
+            {
+                OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Detected unsupported Lean TimeInForce of '{brokerageOrder.Duration}', ignoring. Using default: TimeInForce.GoodTilCanceled"));
+            }
+
             var leg = brokerageOrder.OrderLegCollection[0];
-            var instrument = leg.Instrument;
-            var leanSymbol = _symbolMapper.GetLeanSymbol(instrument.Symbol, instrument.AssetType.ConvertAssetTypeToSecurityType(), Market.USA);
+            var leanSymbol = _symbolMapper.GetLeanSymbol(leg.Instrument.Symbol, leg.Instrument.AssetType.ConvertAssetTypeToSecurityType(), Market.USA);
+            var orderQuantity = leg.Instruction.IsShort() ? decimal.Negate(leg.Quantity) : leg.Quantity;
             switch (brokerageOrder.OrderType)
             {
                 case CharlesSchwabOrderType.Market:
-                    leanOrder = new MarketOrder(leanSymbol, leg.Quantity, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    leanOrder = new MarketOrder(leanSymbol, orderQuantity, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
                     break;
                 case CharlesSchwabOrderType.Limit:
-                    leanOrder = new LimitOrder(leanSymbol, leg.Quantity, brokerageOrder.Price, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    leanOrder = new LimitOrder(leanSymbol, orderQuantity, brokerageOrder.Price, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
                     break;
                 case CharlesSchwabOrderType.Stop:
-                    leanOrder = new StopMarketOrder(leanSymbol, leg.Quantity, brokerageOrder.StopPrice, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    leanOrder = new StopMarketOrder(leanSymbol, orderQuantity, brokerageOrder.StopPrice, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
                     break;
                 case CharlesSchwabOrderType.StopLimit:
-                    leanOrder = new StopLimitOrder(leanSymbol, leg.Quantity, brokerageOrder.StopPrice, brokerageOrder.Price, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    leanOrder = new StopLimitOrder(leanSymbol, orderQuantity, brokerageOrder.StopPrice, brokerageOrder.Price, brokerageOrder.EnteredTime, brokerageOrder.Tag);
                     break;
-                // TODO: case CharlesSchwabOrderType.TrailingStop:
+                case CharlesSchwabOrderType.TrailingStop:
+                    var trailingAsPercent = brokerageOrder.StopPriceLinkType == StopPriceLinkType.Percent ? true : false;
+                    leanOrder = new TrailingStopOrder(leanSymbol, orderQuantity, brokerageOrder.StopPriceOffset, trailingAsPercent, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
+                    break;
                 case CharlesSchwabOrderType.MarketOnClose:
-                    leanOrder = new MarketOnCloseOrder(leanSymbol, leg.Quantity, brokerageOrder.ReleaseTime, brokerageOrder.Tag);
+                    leanOrder = new MarketOnCloseOrder(leanSymbol, orderQuantity, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
                     break;
             }
-            // TODO: Validate the ternary conditional operator
             leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? OrderStatus.PartiallyFilled : OrderStatus.Submitted;
             leanOrder.BrokerId.Add(brokerageOrder.OrderId.ToStringInvariant());
         }

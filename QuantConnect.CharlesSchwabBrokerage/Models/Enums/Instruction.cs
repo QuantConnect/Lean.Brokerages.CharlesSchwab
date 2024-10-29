@@ -17,7 +17,7 @@ using System.Runtime.Serialization;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
-public enum CharlesSchwabInstruction
+public enum Instruction
 {
     /// <summary>
     /// Buy an asset.

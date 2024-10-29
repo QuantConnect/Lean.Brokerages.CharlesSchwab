@@ -20,7 +20,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 /// <summary>
 /// Represents the duration of an order in the Charles Schwab trading system.
 /// </summary>
-public enum CharlesSchwabDuration
+public enum Duration
 {
     /// <summary>
     /// Order is valid for the day.
