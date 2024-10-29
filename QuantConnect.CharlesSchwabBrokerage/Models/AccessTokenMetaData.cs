@@ -19,7 +19,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <summary>
 /// Represents an access token used for authenticating and authorizing requests.
 /// </summary>
-public class CharlesSchwabAccessToken
+public class AccessTokenMetaData
 {
     /// <summary>
     /// The number of seconds the access token is valid for.
@@ -58,7 +58,7 @@ public class CharlesSchwabAccessToken
     public string IDToken { get; }
 
     /// <summary>
-    /// Initialize new instance of <see cref="CharlesSchwabAccessToken"/>
+    /// Initialize new instance of <see cref="Models.AccessTokenMetaData"/>
     /// </summary>
     /// <param name="expiresInSec">The number of seconds the access token is valid for.</param>
     /// <param name="tokenType">The type of access token (e.g., Bearer).</param>
@@ -66,7 +66,7 @@ public class CharlesSchwabAccessToken
     /// <param name="refreshToken">The refresh token used to obtain a new access token (valid for 7 days).</param>
     /// <param name="accessToken">The access token used to access a user's protected resources (valid for 30 minutes).</param>
     /// <param name="idToken">The JSON Web Token (JWT) containing user information and claims.</param>
-    public CharlesSchwabAccessToken(int expiresInSec, string tokenType, string scope, string refreshToken, string accessToken, string idToken)
+    public AccessTokenMetaData(int expiresInSec, string tokenType, string scope, string refreshToken, string accessToken, string idToken)
     {
         ExpiresInSec = expiresInSec;
         TokenType = tokenType;

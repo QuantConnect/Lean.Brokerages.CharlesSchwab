@@ -74,9 +74,9 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     private readonly string _encodedClientCredentials;
 
     /// <summary>
-    /// Represents an object storing AccessToken and information for Charles Schwab authentication.
+    /// Represents an object storing AccessTokenMetaData and information for Charles Schwab authentication.
     /// </summary>
-    private CharlesSchwabAccessToken _charlesSchwabAccessToken;
+    private AccessTokenMetaData _accessTokenMetaData;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabTokenRefreshHandler"/> class.
@@ -118,9 +118,9 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
 
         for (_retryCount = 0; _retryCount < _maxRetryCount; _retryCount++)
         {
-            if (_charlesSchwabAccessToken != null)
+            if (_accessTokenMetaData != null)
             {
-                request.Headers.Authorization = new AuthenticationHeaderValue(_charlesSchwabAccessToken.TokenType, _charlesSchwabAccessToken.AccessToken);
+                request.Headers.Authorization = new AuthenticationHeaderValue(_accessTokenMetaData.TokenType, _accessTokenMetaData.AccessToken);
             }
 
             response = await base.SendAsync(request, cancellationToken);
@@ -131,14 +131,14 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             }
             else if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                if (_charlesSchwabAccessToken == null && string.IsNullOrEmpty(_refreshToken))
+                if (_accessTokenMetaData == null && string.IsNullOrEmpty(_refreshToken))
                 {
-                    _charlesSchwabAccessToken = await GetAccessToken(cancellationToken);
-                    _refreshToken = _charlesSchwabAccessToken.RefreshToken;
+                    _accessTokenMetaData = await GetAccessToken(cancellationToken);
+                    _refreshToken = _accessTokenMetaData.RefreshToken;
                 }
                 else
                 {
-                    _charlesSchwabAccessToken = await RefreshAccessToken(_refreshToken, cancellationToken);
+                    _accessTokenMetaData = await RefreshAccessToken(_refreshToken, cancellationToken);
                 }
             }
             else
@@ -171,7 +171,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// <param name="expiredRefreshToken">The expired refresh token to be exchanged for a new one.</param>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The task result contains the refreshed access token.</returns>
-    private async Task<CharlesSchwabAccessToken> RefreshAccessToken(string expiredRefreshToken, CancellationToken cancellationToken)
+    private async Task<AccessTokenMetaData> RefreshAccessToken(string expiredRefreshToken, CancellationToken cancellationToken)
     {
         var payload = new Dictionary<string, string>
         {
@@ -179,7 +179,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             { "refresh_token", expiredRefreshToken }
         };
 
-        return await SendSignInAsync<CharlesSchwabAccessToken>(payload, cancellationToken);
+        return await SendSignInAsync<AccessTokenMetaData>(payload, cancellationToken);
     }
 
     /// <summary>
@@ -187,7 +187,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// </summary>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The task result contains the access token.</returns>
-    private async Task<CharlesSchwabAccessToken> GetAccessToken(CancellationToken cancellationToken)
+    private async Task<AccessTokenMetaData> GetAccessToken(CancellationToken cancellationToken)
     {
         var payload = new Dictionary<string, string>
         {
@@ -196,7 +196,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             { "redirect_uri", _redirectUri }
         };
 
-        return await SendSignInAsync<CharlesSchwabAccessToken>(payload, cancellationToken);
+        return await SendSignInAsync<AccessTokenMetaData>(payload, cancellationToken);
     }
 
     /// <summary>
