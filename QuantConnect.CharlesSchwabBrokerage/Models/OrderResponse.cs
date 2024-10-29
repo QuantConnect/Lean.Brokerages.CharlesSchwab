@@ -59,7 +59,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <param name="ReplacingOrderCollection">A collection of orders that are replacing this order, if applicable.</param>
 /// <param name="ChildOrderStrategies">A collection of child order strategies associated with the main order.</param>
 /// <param name="StatusDescription">An description related to the order status.</param>
-public record CharlesSchwabOrder(
+public record OrderResponse(
     [property: JsonProperty("session")] CharlesSchwabSessionType Session,
     [property: JsonProperty("duration")] CharlesSchwabDuration Duration,
     [property: JsonProperty("orderType")] CharlesSchwabOrderType OrderType,
