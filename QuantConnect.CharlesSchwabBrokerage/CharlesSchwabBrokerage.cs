@@ -242,7 +242,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
             return false;
         }
 
-        throw new NotImplementedException();
+        return _symbolMapper.SupportedSecurityType.Contains(symbol.SecurityType);
     }
 
     /// <summary>

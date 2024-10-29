@@ -15,6 +15,7 @@
 
 using System;
 using NodaTime;
+using System.Text;
 using QuantConnect.Data;
 using QuantConnect.Util;
 using QuantConnect.Logging;
@@ -49,12 +50,20 @@ public partial class CharlesSchwabBrokerage
     /// <returns>An enumerable of bars covering the span specified in the request, or null if unsupported types are encountered.</returns>
     public override IEnumerable<BaseData> GetHistory(HistoryRequest request)
     {
-        if (request.Symbol.SecurityType is not (SecurityType.Equity or SecurityType.Future or SecurityType.Index))
+        if (!CanSubscribe(request.Symbol))
         {
             if (!_unsupportedSecurityTypeWarningFired)
             {
                 _unsupportedSecurityTypeWarningFired = true;
-                Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: Unsupported SecurityType '{request.Symbol.SecurityType}' for symbol '{request.Symbol}'");
+                var error = new StringBuilder($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: ");
+                if (request.Symbol.IsCanonical())
+                {
+                    Log.Trace(error.Append($"The symbol '{request.Symbol}' is in canonical form, which is not supported for historical data retrieval.").ToString());
+                }
+                else
+                {
+                    Log.Trace(error.Append($"Unsupported SecurityType '{request.Symbol.SecurityType}' for symbol '{request.Symbol}'").ToString());
+                }
             }
             return null;
         }
