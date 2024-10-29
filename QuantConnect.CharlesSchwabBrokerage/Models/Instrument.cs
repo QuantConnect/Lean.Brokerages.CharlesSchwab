@@ -26,7 +26,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <param name="InstrumentId">The unique instrument identifier.</param>
 /// <param name="NetChange">The net change in value of the instrument.</param>
 /// <param name="Type">The type of the instrument (e.g., SWEEP_VEHICLE).</param>
-public record CharlesSchwabInstrument(
+public record Instrument(
     [property: JsonProperty("cusip")] string Cusip,
     [property: JsonProperty("symbol")] string Symbol,
     [property: JsonProperty("description")] string Description,

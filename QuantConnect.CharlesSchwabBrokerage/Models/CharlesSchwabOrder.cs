@@ -147,7 +147,7 @@ public record ExecutionLeg(
 public record OrderLeg(
     [property: JsonProperty("orderLegType")] CharlesSchwabAssetType OrderLegType,
     [property: JsonProperty("legId")] int LegId,
-    [property: JsonProperty("instrument")] CharlesSchwabInstrument Instrument,
+    [property: JsonProperty("instrument")] Instrument Instrument,
     [property: JsonProperty("instruction")] CharlesSchwabInstruction Instruction,
     [property: JsonProperty("positionEffect")] string PositionEffect,
     [property: JsonProperty("quantity")] decimal Quantity,

@@ -256,7 +256,7 @@ public record Position(
     [property: JsonProperty("settledLongQuantity")] int SettledLongQuantity,
     [property: JsonProperty("settledShortQuantity")] int SettledShortQuantity,
     [property: JsonProperty("agedQuantity")] int AgedQuantity,
-    [property: JsonProperty("instrument")] CharlesSchwabInstrument Instrument,
+    [property: JsonProperty("instrument")] Instrument Instrument,
     [property: JsonProperty("marketValue")] decimal MarketValue,
     [property: JsonProperty("maintenanceRequirement")] decimal MaintenanceRequirement,
     [property: JsonProperty("averageLongPrice")] decimal AverageLongPrice,
