@@ -145,7 +145,7 @@ public record ExecutionLeg(
 /// <param name="DivCapGains">Dividend or capital gains specification.</param>
 /// <param name="ToSymbol">The symbol for the asset being exchanged to, if applicable.</param>
 public record OrderLeg(
-    [property: JsonProperty("orderLegType")] CharlesSchwabAssetType OrderLegType,
+    [property: JsonProperty("orderLegType")] AssetType OrderLegType,
     [property: JsonProperty("legId")] int LegId,
     [property: JsonProperty("instrument")] Instrument Instrument,
     [property: JsonProperty("instruction")] CharlesSchwabInstruction Instruction,

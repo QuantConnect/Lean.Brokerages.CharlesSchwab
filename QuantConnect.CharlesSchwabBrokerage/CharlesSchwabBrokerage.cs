@@ -120,7 +120,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
 
             var leg = brokerageOrder.OrderLegCollection[0];
             // TODO: What about Market ?? 
-            var leanSymbol = _symbolMapper.GetLeanSymbol(leg.Instrument.Symbol, leg.OrderLegType.ConvertCharlesSchwabAssetTypeToLeanSecurityType(), Market.USA);
+            var leanSymbol = _symbolMapper.GetLeanSymbol(leg.Instrument.Symbol, leg.OrderLegType.ConvertAssetTypeToSecurityType(), Market.USA);
             switch (brokerageOrder.OrderType)
             {
                 case CharlesSchwabOrderType.Market:

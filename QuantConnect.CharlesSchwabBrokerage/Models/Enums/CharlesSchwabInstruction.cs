@@ -44,24 +44,24 @@ public enum CharlesSchwabInstruction
     SellShort = 3,
 
     /// <summary>
-    /// Buy to open a new position <see cref="CharlesSchwabAssetType.Option"/>.
+    /// Buy to open a new position <see cref="AssetType.Option"/>.
     /// </summary>
     [EnumMember(Value = "BUY_TO_OPEN")]
     BuyToOpen = 4,
 
     /// <summary>
-    /// Buy to close an existing position <see cref="CharlesSchwabAssetType.Option"/>.
+    /// Buy to close an existing position <see cref="AssetType.Option"/>.
     /// </summary>
     [EnumMember(Value = "BUY_TO_CLOSE")]
     BuyToClose = 5,
 
     /// <summary>
-    /// Sell to open a new position, <see cref="CharlesSchwabAssetType.Option"/>.
+    /// Sell to open a new position, <see cref="AssetType.Option"/>.
     /// </summary>
     [EnumMember(Value = "SELL_TO_OPEN")]
     SellToOpen = 6,
     /// <summary>
-    /// Sell to close an existing position, <see cref="CharlesSchwabAssetType.Option"/>.
+    /// Sell to close an existing position, <see cref="AssetType.Option"/>.
     /// </summary>
     [EnumMember(Value = "SELL_TO_CLOSE")]
     SellToClose = 7,

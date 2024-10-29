@@ -31,12 +31,12 @@ public static class CharlesSchwaExtensions
     /// <exception cref="NotSupportedException">
     /// Thrown when the provided <paramref name="assetType"/> is not supported.
     /// </exception>
-    public static SecurityType ConvertCharlesSchwabAssetTypeToLeanSecurityType(this CharlesSchwabAssetType assetType) => assetType switch
+    public static SecurityType ConvertAssetTypeToSecurityType(this AssetType assetType) => assetType switch
     {
-        CharlesSchwabAssetType.Equity => SecurityType.Equity,
-        CharlesSchwabAssetType.Option => SecurityType.Option,
-        CharlesSchwabAssetType.Index => SecurityType.Index,
-        _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(ConvertCharlesSchwabAssetTypeToLeanSecurityType)}: " +
+        AssetType.Equity => SecurityType.Equity,
+        AssetType.Option => SecurityType.Option,
+        AssetType.Index => SecurityType.Index,
+        _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(ConvertAssetTypeToSecurityType)}: " +
             $"The AssetType '{assetType}' is not supported.")
     };
 }

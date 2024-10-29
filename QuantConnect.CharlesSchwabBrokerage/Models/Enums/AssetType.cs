@@ -20,7 +20,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 /// <summary>
 /// Represents the types of assets that can be traded or held in a Charles Schwab account.
 /// </summary>
-public enum CharlesSchwabAssetType
+public enum AssetType
 {
     /// <summary>
     /// An equity asset, representing shares of a stock or similar security.
