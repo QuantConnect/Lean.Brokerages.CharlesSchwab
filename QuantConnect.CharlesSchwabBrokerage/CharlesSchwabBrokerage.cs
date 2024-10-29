@@ -235,6 +235,17 @@ public partial class CharlesSchwabBrokerage : Brokerage
 
     #endregion
 
+    /// <summary>
+    /// Determines whether a symbol can be subscribed to.
+    /// </summary>
+    /// <param name="symbol">The symbol to check for subscription eligibility.</param>
+    /// <returns>
+    ///   <c>true</c> if the symbol can be subscribed to; otherwise, <c>false</c>.
+    /// </returns>
+    /// <remarks>
+    /// This method checks if the provided symbol is eligible for subscription based on certain criteria.
+    /// Symbols containing the substring "universe" or those identified as canonical are not eligible for subscription.
+    /// </remarks>
     private bool CanSubscribe(Symbol symbol)
     {
         if (symbol.Value.IndexOfInvariant("universe", true) != -1 || symbol.IsCanonical())
