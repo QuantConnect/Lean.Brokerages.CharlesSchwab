@@ -13,90 +13,110 @@
  * limitations under the License.
 */
 
+using System;
+using System.Linq;
 using NUnit.Framework;
 using QuantConnect.Tests;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
+using QuantConnect.Configuration;
 using QuantConnect.Tests.Brokerages;
 
-namespace QuantConnect.Brokerages.CharlesSchwab.Tests
+namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
+
+[TestFixture]
+public partial class CharlesSchwabBrokerageTests : BrokerageTests
 {
-    [TestFixture, Ignore("Not implemented")]
-    public partial class CharlesSchwabBrokerageTests : BrokerageTests
+    protected override Symbol Symbol { get; }
+    protected override SecurityType SecurityType { get; }
+
+    protected override IBrokerage CreateBrokerage(IOrderProvider orderProvider, ISecurityProvider securityProvider)
     {
-        protected override Symbol Symbol { get; }
-        protected override SecurityType SecurityType { get; }
+        var baseUrl = Config.Get("charles-schwab-api-url");
+        var appKey = Config.Get("charles-schwab-app-key");
+        var secret = Config.Get("charles-schwab-secret");
+        var accountNumber = Config.Get("charles-schwab-account-number");
 
-        protected override IBrokerage CreateBrokerage(IOrderProvider orderProvider, ISecurityProvider securityProvider)
+        var refreshToken = Config.Get("charles-schwab-refresh-token");
+        if (string.IsNullOrEmpty(refreshToken))
         {
-            throw new System.NotImplementedException();
-        }
-        protected override bool IsAsync()
-        {
-            throw new System.NotImplementedException();
-        }
+            var redirectUrl = Config.Get("charles-schwab-redirect-url");
+            var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
 
-        protected override decimal GetAskPrice(Symbol symbol)
-        {
-            throw new System.NotImplementedException();
-        }
-
-
-        /// <summary>
-        /// Provides the data required to test each order type in various cases
-        /// </summary>
-        private static TestCaseData[] OrderParameters()
-        {
-            return new[]
+            if (new string[] { redirectUrl, authorizationCode }.Any(string.IsNullOrEmpty))
             {
-                new TestCaseData(new MarketOrderTestParameters(Symbols.BTCUSD)).SetName("MarketOrder"),
-                new TestCaseData(new LimitOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("LimitOrder"),
-                new TestCaseData(new StopMarketOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("StopMarketOrder"),
-                new TestCaseData(new StopLimitOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("StopLimitOrder"),
-                new TestCaseData(new LimitIfTouchedOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("LimitIfTouchedOrder")
-            };
-        }
+                throw new ArgumentException("RedirectUrl or AuthorizationCode cannot be empty or null. Please ensure these values are correctly set in the configuration file.");
+            }
 
-        [Test, TestCaseSource(nameof(OrderParameters))]
-        public override void CancelOrders(OrderTestParameters parameters)
-        {
-            base.CancelOrders(parameters);
+            return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCode, string.Empty);
         }
+        return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, string.Empty, string.Empty, refreshToken);
+    }
+    protected override bool IsAsync()
+    {
+        throw new System.NotImplementedException();
+    }
 
-        [Test, TestCaseSource(nameof(OrderParameters))]
-        public override void LongFromZero(OrderTestParameters parameters)
-        {
-            base.LongFromZero(parameters);
-        }
+    protected override decimal GetAskPrice(Symbol symbol)
+    {
+        throw new System.NotImplementedException();
+    }
 
-        [Test, TestCaseSource(nameof(OrderParameters))]
-        public override void CloseFromLong(OrderTestParameters parameters)
-        {
-            base.CloseFromLong(parameters);
-        }
 
-        [Test, TestCaseSource(nameof(OrderParameters))]
-        public override void ShortFromZero(OrderTestParameters parameters)
+    /// <summary>
+    /// Provides the data required to test each order type in various cases
+    /// </summary>
+    private static TestCaseData[] OrderParameters()
+    {
+        return new[]
         {
-            base.ShortFromZero(parameters);
-        }
+            new TestCaseData(new MarketOrderTestParameters(Symbols.BTCUSD)).SetName("MarketOrder"),
+            new TestCaseData(new LimitOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("LimitOrder"),
+            new TestCaseData(new StopMarketOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("StopMarketOrder"),
+            new TestCaseData(new StopLimitOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("StopLimitOrder"),
+            new TestCaseData(new LimitIfTouchedOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("LimitIfTouchedOrder")
+        };
+    }
 
-        [Test, TestCaseSource(nameof(OrderParameters))]
-        public override void CloseFromShort(OrderTestParameters parameters)
-        {
-            base.CloseFromShort(parameters);
-        }
+    [Test, TestCaseSource(nameof(OrderParameters))]
+    public override void CancelOrders(OrderTestParameters parameters)
+    {
+        base.CancelOrders(parameters);
+    }
 
-        [Test, TestCaseSource(nameof(OrderParameters))]
-        public override void ShortFromLong(OrderTestParameters parameters)
-        {
-            base.ShortFromLong(parameters);
-        }
+    [Test, TestCaseSource(nameof(OrderParameters))]
+    public override void LongFromZero(OrderTestParameters parameters)
+    {
+        base.LongFromZero(parameters);
+    }
 
-        [Test, TestCaseSource(nameof(OrderParameters))]
-        public override void LongFromShort(OrderTestParameters parameters)
-        {
-            base.LongFromShort(parameters);
-        }
+    [Test, TestCaseSource(nameof(OrderParameters))]
+    public override void CloseFromLong(OrderTestParameters parameters)
+    {
+        base.CloseFromLong(parameters);
+    }
+
+    [Test, TestCaseSource(nameof(OrderParameters))]
+    public override void ShortFromZero(OrderTestParameters parameters)
+    {
+        base.ShortFromZero(parameters);
+    }
+
+    [Test, TestCaseSource(nameof(OrderParameters))]
+    public override void CloseFromShort(OrderTestParameters parameters)
+    {
+        base.CloseFromShort(parameters);
+    }
+
+    [Test, TestCaseSource(nameof(OrderParameters))]
+    public override void ShortFromLong(OrderTestParameters parameters)
+    {
+        base.ShortFromLong(parameters);
+    }
+
+    [Test, TestCaseSource(nameof(OrderParameters))]
+    public override void LongFromShort(OrderTestParameters parameters)
+    {
+        base.LongFromShort(parameters);
     }
 }
