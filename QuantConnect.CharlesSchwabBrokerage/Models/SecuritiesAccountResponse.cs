@@ -248,14 +248,14 @@ public record ProjectedBalance(
 /// <param name="PreviousSessionShortQuantity">The previous session's short quantity.</param>
 /// <param name="CurrentDayCost">The cost incurred for the position on the current day.</param>
 public record Position(
-    [property: JsonProperty("shortQuantity")] int ShortQuantity,
+    [property: JsonProperty("shortQuantity")] decimal ShortQuantity,
     [property: JsonProperty("averagePrice")] decimal AveragePrice,
     [property: JsonProperty("currentDayProfitLoss")] decimal CurrentDayProfitLoss,
     [property: JsonProperty("currentDayProfitLossPercentage")] decimal CurrentDayProfitLossPercentage,
-    [property: JsonProperty("longQuantity")] int LongQuantity,
-    [property: JsonProperty("settledLongQuantity")] int SettledLongQuantity,
-    [property: JsonProperty("settledShortQuantity")] int SettledShortQuantity,
-    [property: JsonProperty("agedQuantity")] int AgedQuantity,
+    [property: JsonProperty("longQuantity")] decimal LongQuantity,
+    [property: JsonProperty("settledLongQuantity")] decimal SettledLongQuantity,
+    [property: JsonProperty("settledShortQuantity")] decimal SettledShortQuantity,
+    [property: JsonProperty("agedQuantity")] decimal AgedQuantity,
     [property: JsonProperty("instrument")] Instrument Instrument,
     [property: JsonProperty("marketValue")] decimal MarketValue,
     [property: JsonProperty("maintenanceRequirement")] decimal MaintenanceRequirement,
@@ -265,7 +265,7 @@ public record Position(
     [property: JsonProperty("taxLotAverageShortPrice")] decimal TaxLotAverageShortPrice,
     [property: JsonProperty("longOpenProfitLoss")] decimal LongOpenProfitLoss,
     [property: JsonProperty("shortOpenProfitLoss")] decimal ShortOpenProfitLoss,
-    [property: JsonProperty("previousSessionLongQuantity")] int PreviousSessionLongQuantity,
-    [property: JsonProperty("previousSessionShortQuantity")] int PreviousSessionShortQuantity,
+    [property: JsonProperty("previousSessionLongQuantity")] decimal PreviousSessionLongQuantity,
+    [property: JsonProperty("previousSessionShortQuantity")] decimal PreviousSessionShortQuantity,
     [property: JsonProperty("currentDayCost")] decimal CurrentDayCost
     );
