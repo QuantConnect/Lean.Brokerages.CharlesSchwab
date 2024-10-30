@@ -135,6 +135,20 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
+    /// Asynchronously cancels an order with the specified order ID for the associated account.
+    /// </summary>
+    /// <param name="orderId">The unique identifier of the order to be canceled.</param>
+    /// <returns>
+    /// A <see cref="Task{Boolean}"/> indicating whether the cancellation request was sent successfully. 
+    /// Returns <c>true</c> if the order was canceled successfully.
+    /// </returns>
+    public async Task<bool> CancelOrderById(string orderId)
+    {
+        var response = await RequestTraderAsync<string>(HttpMethod.Delete, $"/accounts/{_accountHashNumber.Value}/orders/{orderId}");
+        return string.IsNullOrEmpty(response);
+    }
+
+    /// <summary>
     /// Retrieves the balance and positions of the securities account.
     /// </summary>
     /// <returns>A <see cref="SecuritiesAccount"/> object that represents the account balance and positions.</returns>

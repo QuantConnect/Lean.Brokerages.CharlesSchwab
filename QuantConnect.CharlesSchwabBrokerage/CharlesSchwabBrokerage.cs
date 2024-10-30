@@ -14,11 +14,13 @@
 */
 
 using System;
+using System.Linq;
 using QuantConnect.Data;
 using QuantConnect.Util;
 using QuantConnect.Orders;
 using QuantConnect.Logging;
 using QuantConnect.Securities;
+using QuantConnect.Orders.Fees;
 using QuantConnect.Configuration;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
@@ -226,7 +228,16 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// <returns>True if the request was made for the order to be canceled, false otherwise</returns>
     public override bool CancelOrder(Order order)
     {
-        throw new NotImplementedException();
+        var brokerageId = order.BrokerId.Last();
+        try
+        {
+            return _charlesSchwabApiClient.CancelOrderById(brokerageId).SynchronouslyAwaitTaskResult();
+        }
+        catch (Exception ex)
+        {
+            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Cancel order {order.Id} failed: {ex.Message}") { Status = OrderStatus.Invalid });
+            return false;
+    }
     }
 
     /// <summary>
