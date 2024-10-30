@@ -68,6 +68,8 @@ public class CharlesSchwabApiClient
         _marketDataBaseUrl = baseUrl + "/marketdata/v1";
         _accountHashNumber = new Lazy<string>(() =>
         {
+            // Charles Schwab's web UI returns account numbers with hyphens.
+            accountNumber = accountNumber.Replace("-", "");
             return GetAccountNumbers().SynchronouslyAwaitTaskResult().Single(an => an.AccountNumber == accountNumber).HashValue;
         });
         var httpClient = httpClientHandler ?? new HttpClientHandler();
