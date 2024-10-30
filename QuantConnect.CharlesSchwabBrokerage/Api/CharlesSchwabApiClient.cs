@@ -260,8 +260,7 @@ public class CharlesSchwabApiClient
                 if (!responseMessage.IsSuccessStatusCode)
                 {
                     var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
-                    throw new ArgumentException($"{nameof(CharlesSchwabApiClient)}.{nameof(RequestAsync)}: {errorResponse.Error} - " +
-                                   $"{string.Join('\n', errorResponse.ErrorDescription)}.");
+                    throw new ArgumentException($"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available." })}.");
                 }
 
                 return JsonConvert.DeserializeObject<T>(jsonContent);
