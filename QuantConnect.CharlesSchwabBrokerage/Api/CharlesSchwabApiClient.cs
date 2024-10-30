@@ -131,7 +131,7 @@ public class CharlesSchwabApiClient
 
         return await RequestTraderAsync<IReadOnlyCollection<OrderResponse>>(
             HttpMethod.Get,
-            $"/accounts/{_accountHashNumber}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}&status={CharlesSchwabOrderStatus.Working.ToStringInvariant().ToUpperInvariant()}");
+            $"/accounts/{_accountHashNumber.Value}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}&status={CharlesSchwabOrderStatus.Working.ToStringInvariant().ToUpperInvariant()}");
     }
 
     /// <summary>

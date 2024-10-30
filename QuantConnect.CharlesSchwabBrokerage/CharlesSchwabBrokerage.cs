@@ -155,6 +155,8 @@ public partial class CharlesSchwabBrokerage : Brokerage
             }
             leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? OrderStatus.PartiallyFilled : OrderStatus.Submitted;
             leanOrder.BrokerId.Add(brokerageOrder.OrderId.ToStringInvariant());
+
+            leanOrders.Add(leanOrder);
         }
         return leanOrders;
     }

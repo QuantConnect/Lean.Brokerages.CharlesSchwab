@@ -84,7 +84,7 @@ public record OrderResponse(
     [property: JsonProperty("activationPrice")] decimal ActivationPrice,
     [property: JsonProperty("specialInstruction")] string SpecialInstruction,
     [property: JsonProperty("orderStrategyType")] string OrderStrategyType,
-    [property: JsonProperty("orderId")] int OrderId,
+    [property: JsonProperty("orderId")] long OrderId,
     [property: JsonProperty("cancelable")] bool Cancelable,
     [property: JsonProperty("editable")] bool Editable,
     [property: JsonProperty("status")] CharlesSchwabOrderStatus Status,
