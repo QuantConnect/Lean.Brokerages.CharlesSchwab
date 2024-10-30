@@ -62,7 +62,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 public record OrderResponse(
     [property: JsonProperty("session")] SessionType Session,
     [property: JsonProperty("duration")] Duration Duration,
-    [property: JsonProperty("orderType")] CharlesSchwabOrderType OrderType,
+    [property: JsonProperty("orderType")] OrderType OrderType,
     [property: JsonProperty("cancelTime")] DateTime CancelTime,
     [property: JsonProperty("complexOrderStrategyType")] string ComplexOrderStrategyType,
     [property: JsonProperty("quantity")] decimal Quantity,

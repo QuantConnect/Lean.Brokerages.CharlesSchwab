@@ -20,7 +20,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 /// <summary>
 /// Represents the various types of orders that can be placed in the Charles Schwab.
 /// </summary>
-public enum CharlesSchwabOrderType
+public enum OrderType
 {
     /// <summary>
     /// A market order, executed at the current market price.

@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
 using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using CharlesSchwabOrderType = QuantConnect.Brokerages.CharlesSchwab.Models.Enums.OrderType;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
