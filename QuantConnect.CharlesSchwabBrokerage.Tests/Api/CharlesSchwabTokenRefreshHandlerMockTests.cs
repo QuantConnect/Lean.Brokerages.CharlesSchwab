@@ -27,7 +27,7 @@ using QuantConnect.Brokerages.CharlesSchwab.Api;
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
 
 [TestFixture]
-public class CharlesSchwabTokenRefreshHandlerTests
+public class CharlesSchwabTokenRefreshHandlerMockTests
 {
     private string _baseUrl = Config.Get("charles-schwab-api-url");
     private string _redirectUrl = Config.Get("charles-schwab-redirect-url");
@@ -108,7 +108,7 @@ public class CharlesSchwabTokenRefreshHandlerTests
                         case (not null, "NOT_EXPIRED_ACCESS_TOKEN_HERE"):
                             return new HttpResponseMessage(HttpStatusCode.OK);
                         default:
-                            throw new NotImplementedException($"{nameof(CharlesSchwabTokenRefreshHandlerTests)}.{nameof(GetAccessToken)}:" +
+                            throw new NotImplementedException($"{nameof(CharlesSchwabTokenRefreshHandlerMockTests)}.{nameof(GetAccessToken)}:" +
                                 $"Unexpected combination of Authorization header: '{request.Headers.Authorization}' and access token: '{accessToken}'.");
                     }
                 }

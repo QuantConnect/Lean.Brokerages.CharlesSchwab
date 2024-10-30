@@ -14,6 +14,7 @@
 */
 
 using Moq;
+using System;
 using System.Net;
 using Moq.Protected;
 using System.Net.Http;
@@ -26,82 +27,93 @@ using QuantConnect.Brokerages.CharlesSchwab.Api;
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
 
 [TestFixture]
-public class CharlesSchwabApiClientTests
+public class CharlesSchwabApiClientMockTests
 {
-  private string _accountNumber = Config.Get("charles-schwab-account-number", "123");
-  private CharlesSchwabApiClient _apiClient;
+    private string _accountNumber = Config.Get("charles-schwab-account-number", "123");
+    private string _hashAccountNumber = "X7V7W7";
+    private CharlesSchwabApiClient _apiClient;
 
-  [OneTimeSetUp]
-  public void OneTimeSetUp()
-  {
-    var baseUrl = Config.Get("charles-schwab-api-url");
-    var appKey = Config.Get("charles-schwab-app-key");
-    var secret = Config.Get("charles-schwab-secret");
-    var redirectUrl = Config.Get("charles-schwab-redirect-url");
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
+    {
+        var baseUrl = Config.Get("charles-schwab-api-url");
+        var appKey = Config.Get("charles-schwab-app-key");
+        var secret = Config.Get("charles-schwab-secret");
+        var redirectUrl = Config.Get("charles-schwab-redirect-url");
 
-    var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
-
-    var mockHandler = GetMockHttpMessageHandler();
-
-    _apiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, _accountNumber, redirectUrl, authorizationCode, string.Empty, mockHandler.Object);
-  }
-
-  [Test]
-  public async Task GetAccounts()
-  {
-    var result = await _apiClient.GetAccountBalanceAndPosition();
-    Assert.IsNotNull(result);
-  }
-
-  [Test]
-  public async Task GetOpenOrders()
-  {
-    var result = await _apiClient.GetOpenOrders();
-    Assert.IsNotNull(result);
-  }
-
-  private Mock<HttpClientHandler> GetMockHttpMessageHandler()
-  {
-    var mockHandler = new Mock<HttpClientHandler>(MockBehavior.Strict);
-
-    mockHandler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
-
-    mockHandler
-        .Protected()
-        .Setup<Task<HttpResponseMessage>>(
-        "SendAsync",
-        ItExpr.IsAny<HttpRequestMessage>(),
-        ItExpr.IsAny<CancellationToken>())
-        .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
+        if (string.IsNullOrEmpty(_accountNumber))
         {
-          var requestUriAbsolutePath = request.RequestUri.PathAndQuery;
-          if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}?fields=positions"))
-          {
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-              Content = new StringContent(GetAccountJsonResponse())
-            };
-          }
-          else if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_accountNumber}/orders"))
-          {
-            return new HttpResponseMessage(HttpStatusCode.OK)
-            {
-              Content = new StringContent(GetOpenOrderJsonResponse())
-            };
-          }
-          return new HttpResponseMessage(HttpStatusCode.BadRequest);
-        });
+            throw new ArgumentNullException(nameof(_accountNumber), "Account number cannot be null or empty.");
+        }
 
-    return mockHandler;
-  }
+        var mockHandler = GetMockHttpMessageHandler();
 
-  private string GetAccountJsonResponse()
-  {
-    return $@"
+        _apiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, _accountNumber, redirectUrl, string.Empty, string.Empty, mockHandler.Object);
+    }
+
+    [Test]
+    public async Task GetAccounts()
+    {
+        var result = await _apiClient.GetAccountBalanceAndPosition();
+        Assert.IsNotNull(result);
+    }
+
+    [Test]
+    public async Task GetOpenOrders()
+    {
+        var result = await _apiClient.GetOpenOrders();
+        Assert.IsNotNull(result);
+    }
+
+    private Mock<HttpClientHandler> GetMockHttpMessageHandler()
+    {
+        var mockHandler = new Mock<HttpClientHandler>(MockBehavior.Strict);
+
+        mockHandler.Protected().Setup("Dispose", ItExpr.IsAny<bool>());
+
+        mockHandler
+            .Protected()
+            .Setup<Task<HttpResponseMessage>>(
+            "SendAsync",
+            ItExpr.IsAny<HttpRequestMessage>(),
+            ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync((HttpRequestMessage request, CancellationToken cancellationToken) =>
+            {
+                var requestUriAbsolutePath = request.RequestUri.PathAndQuery;
+                if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_hashAccountNumber}?fields=positions"))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(GetAccountJsonResponse())
+                    };
+                }
+                else if (requestUriAbsolutePath.StartsWith($"/trader/v1/accounts/{_hashAccountNumber}/orders"))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(GetOpenOrderJsonResponse())
+                    };
+                }
+                else if (requestUriAbsolutePath.StartsWith("/trader/v1/accounts/accountNumbers"))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(GetAccountNumbers())
+                    };
+                }
+                return new HttpResponseMessage(HttpStatusCode.BadRequest);
+            });
+
+        return mockHandler;
+    }
+
+    private string GetAccountJsonResponse()
+    {
+        return $@"
 {{
   ""securitiesAccount"": {{
     ""type"": ""MARGIN"",
-    ""accountNumber"": ""{_accountNumber}"",
+    ""accountNumber"": ""{_accountNumber.Replace("-", "")}"",
     ""roundTrips"": 0,
     ""isDayTrader"": false,
     ""isClosingOnlyRestricted"": false,
@@ -219,7 +231,7 @@ public class CharlesSchwabApiClientTests
   }}
 }}
 ";
-  }
+    }
 
     private string GetOpenOrderJsonResponse()
     {
@@ -273,7 +285,7 @@ public class CharlesSchwabApiClientTests
         ""enteredTime"": ""2024-10-24T16:41:34.564Z"",
         ""closeTime"": ""2024-10-24T16:41:34.564Z"",
         ""tag"": ""MockOrder"",
-        ""accountNumber"": ""{_accountNumber}"",
+        ""accountNumber"": ""{_accountNumber.Replace("-", "")}"",
         ""orderActivityCollection"": [ {{
             ""activityType"": ""EXECUTION"",
             ""executionType"": ""FILL"",
@@ -292,5 +304,15 @@ public class CharlesSchwabApiClientTests
         ""childOrderStrategies"": [ ""string"" ],
         ""statusDescription"": ""string""
     }}]";
+    }
+
+    private string GetAccountNumbers()
+    {
+        // Api returns account number without hyphens
+        return $@"[
+{{
+    ""accountNumber"": ""{_accountNumber.Replace("-", "")}"",
+    ""hashValue"": ""{_hashAccountNumber}""
+}}]";
     }
 }
