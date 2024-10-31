@@ -17,6 +17,8 @@ using Newtonsoft.Json;
 using NUnit.Framework;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
 
@@ -74,5 +76,26 @@ public class CharlesSchwabApiResponseJsonConverterTests
 
         Assert.IsNotNull(accountNumbers);
         Assert.Greater(accountNumbers.Count, 0);
+    }
+
+    [TestCase(OrderType.Market, "AAPL", Instruction.Buy)]
+    [TestCase(OrderType.Limit, "AAPL", Instruction.Sell)]
+    public void SerializePlaceOrderRequest(OrderType orderType, string symbol, Instruction instruction)
+    {
+        var orderRequest = default(OrderBaseRequest);
+        switch (orderType)
+        {
+            case OrderType.Market:
+                orderRequest = new MarketOrderRequest(SessionType.Normal, Duration.GoodTillCancel, instruction, 1m, symbol, AssetType.Equity);
+                break;
+            case OrderType.Limit:
+                orderRequest = new LimitOrderRequest(SessionType.Normal, Duration.GoodTillCancel, instruction, 1m, symbol, AssetType.Equity, 22.222m);
+                break;
+        }
+
+        var json = JsonConvert.SerializeObject(orderRequest);
+
+        Assert.IsNotNull(json);
+        Assert.IsNotEmpty(json);
     }
 }
