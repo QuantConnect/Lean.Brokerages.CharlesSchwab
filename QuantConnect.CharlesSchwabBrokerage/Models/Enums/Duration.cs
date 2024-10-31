@@ -13,6 +13,8 @@
  * limitations under the License.
 */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
@@ -20,6 +22,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 /// <summary>
 /// Represents the duration of an order in the Charles Schwab trading system.
 /// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
 public enum Duration
 {
     /// <summary>

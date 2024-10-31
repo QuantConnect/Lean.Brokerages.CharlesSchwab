@@ -13,10 +13,13 @@
  * limitations under the License.
 */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
+[JsonConverter(typeof(StringEnumConverter))]
 public enum Instruction
 {
     /// <summary>

@@ -13,6 +13,8 @@
  * limitations under the License.
 */
 
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using System.Runtime.Serialization;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
@@ -20,6 +22,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 /// <summary>
 /// Represents the types of assets that can be traded or held in a Charles Schwab account.
 /// </summary>
+[JsonConverter(typeof(StringEnumConverter))]
 public enum AssetType
 {
     /// <summary>
