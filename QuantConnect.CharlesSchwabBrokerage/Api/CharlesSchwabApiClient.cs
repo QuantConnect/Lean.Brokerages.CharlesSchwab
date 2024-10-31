@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Api;
 
@@ -145,6 +146,21 @@ public class CharlesSchwabApiClient
     public async Task<bool> CancelOrderById(string orderId)
     {
         var response = await RequestTraderAsync<string>(HttpMethod.Delete, $"/accounts/{_accountHashNumber.Value}/orders/{orderId}");
+        return string.IsNullOrEmpty(response);
+    }
+
+    /// <summary>
+    /// Places an order using the provided order request.
+    /// </summary>
+    /// <param name="orderRequest">The request object containing order details.</param>
+    /// <returns>
+    /// A <see cref="Task{Boolean}"/> indicating whether the cancellation request was sent successfully. 
+    /// Returns <c>true</c> if the order was canceled successfully.
+    /// </returns>
+    public async Task<bool> PlaceOrder(OrderBaseRequest orderRequest)
+    {
+        var response = await RequestTraderAsync<string>(HttpMethod.Post, $"/accounts/{_accountHashNumber.Value}/orders",
+            JsonConvert.SerializeObject(orderRequest, new JsonSerializerSettings() { DateTimeZoneHandling = DateTimeZoneHandling.Utc }));
         return string.IsNullOrEmpty(response);
     }
 
