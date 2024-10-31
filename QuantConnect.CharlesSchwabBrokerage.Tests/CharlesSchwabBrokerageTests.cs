@@ -20,6 +20,7 @@ using QuantConnect.Tests;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 using QuantConnect.Configuration;
+using System.Collections.Generic;
 using QuantConnect.Tests.Brokerages;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
@@ -27,7 +28,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
 [TestFixture]
 public partial class CharlesSchwabBrokerageTests : BrokerageTests
 {
-    protected override Symbol Symbol { get; }
+    protected override Symbol Symbol { get; } = Symbol.Create("F", SecurityType.Equity, Market.USA);
     protected override SecurityType SecurityType { get; }
 
     protected override IBrokerage CreateBrokerage(IOrderProvider orderProvider, ISecurityProvider securityProvider)
@@ -54,7 +55,7 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
     }
     protected override bool IsAsync()
     {
-        throw new System.NotImplementedException();
+        return true;
     }
 
     protected override decimal GetAskPrice(Symbol symbol)
@@ -66,16 +67,16 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
     /// <summary>
     /// Provides the data required to test each order type in various cases
     /// </summary>
-    private static TestCaseData[] OrderParameters()
+    private static IEnumerable<TestCaseData> OrderParameters
     {
-        return new[]
+        get
         {
-            new TestCaseData(new MarketOrderTestParameters(Symbols.BTCUSD)).SetName("MarketOrder"),
-            new TestCaseData(new LimitOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("LimitOrder"),
-            new TestCaseData(new StopMarketOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("StopMarketOrder"),
-            new TestCaseData(new StopLimitOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("StopLimitOrder"),
-            new TestCaseData(new LimitIfTouchedOrderTestParameters(Symbols.BTCUSD, 10000m, 0.01m)).SetName("LimitIfTouchedOrder")
-        };
+            var symbol = Symbol.Create("F", SecurityType.Equity, Market.USA);
+            yield return new TestCaseData(new MarketOrderTestParameters(symbol)).SetName("MarketOrder");
+            yield return new TestCaseData(new LimitOrderTestParameters(symbol, 11m, 10m)).SetName("LimitOrder");
+            yield return new TestCaseData(new StopLimitOrderTestParameters(symbol, 11m, 10m)).SetName("StopLimitOrder");
+            yield return new TestCaseData(new StopMarketOrderTestParameters(symbol, 11m, 10m)).SetName("StopMarketOrder");
+        }
     }
 
     [Test, TestCaseSource(nameof(OrderParameters))]
