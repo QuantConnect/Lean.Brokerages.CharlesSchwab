@@ -26,6 +26,7 @@ using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
 using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 using CharlesSchwabOrderType = QuantConnect.Brokerages.CharlesSchwab.Models.Enums.OrderType;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
@@ -209,7 +210,25 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// <returns>True if the request for a new order has been placed, false otherwise</returns>
     public override bool PlaceOrder(Order order)
     {
-        throw new NotImplementedException();
+        var (duration, cancelTime) = order.Properties.TimeInForce.GetDurationByTimeInForce();
+        var sessionType = order.Properties.GetExtendedHoursSessionTypeOrDefault(SessionType.Normal);
+        var instruction = order.Direction.GetInstructionByDirection();
+        var symbol = _symbolMapper.GetBrokerageSymbol(order.Symbol);
+        var assetType = order.SecurityType.ConvertSecurityTypeToAssetType();
+
+        OrderBaseRequest orderRequest = order switch
+        {
+            MarketOrder => new MarketOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType),
+            LimitOrder lo => new LimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, lo.LimitPrice),
+            _ => throw new NotSupportedException()
+        };
+
+        if (cancelTime.HasValue)
+        {
+            orderRequest.CancelTime = cancelTime.Value;
+        }
+
+        return _charlesSchwabApiClient.PlaceOrder(orderRequest).SynchronouslyAwaitTaskResult();
     }
 
     /// <summary>

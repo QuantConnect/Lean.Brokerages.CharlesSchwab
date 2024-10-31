@@ -15,6 +15,8 @@
 
 using System;
 using QuantConnect.Orders;
+using QuantConnect.Interfaces;
+using QuantConnect.Orders.TimeInForces;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Extensions;
@@ -39,6 +41,25 @@ public static class CharlesSchwaExtensions
         AssetType.Index => SecurityType.Index,
         _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(ConvertAssetTypeToSecurityType)}: " +
             $"The AssetType '{assetType}' is not supported.")
+    };
+
+    /// <summary>
+    /// Converts a <see cref="SecurityType"/> to its corresponding <see cref="AssetType"/>.
+    /// </summary>
+    /// <param name="securityType">The security type to convert.</param>
+    /// <returns>
+    /// Returns the corresponding <see cref="AssetType"/> for the specified <paramref name="securityType"/>.
+    /// </returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when an unsupported <see cref="SecurityType"/> is provided.
+    /// </exception>
+    public static AssetType ConvertSecurityTypeToAssetType(this SecurityType securityType) => securityType switch
+    {
+        SecurityType.Equity => AssetType.Equity,
+        SecurityType.Option => AssetType.Option,
+        SecurityType.Index => AssetType.Index,
+        _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(ConvertSecurityTypeToAssetType)}: " +
+            $"The SecurityType '{securityType}' is not supported.")
     };
 
     /// <summary>
@@ -97,5 +118,74 @@ public static class CharlesSchwaExtensions
             default:
                 throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsShort)}: The '{instruction}' is not supported. Please provide a valid instruction type.");
         }
+    }
+
+    /// <summary>
+    /// Determines the session type based on the <paramref name="orderProperties"/> provided.
+    /// </summary>
+    /// <param name="orderProperties">The order properties to evaluate, expected to be of type <see cref="CharlesSchwabOrderProperties"/>.</param>
+    /// <param name="defaultSessionType">The default session type to return if <paramref name="orderProperties"/> is not configured for extended trading hours.</param>
+    /// <returns>
+    /// Returns <see cref="SessionType.Seamless"/> if <paramref name="orderProperties"/> is an instance of
+    /// <see cref="CharlesSchwabOrderProperties"/> with <c>ExtendedRegularTradingHours</c> set to <c>true</c>;
+    /// otherwise, returns <paramref name="defaultSessionType"/>.
+    /// </returns>
+    public static SessionType GetExtendedHoursSessionTypeOrDefault(this IOrderProperties orderProperties, SessionType defaultSessionType)
+    {
+        if (orderProperties is CharlesSchwabOrderProperties { ExtendedRegularTradingHours: true })
+        {
+            return SessionType.Seamless;
+        }
+        return defaultSessionType;
+    }
+
+    /// <summary>
+    /// Maps an <see cref="OrderDirection"/> to the corresponding <see cref="Instruction"/>.
+    /// </summary>
+    /// <param name="orderDirection">The order direction to convert.</param>
+    /// <returns>
+    /// Returns the corresponding <see cref="Instruction"/> for the specified <paramref name="orderDirection"/>.
+    /// </returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when an unsupported <see cref="OrderDirection"/> is provided.
+    /// </exception>
+    public static Instruction GetInstructionByDirection(this OrderDirection orderDirection)
+    {
+        switch (orderDirection)
+        {
+            case OrderDirection.Sell:
+                return Instruction.Sell;
+            case OrderDirection.Buy:
+                return Instruction.Buy;
+            default:
+                throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(GetInstructionByDirection)}: The specified order direction '{orderDirection}' is not supported.");
+        }
+    }
+
+    /// <summary>
+    /// Gets the duration and optional cancellation time based on the TimeInForce value.
+    /// </summary>
+    /// <param name="timeInForce">The TimeInForce value.</param>
+    /// <returns>A tuple containing the Duration and optional expiry DateTime.</returns>
+    public static (Duration Duration, DateTime? ExpiryDateTime) GetDurationByTimeInForce(this TimeInForce timeInForce)
+    {
+        var expiryDateTime = default(DateTime?); // Use nullable DateTime for clarity
+        var duration = default(Duration);
+        switch (timeInForce)
+        {
+            case DayTimeInForce:
+                duration = Duration.Day;
+                break;
+            case GoodTilCanceledTimeInForce:
+                duration = Duration.GoodTillCancel;
+                break;
+            case GoodTilDateTimeInForce goodTilDateTime:
+                duration = Duration.GoodTillCancel;
+                expiryDateTime = goodTilDateTime.Expiry;
+                break;
+            default:
+                throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(GetDurationByTimeInForce)}: The TimeInForce '{timeInForce}' is not supported.");
+        }
+        return (duration, expiryDateTime);
     }
 }
