@@ -220,6 +220,8 @@ public partial class CharlesSchwabBrokerage : Brokerage
         {
             MarketOrder => new MarketOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType),
             LimitOrder lo => new LimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, lo.LimitPrice),
+            StopMarketOrder smo => new StopMarketOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, smo.StopPrice),
+            StopLimitOrder slo => new StopLimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, slo.StopPrice, slo.LimitPrice),
             _ => throw new NotSupportedException()
         };
 
