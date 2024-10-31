@@ -83,7 +83,7 @@ public record OrderResponse(
     [property: JsonProperty("orderLegCollection")] IReadOnlyList<OrderLeg> OrderLegCollection,
     [property: JsonProperty("activationPrice")] decimal ActivationPrice,
     [property: JsonProperty("specialInstruction")] string SpecialInstruction,
-    [property: JsonProperty("orderStrategyType")] string OrderStrategyType,
+    [property: JsonProperty("orderStrategyType")] OrderStrategyType OrderStrategyType,
     [property: JsonProperty("orderId")] long OrderId,
     [property: JsonProperty("cancelable")] bool Cancelable,
     [property: JsonProperty("editable")] bool Editable,
