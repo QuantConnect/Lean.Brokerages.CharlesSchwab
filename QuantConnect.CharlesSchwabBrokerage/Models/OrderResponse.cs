@@ -87,7 +87,7 @@ public record OrderResponse(
     [property: JsonProperty("orderId")] long OrderId,
     [property: JsonProperty("cancelable")] bool Cancelable,
     [property: JsonProperty("editable")] bool Editable,
-    [property: JsonProperty("status")] CharlesSchwabOrderStatus Status,
+    [property: JsonProperty("status")] OrderStatus Status,
     [property: JsonProperty("enteredTime")] DateTime EnteredTime,
     [property: JsonProperty("closeTime")] DateTime CloseTime,
     [property: JsonProperty("tag")] string Tag,

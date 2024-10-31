@@ -116,9 +116,9 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// <returns>The open orders returned from IB</returns>
     public override List<Order> GetOpenOrders()
     {
-        var brokerageOpenOrders = _charlesSchwabApiClient.GetOpenOrders().SynchronouslyAwaitTaskResult();
+        var brokerageOpenOrders = _charlesSchwabApiClient.GetAllOrders().SynchronouslyAwaitTaskResult();
         var leanOrders = new List<Order>();
-        foreach (var brokerageOrder in brokerageOpenOrders)
+        foreach (var brokerageOrder in brokerageOpenOrders.Where(o => o.Status.IsOrderOpen()))
         {
             var leanOrder = default(Order);
 
@@ -157,7 +157,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
                     leanOrder = new MarketOnCloseOrder(leanSymbol, orderQuantity, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
                     break;
             }
-            leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? OrderStatus.PartiallyFilled : OrderStatus.Submitted;
+            leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? Orders.OrderStatus.PartiallyFilled : Orders.OrderStatus.Submitted;
             leanOrder.BrokerId.Add(brokerageOrder.OrderId.ToStringInvariant());
 
             leanOrders.Add(leanOrder);

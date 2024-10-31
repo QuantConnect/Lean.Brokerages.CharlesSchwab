@@ -18,6 +18,7 @@ using QuantConnect.Orders;
 using QuantConnect.Interfaces;
 using QuantConnect.Orders.TimeInForces;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using CharlesSchwabOrderStatus = QuantConnect.Brokerages.CharlesSchwab.Models.Enums.OrderStatus;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Extensions;
 
@@ -213,6 +214,48 @@ public static class CharlesSchwaExtensions
                 return false;
             default:
                 throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsExtendedRegularTradingHoursBySessionType)}: The session type '{sessionType}' is not supported.");
+        }
+    }
+
+    /// <summary>
+    /// Determines whether the specified order status indicates that the order is open.
+    /// </summary>
+    /// <param name="orderStatus">The order status to check.</param>
+    /// <returns>
+    /// <c>true</c> if the order is open; otherwise, <c>false</c>.
+    /// </returns>
+    /// <exception cref="NotImplementedException">
+    /// Thrown when the order status is not recognized.
+    /// </exception>
+    public static bool IsOrderOpen(this CharlesSchwabOrderStatus orderStatus)
+    {
+        switch (orderStatus)
+        {
+            case CharlesSchwabOrderStatus.AwaitingParentOrder:
+            case CharlesSchwabOrderStatus.AwaitingCondition:
+            case CharlesSchwabOrderStatus.AwaitingStopCondition:
+            case CharlesSchwabOrderStatus.AwaitingManualReview:
+            case CharlesSchwabOrderStatus.Accepted:
+            case CharlesSchwabOrderStatus.PendingActivation:
+            case CharlesSchwabOrderStatus.Queued:
+            case CharlesSchwabOrderStatus.Working:
+            case CharlesSchwabOrderStatus.PendingReplace:
+            case CharlesSchwabOrderStatus.Replaced:
+            case CharlesSchwabOrderStatus.New:
+            case CharlesSchwabOrderStatus.AwaitingReleaseTime:
+            case CharlesSchwabOrderStatus.PendingAcknowledgement:
+            case CharlesSchwabOrderStatus.PendingRecall:
+                return true;
+            case CharlesSchwabOrderStatus.AwaitingUrOut:
+            case CharlesSchwabOrderStatus.Rejected:
+            case CharlesSchwabOrderStatus.PendingCancel:
+            case CharlesSchwabOrderStatus.Canceled:
+            case CharlesSchwabOrderStatus.Filled:
+            case CharlesSchwabOrderStatus.Expired:
+            case CharlesSchwabOrderStatus.Unknown:
+                return false;
+            default:
+                throw new NotImplementedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsOrderOpen)}: The order status '{orderStatus}' is not implemented.");
         }
     }
 }

@@ -119,12 +119,12 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
-    /// Retrieves a collection of open orders for the account.
+    /// Retrieves a collection of all orders for the account.
     /// </summary>
     /// <returns>
-    ///The read-only collection of open <see cref="OrderResponse"/> objects.
+    ///The read-only collection of <see cref="OrderResponse"/> objects.
     /// </returns>
-    public async Task<IReadOnlyCollection<OrderResponse>> GetOpenOrders()
+    public async Task<IReadOnlyCollection<OrderResponse>> GetAllOrders()
     {
         // Docs remark: Date must be within 60 days from today's date.
         var fromEnteredTime = DateTime.UtcNow.AddDays(-60).ToIso8601Invariant();
@@ -132,7 +132,7 @@ public class CharlesSchwabApiClient
 
         return await RequestTraderAsync<IReadOnlyCollection<OrderResponse>>(
             HttpMethod.Get,
-            $"/accounts/{_accountHashNumber.Value}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}&status={CharlesSchwabOrderStatus.Working.ToStringInvariant().ToUpperInvariant()}");
+            $"/accounts/{_accountHashNumber.Value}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}");
     }
 
     /// <summary>

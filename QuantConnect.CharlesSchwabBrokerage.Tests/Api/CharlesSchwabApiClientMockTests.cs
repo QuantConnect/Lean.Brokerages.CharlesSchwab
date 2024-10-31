@@ -61,7 +61,7 @@ public class CharlesSchwabApiClientMockTests
     [Test]
     public async Task GetOpenOrders()
     {
-        var result = await _apiClient.GetOpenOrders();
+        var result = await _apiClient.GetAllOrders();
         Assert.IsNotNull(result);
     }
 
