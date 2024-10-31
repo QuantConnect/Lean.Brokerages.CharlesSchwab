@@ -229,12 +229,13 @@ public class CharlesSchwabApiClient
     /// <typeparam name="T">The type into which the response will be deserialized.</typeparam>
     /// <param name="httpMethod">The HTTP method to use for the request (e.g., GET, POST).</param>
     /// <param name="endpoint">The specific API endpoint including the path and query parameters.</param>
+    /// <param name="jsonBody">The JSON body of the request.</param>
     /// <returns>An object of type <typeparamref name="T"/> containing the deserialized response data.</returns>
     /// <exception cref="ArgumentException">Thrown when the API returns an unsuccessful status code along with error details.</exception>
     /// <exception cref="Exception">Thrown when there is an error during the HTTP request or response handling.</exception>
-    private async Task<T> RequestTraderAsync<T>(HttpMethod httpMethod, string endpoint)
+    private async Task<T> RequestTraderAsync<T>(HttpMethod httpMethod, string endpoint, string jsonBody = null)
     {
-        return await RequestAsync<T>(httpMethod, _traderBaseUrl, endpoint);
+        return await RequestAsync<T>(httpMethod, _traderBaseUrl, endpoint, jsonBody);
     }
 
     /// <summary>
@@ -244,13 +245,19 @@ public class CharlesSchwabApiClient
     /// <param name="httpMethod">The HTTP method to use for the request (e.g., GET, POST).</param>
     /// <param name="baseUrl">The base URL for the API endpoint.</param>
     /// <param name="endpoint">The specific API endpoint including the path and query parameters.</param>
+    /// <param name="jsonBody">The JSON body of the request.</param>
     /// <returns>An object of type <typeparamref name="T"/> containing the deserialized response data.</returns>
     /// <exception cref="ArgumentException">Thrown when the API returns an unsuccessful status code along with error details.</exception>
     /// <exception cref="Exception">Thrown when there is an error during the HTTP request or response handling.</exception>
-    private async Task<T> RequestAsync<T>(HttpMethod httpMethod, string baseUrl, string endpoint)
+    private async Task<T> RequestAsync<T>(HttpMethod httpMethod, string baseUrl, string endpoint, string jsonBody = null)
     {
         using (var requestMessage = new HttpRequestMessage(httpMethod, baseUrl + endpoint))
         {
+            if (jsonBody != null)
+            {
+                requestMessage.Content = new StringContent(jsonBody, Encoding.UTF8, "application/json");
+            }
+
             try
             {
                 var responseMessage = await _httpClient.SendAsync(requestMessage);
