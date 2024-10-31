@@ -188,4 +188,31 @@ public static class CharlesSchwaExtensions
         }
         return (duration, expiryDateTime);
     }
+
+    /// <summary>
+    /// Determines whether the specified session type is considered an extended trading session
+    /// (either pre-market or after-hours trading).
+    /// </summary>
+    /// <param name="sessionType">The session type to evaluate.</param>
+    /// <returns>
+    /// <c>true</c> if the session type is pre-market, post-market, or seamless (extended trading hours); 
+    /// <c>false</c> if it is a regular trading session.
+    /// </returns>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when the specified <paramref name="sessionType"/> is not recognized.
+    /// </exception>
+    public static bool IsExtendedRegularTradingHoursBySessionType(this SessionType sessionType)
+    {
+        switch (sessionType)
+        {
+            case SessionType.Am:
+            case SessionType.Pm:
+            case SessionType.Seamless:
+                return true;
+            case SessionType.Normal:
+                return false;
+            default:
+                throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsExtendedRegularTradingHoursBySessionType)}: The session type '{sessionType}' is not supported.");
+        }
+    }
 }

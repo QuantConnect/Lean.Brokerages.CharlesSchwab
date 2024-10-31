@@ -124,7 +124,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
 
             var orderProperties = new CharlesSchwabOrderProperties()
             {
-                ExtendedRegularTradingHours = brokerageOrder.Session != SessionType.Normal ? true : false
+                ExtendedRegularTradingHours = brokerageOrder.Session.IsExtendedRegularTradingHoursBySessionType()
             };
 
             if (!orderProperties.GetLeanTimeInForce(brokerageOrder.Duration, brokerageOrder.CancelTime))
