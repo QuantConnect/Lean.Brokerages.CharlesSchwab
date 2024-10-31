@@ -32,7 +32,7 @@ public sealed class LimitOrderRequest : OrderBaseRequest
     /// The price for the limit order.
     /// </summary>
     [JsonProperty("price")]
-    public decimal Price { get; }
+    public decimal LimitPrice { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="LimitOrderRequest"/> class.
@@ -43,7 +43,7 @@ public sealed class LimitOrderRequest : OrderBaseRequest
     /// <param name="quantity">The quantity for the order leg.</param>
     /// <param name="symbol">The symbol for the order leg.</param>
     /// <param name="assetType">The asset type for the order leg.</param>
-    /// <param name="price">The price for the limit order.</param>
+    /// <param name="limitPrice">The price for the limit order.</param>
     public LimitOrderRequest(
         SessionType session,
         Duration duration,
@@ -51,8 +51,8 @@ public sealed class LimitOrderRequest : OrderBaseRequest
         decimal quantity,
         string symbol,
         AssetType assetType,
-        decimal price) : base(session, duration, instruction, quantity, symbol, assetType)
+        decimal limitPrice) : base(session, duration, instruction, quantity, symbol, assetType)
     {
-        Price = price;
+        LimitPrice = limitPrice;
     }
 }
