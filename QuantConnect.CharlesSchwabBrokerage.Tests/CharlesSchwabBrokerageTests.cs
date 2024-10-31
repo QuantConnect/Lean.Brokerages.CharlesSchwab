@@ -72,10 +72,10 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
         get
         {
             var symbol = Symbol.Create("F", SecurityType.Equity, Market.USA);
-            yield return new TestCaseData(new MarketOrderTestParameters(symbol)).SetName("MarketOrder");
-            yield return new TestCaseData(new LimitOrderTestParameters(symbol, 11m, 10m)).SetName("LimitOrder");
-            yield return new TestCaseData(new StopLimitOrderTestParameters(symbol, 11m, 10m)).SetName("StopLimitOrder");
-            yield return new TestCaseData(new StopMarketOrderTestParameters(symbol, 11m, 10m)).SetName("StopMarketOrder");
+            yield return new TestCaseData(new MarketOrderTestParameters(symbol));
+            yield return new TestCaseData(new LimitOrderTestParameters(symbol, 11m, 10m));
+            yield return new TestCaseData(new StopLimitOrderTestParameters(symbol, 11m, 10m));
+            yield return new TestCaseData(new StopMarketOrderTestParameters(symbol, 11m, 10m));
         }
     }
 
