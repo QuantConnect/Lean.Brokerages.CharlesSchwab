@@ -180,6 +180,17 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
+    /// Retrieves the user preferences from the API.
+    /// </summary>
+    /// <returns>
+    /// The task result contains the user preferences.
+    /// </returns>
+    public async Task<UserPreference> GetUserPreference()
+    {
+        return await RequestTraderAsync<UserPreference>(HttpMethod.Get, "/userPreference");
+    }
+
+    /// <summary>
     /// Retrieves the balance and positions of the securities account.
     /// </summary>
     /// <returns>A <see cref="SecuritiesAccount"/> object that represents the account balance and positions.</returns>
