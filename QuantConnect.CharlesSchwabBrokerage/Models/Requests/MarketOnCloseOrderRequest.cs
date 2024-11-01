@@ -18,23 +18,23 @@ using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 
 /// <summary>
-/// Represents a market order request.
+/// Represents a market on close order request.
 /// </summary>
-public sealed class MarketOrderRequest : OrderBaseRequest
+public class MarketOnCloseOrderRequest : OrderBaseRequest
 {
     /// <summary>
-    /// The type of the order, which is <see cref="OrderType.Market"/>.
+    /// The type of the order, which is <see cref="OrderType.MarketOnClose"/>.
     /// </summary>
-    public override OrderType OrderType => OrderType.Market;
+    public override OrderType OrderType => OrderType.MarketOnClose;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MarketOrderRequest"/> class.
+    /// Initializes a new instance of the <see cref="MarketOnCloseOrderRequest"/> class.
     /// </summary>
     /// <param name="instruction">The instruction for the order leg.</param>
     /// <param name="quantity">The quantity for the order leg.</param>
     /// <param name="symbol">The symbol for the order leg.</param>
     /// <param name="assetType">The asset type for the order leg.</param>
-    public MarketOrderRequest(
+    public MarketOnCloseOrderRequest(
         Instruction instruction,
         decimal quantity,
         string symbol,

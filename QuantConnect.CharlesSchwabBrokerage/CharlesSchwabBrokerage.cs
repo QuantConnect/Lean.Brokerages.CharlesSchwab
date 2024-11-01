@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -216,13 +216,26 @@ public partial class CharlesSchwabBrokerage : Brokerage
         var symbol = _symbolMapper.GetBrokerageSymbol(order.Symbol);
         var assetType = order.SecurityType.ConvertSecurityTypeToAssetType();
 
-        OrderBaseRequest orderRequest = order switch
+        OrderBaseRequest orderRequest;
+        switch (order)
         {
-            MarketOrder => new MarketOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType),
-            LimitOrder lo => new LimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, lo.LimitPrice),
-            StopMarketOrder smo => new StopMarketOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, smo.StopPrice),
-            StopLimitOrder slo => new StopLimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, slo.StopPrice, slo.LimitPrice),
-            _ => throw new NotSupportedException()
+            case MarketOrder:
+                orderRequest = new MarketOrderRequest(instruction, order.AbsoluteQuantity, symbol, assetType);
+                break;
+            case LimitOrder lo:
+                orderRequest = new LimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, lo.LimitPrice);
+                break;
+            case StopMarketOrder smo when order.Type == Orders.OrderType.StopMarket:
+                orderRequest = new StopMarketOrderRequest(duration, instruction, order.AbsoluteQuantity, symbol, assetType, smo.StopPrice);
+                break;
+            case StopLimitOrder slo:
+                orderRequest = new StopLimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, slo.StopPrice, slo.LimitPrice);
+                break;
+            case MarketOnCloseOrder:
+                orderRequest = new MarketOnCloseOrderRequest(instruction, order.AbsoluteQuantity, symbol, assetType);
+                break;
+            default:
+                throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(PlaceOrder)}: The order type '{order.GetType().Name}' is not supported.");
         };
 
         if (cancelTime.HasValue)
@@ -259,7 +272,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
         {
             OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Cancel order {order.Id} failed: {ex.Message}") { Status = Orders.OrderStatus.Invalid });
             return false;
-    }
+        }
     }
 
     /// <summary>

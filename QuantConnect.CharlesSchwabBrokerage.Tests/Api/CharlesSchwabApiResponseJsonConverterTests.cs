@@ -86,7 +86,7 @@ public class CharlesSchwabApiResponseJsonConverterTests
         switch (orderType)
         {
             case OrderType.Market:
-                orderRequest = new MarketOrderRequest(SessionType.Normal, Duration.GoodTillCancel, instruction, 1m, symbol, AssetType.Equity);
+                orderRequest = new MarketOrderRequest(instruction, 1m, symbol, AssetType.Equity);
                 break;
             case OrderType.Limit:
                 orderRequest = new LimitOrderRequest(SessionType.Normal, Duration.GoodTillCancel, instruction, 1m, symbol, AssetType.Equity, 22.222m);

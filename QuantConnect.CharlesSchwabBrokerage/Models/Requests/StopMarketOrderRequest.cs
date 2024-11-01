@@ -37,20 +37,19 @@ public sealed class StopMarketOrderRequest : OrderBaseRequest
     /// <summary>
     /// Initializes a new instance of the <see cref="StopMarketOrderRequest"/> class.
     /// </summary>
-    /// <param name="session">The session type for the order.</param>
     /// <param name="duration">The duration of the order.</param>
     /// <param name="instruction">The instruction for the order leg.</param>
     /// <param name="quantity">The quantity for the order leg.</param>
     /// <param name="symbol">The symbol for the order leg.</param>
     /// <param name="assetType">The asset type for the order leg.</param>
     /// <param name="stopPrice">The stop price for the stop market order.</param>
-    public StopMarketOrderRequest(SessionType session,
+    public StopMarketOrderRequest(
         Duration duration,
         Instruction instruction,
         decimal quantity,
         string symbol,
         AssetType assetType,
-        decimal stopPrice) : base(session, duration, instruction, quantity, symbol, assetType)
+        decimal stopPrice) : base(SessionType.Normal, duration, instruction, quantity, symbol, assetType)
     {
         StopPrice = stopPrice;
     }
