@@ -234,6 +234,10 @@ public partial class CharlesSchwabBrokerage : Brokerage
             case MarketOnCloseOrder:
                 orderRequest = new MarketOnCloseOrderRequest(instruction, order.AbsoluteQuantity, symbol, assetType);
                 break;
+            case TrailingStopOrder tso when order.Type == Orders.OrderType.TrailingStop:
+                var stopPriceLinkType = tso.TrailingAsPercentage ? StopPriceLinkType.Percent : StopPriceLinkType.Value;
+                orderRequest = new TrailingStopOrderRequest(duration, instruction, order.AbsoluteQuantity, symbol, assetType, stopPriceLinkType, tso.TrailingAmount);
+                break;
             default:
                 throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(PlaceOrder)}: The order type '{order.GetType().Name}' is not supported.");
         };

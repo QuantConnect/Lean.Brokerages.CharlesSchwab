@@ -16,7 +16,7 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
-using QuantConnect.Tests;
+using QuantConnect.Orders;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 using QuantConnect.Configuration;
@@ -119,5 +119,14 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
     public override void LongFromShort(OrderTestParameters parameters)
     {
         base.LongFromShort(parameters);
+    }
+
+    [TestCase(0.0001, false)]
+    [TestCase(0.01, true)]
+    public void TrailingStopOrder(decimal trailingAmount, bool trailingAsPercentage)
+    {
+        var trailingStopOrder = new TrailingStopOrder(Symbol, GetDefaultQuantity(), trailingAmount, trailingAsPercentage, DateTime.UtcNow);
+
+        Assert.IsTrue(Brokerage.PlaceOrder(trailingStopOrder));
     }
 }
