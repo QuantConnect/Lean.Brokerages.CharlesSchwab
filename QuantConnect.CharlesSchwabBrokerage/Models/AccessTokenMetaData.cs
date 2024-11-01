@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
 */
+using System;
 using Newtonsoft.Json;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models;
@@ -26,6 +27,11 @@ public class AccessTokenMetaData
     /// </summary>
     [JsonProperty("expires_in", Required = Required.Always)]
     public int ExpiresInSec { get; }
+
+    /// <summary>
+    /// The expiration date and time of the access token.
+    /// </summary>
+    public DateTime AccessTokenExpires { get; }
 
     /// <summary>
     /// The type of access token (e.g., Bearer).
@@ -74,6 +80,7 @@ public class AccessTokenMetaData
         RefreshToken = refreshToken;
         AccessToken = accessToken;
         IDToken = idToken;
+        AccessTokenExpires = DateTime.UtcNow.AddSeconds(expiresInSec - 10); // A 10-second buffer for expiration
     }
 }
 

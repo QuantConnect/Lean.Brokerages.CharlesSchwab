@@ -114,14 +114,11 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// <returns>The HTTP response message.</returns>
     protected async override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
     {
-        HttpResponseMessage response = null;
-
+        var response = default(HttpResponseMessage);
+        var accessToken = await GetAccessToken(cancellationToken);
         for (_retryCount = 0; _retryCount < _maxRetryCount; _retryCount++)
         {
-            if (_accessTokenMetaData != null)
-            {
-                request.Headers.Authorization = new AuthenticationHeaderValue(_accessTokenMetaData.TokenType, _accessTokenMetaData.AccessToken);
-            }
+            request.Headers.Authorization = new AuthenticationHeaderValue(_accessTokenMetaData.TokenType, accessToken);
 
             response = await base.SendAsync(request, cancellationToken);
 
@@ -131,15 +128,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
             }
             else if (response.StatusCode == HttpStatusCode.Unauthorized)
             {
-                if (_accessTokenMetaData == null && string.IsNullOrEmpty(_refreshToken))
-                {
-                    _accessTokenMetaData = await GetAccessToken(cancellationToken);
-                    _refreshToken = _accessTokenMetaData.RefreshToken;
-                }
-                else
-                {
-                    _accessTokenMetaData = await RefreshAccessToken(_refreshToken, cancellationToken);
-                }
+                accessToken = await GetAccessToken(cancellationToken);
             }
             else
             {
@@ -166,6 +155,28 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     }
 
     /// <summary>
+    /// Retrieves a valid access token, either by fetching new metadata or refreshing it if expired.
+    /// </summary>
+    /// <param name="cancellationToken">A token to cancel the operation if necessary.</param>
+    /// <returns>
+    /// A <see cref="string"/> representing the access token.
+    /// </returns>
+    internal async Task<string> GetAccessToken(CancellationToken cancellationToken)
+    {
+        if (_accessTokenMetaData == null && string.IsNullOrEmpty(_refreshToken))
+        {
+            _accessTokenMetaData = await GetAccessTokenMetaData(cancellationToken);
+            _refreshToken = _accessTokenMetaData.RefreshToken;
+        }
+        else if (_accessTokenMetaData == null || DateTime.UtcNow >= _accessTokenMetaData?.AccessTokenExpires)
+        {
+            _accessTokenMetaData = await RefreshAccessToken(_refreshToken, cancellationToken);
+        }
+
+        return _accessTokenMetaData.AccessToken;
+    }
+
+    /// <summary>
     /// Refreshes the access token using an expired refresh token.
     /// </summary>
     /// <param name="expiredRefreshToken">The expired refresh token to be exchanged for a new one.</param>
@@ -187,7 +198,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     /// </summary>
     /// <param name="cancellationToken">A cancellation token to observe while waiting for the task to complete.</param>
     /// <returns>The task result contains the access token.</returns>
-    private async Task<AccessTokenMetaData> GetAccessToken(CancellationToken cancellationToken)
+    private async Task<AccessTokenMetaData> GetAccessTokenMetaData(CancellationToken cancellationToken)
     {
         var payload = new Dictionary<string, string>
         {

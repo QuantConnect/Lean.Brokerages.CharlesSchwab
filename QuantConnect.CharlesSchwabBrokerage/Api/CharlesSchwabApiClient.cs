@@ -18,10 +18,10 @@ using System.Linq;
 using System.Text;
 using System.Net.Http;
 using Newtonsoft.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
-using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Api;
@@ -52,6 +52,11 @@ public class CharlesSchwabApiClient
     private readonly string _marketDataBaseUrl;
 
     /// <summary>
+    /// Handler responsible for refreshing OAuth tokens using Charles Schwab's API.
+    /// </summary>
+    private readonly CharlesSchwabTokenRefreshHandler _tokenRefreshHandler;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabApiClient"/> class.
     /// </summary>
     /// <param name="baseUrl">The base URL of the Charles Schwab API.</param>
@@ -74,8 +79,18 @@ public class CharlesSchwabApiClient
             return GetAccountNumbers().SynchronouslyAwaitTaskResult().Single(an => an.AccountNumber == accountNumber).HashValue;
         });
         var httpClient = httpClientHandler ?? new HttpClientHandler();
-        var tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(httpClient, baseUrl, appKey, secret, redirectUri, authorizationCodeFromUrl, refreshToken);
-        _httpClient = new(tokenRefreshHandler);
+        _tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(httpClient, baseUrl, appKey, secret, redirectUri, authorizationCodeFromUrl, refreshToken);
+        _httpClient = new(_tokenRefreshHandler);
+    }
+
+    /// <summary>
+    /// Asynchronously retrieves an access token for authenticated requests, refreshing if necessary.
+    /// </summary>
+    /// <param name="cancellationToken">Token to observe while waiting for the task to complete.</param>
+    /// <returns>The access token to get access on Charles Schwab API.</returns>
+    internal async Task<string> GetAccessToken(CancellationToken cancellationToken)
+    {
+        return await _tokenRefreshHandler.GetAccessToken(cancellationToken);
     }
 
     /// <summary>
