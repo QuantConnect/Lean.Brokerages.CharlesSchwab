@@ -60,7 +60,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Tests
         {
             TestDelegate test = () =>
             {
-                var brokerage = new CharlesSchwabBrokerage("", "", "", "", "", "", "");
+                var brokerage = new CharlesSchwabBrokerage("", "", "", "", "", "", "", null);
 
                 var historyProvider = new BrokerageHistoryProvider();
                 historyProvider.SetBrokerage(brokerage);

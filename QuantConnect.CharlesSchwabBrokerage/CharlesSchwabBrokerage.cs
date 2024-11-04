@@ -15,6 +15,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using QuantConnect.Data;
 using QuantConnect.Util;
 using QuantConnect.Orders;
@@ -23,9 +24,11 @@ using QuantConnect.Securities;
 using QuantConnect.Orders.Fees;
 using QuantConnect.Configuration;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
 using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 using CharlesSchwabOrderType = QuantConnect.Brokerages.CharlesSchwab.Models.Enums.OrderType;
 
@@ -35,7 +38,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab;
 /// Represents the Charles Schwab Brokerage implementation.
 /// </summary>
 [BrokerageFactory(typeof(CharlesSchwabBrokerageFactory))]
-public partial class CharlesSchwabBrokerage : Brokerage
+public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
 {
     /// <summary>
     /// Represents the name of the market or broker being used, in this case, "Charles Schwab".
@@ -45,7 +48,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// <summary>
     /// Returns true if we're currently connected to the broker
     /// </summary>
-    public override bool IsConnected { get; }
+    public override bool IsConnected => WebSocket.IsOpen;
 
     /// <summary>
     /// Indicates whether the initialization process has already been completed.
@@ -62,18 +65,27 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// </summary>
     private CharlesSchwabBrokerageSymbolMapper _symbolMapper;
 
+    private BrokerageConcurrentMessageHandler<AccountContent> _messageHandler;
+
+    private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    /// <summary>
+    /// Order provider
+    /// </summary>
+    private IOrderProvider _orderProvider;
+
     public CharlesSchwabBrokerage() : base(MarketName)
     {
     }
 
     public CharlesSchwabBrokerage(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
-        string refreshToken) : base(MarketName)
+        string refreshToken, IOrderProvider orderProvider) : base(MarketName)
     {
-        Initialize(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
+        Initialize(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken, orderProvider);
     }
 
     protected void Initialize(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
-        string refreshToken)
+        string refreshToken, IOrderProvider orderProvider)
     {
         if (_isInitialized)
         {
@@ -81,6 +93,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
         }
         _isInitialized = true;
 
+        _orderProvider = orderProvider;
         _aggregator = Composer.Instance.GetPart<IDataAggregator>();
         if (_aggregator == null)
         {
@@ -89,7 +102,6 @@ public partial class CharlesSchwabBrokerage : Brokerage
             _aggregator = Composer.Instance.GetExportedValueByTypeName<IDataAggregator>(aggregatorName);
         }
 
-
         _subscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager();
         _subscriptionManager.SubscribeImpl += (s, t) => Subscribe(s);
         _subscriptionManager.UnsubscribeImpl += (s, t) => Unsubscribe(s);
@@ -97,7 +109,8 @@ public partial class CharlesSchwabBrokerage : Brokerage
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
-        // Useful for some brokerages:
+        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, onOrderUpdate);
+        _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
 
         // Brokerage helper class to lock websocket message stream while executing an action, for example placing an order
         // avoid race condition with placing an order and getting filled events before finished placing
@@ -247,7 +260,13 @@ public partial class CharlesSchwabBrokerage : Brokerage
             orderRequest.CancelTime = cancelTime.Value;
         }
 
-        return _charlesSchwabApiClient.PlaceOrder(orderRequest).SynchronouslyAwaitTaskResult();
+        var response = default(bool);
+        _messageHandler.WithLockedStream(() =>
+        {
+            response = _charlesSchwabApiClient.PlaceOrder(orderRequest).SynchronouslyAwaitTaskResult();
+        });
+
+        return response;
     }
 
     /// <summary>
@@ -284,7 +303,7 @@ public partial class CharlesSchwabBrokerage : Brokerage
     /// </summary>
     public override void Connect()
     {
-        throw new NotImplementedException();
+        base.Connect();
     }
 
     /// <summary>
@@ -316,23 +335,5 @@ public partial class CharlesSchwabBrokerage : Brokerage
         }
 
         return _symbolMapper.SupportedSecurityType.Contains(symbol.SecurityType);
-    }
-
-    /// <summary>
-    /// Adds the specified symbols to the subscription
-    /// </summary>
-    /// <param name="symbols">The symbols to be added keyed by SecurityType</param>
-    private bool Subscribe(IEnumerable<Symbol> symbols)
-    {
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Removes the specified symbols to the subscription
-    /// </summary>
-    /// <param name="symbols">The symbols to be removed keyed by SecurityType</param>
-    private bool Unsubscribe(IEnumerable<Symbol> symbols)
-    {
-        throw new NotImplementedException();
     }
 }

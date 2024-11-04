@@ -14,10 +14,16 @@
 */
 
 using System;
+using System.Linq;
+using Newtonsoft.Json;
 using QuantConnect.Data;
+using QuantConnect.Orders;
 using QuantConnect.Packets;
+using QuantConnect.Logging;
 using QuantConnect.Interfaces;
+using QuantConnect.Orders.Fees;
 using System.Collections.Generic;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
@@ -61,6 +67,11 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
         return enumerator;
     }
 
+    protected override bool Subscribe(IEnumerable<Symbol> symbols)
+    {
+        throw new NotImplementedException();
+    }
+
     /// <summary>
     /// Removes the specified configuration
     /// </summary>
@@ -69,5 +80,46 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     {
         _subscriptionManager.Unsubscribe(dataConfig);
         _aggregator.Remove(dataConfig);
+    }
+
+    /// <summary>
+    /// Removes the specified symbols to the subscription
+    /// </summary>
+    /// <param name="symbols">The symbols to be removed keyed by SecurityType</param>
+    private bool Unsubscribe(IEnumerable<Symbol> symbols)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void onOrderUpdate(object _, AccountContent accountContent)
+    {
+        _messageHandler.HandleNewMessage(accountContent);
+    }
+
+    private void OnUserMessage(AccountContent accountContent)
+    {
+        switch (accountContent.MessageType)
+        {
+            case "OrderUROutCompleted":
+                var orderUROut = JsonConvert.DeserializeObject<OrderUROutCompleted>(accountContent.MessageData);
+                var leanOrder = _orderProvider.GetOrdersByBrokerageId(orderUROut.SchwabOrderID).FirstOrDefault();
+
+                if (leanOrder == null)
+                {
+                    Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnUserMessage)}: Order od not found: {orderUROut.SchwabOrderID}");
+                    break;
+                }
+
+                var orderEvent = new OrderEvent(leanOrder, orderUROut.BaseEvent.OrderUROutCompletedEvent.ExecutionTimeStamp.DateTime, OrderFee.Zero) { Status = OrderStatus.Canceled };
+                OnOrderEvent(orderEvent);
+                break;
+            case "OrderAccepted":
+                break;
+        }
+    }
+
+    protected override void OnMessage(object sender, WebSocketMessage e)
+    {
+        throw new NotImplementedException();
     }
 }
