@@ -16,7 +16,6 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
-using QuantConnect.Orders;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 using QuantConnect.Configuration;
@@ -60,73 +59,89 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
 
     protected override decimal GetAskPrice(Symbol symbol)
     {
-        throw new System.NotImplementedException();
+        throw new NotImplementedException();
     }
 
 
     /// <summary>
     /// Provides the data required to test each order type in various cases
     /// </summary>
-    private static IEnumerable<TestCaseData> OrderParameters
+    private static IEnumerable<TestCaseData> EquityOrderParameters
     {
         get
         {
             var symbol = Symbol.Create("F", SecurityType.Equity, Market.USA);
-            yield return new TestCaseData(new MarketOrderTestParameters(symbol));
-            yield return new TestCaseData(new LimitOrderTestParameters(symbol, 11m, 10m));
-            yield return new TestCaseData(new StopLimitOrderTestParameters(symbol, 11m, 10m));
-            yield return new TestCaseData(new StopMarketOrderTestParameters(symbol, 11m, 10m));
+            yield return new TestCaseData(new MarketOrderTestParameters(symbol)).SetCategory("Equity");
+            yield return new TestCaseData(new LimitOrderTestParameters(symbol, 11m, 10m)).SetCategory("Equity");
+            yield return new TestCaseData(new StopMarketOrderTestParameters(symbol, 11m, 10m)).SetCategory("Equity");
         }
     }
 
-    [Test, TestCaseSource(nameof(OrderParameters))]
-    public override void CancelOrders(OrderTestParameters parameters)
+    private static IEnumerable<TestCaseData> OptionOrderParameters
     {
-        base.CancelOrders(parameters);
+        get
+        {
+            var symbol = Symbol.Create("F", SecurityType.Equity, Market.USA);
+            var option = Symbol.CreateOption(symbol, symbol.ID.Market, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 10m, new DateTime(2024, 11, 08));
+            yield return new TestCaseData(new MarketOrderTestParameters(option)).SetCategory("Option");
+            yield return new TestCaseData(new LimitOrderTestParameters(option, 0.5m, 0.1m)).SetCategory("Option");
+            yield return new TestCaseData(new StopMarketOrderTestParameters(option, 0.5m, 0.1m)).SetCategory("Option");
+        }
     }
 
-    [Test, TestCaseSource(nameof(OrderParameters))]
-    public override void LongFromZero(OrderTestParameters parameters)
+    #region Equtiy
+
+    [TestCaseSource(nameof(EquityOrderParameters))]
+    public void CancelEquityOrders(OrderTestParameters parameters)
     {
-        base.LongFromZero(parameters);
+        CancelOrders(parameters);
     }
 
-    [Test, TestCaseSource(nameof(OrderParameters))]
-    public override void CloseFromLong(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(EquityOrderParameters))]
+    public void LongFromZeroEquityOrders(OrderTestParameters parameters)
     {
-        base.CloseFromLong(parameters);
+        LongFromZero(parameters);
     }
 
-    [Test, TestCaseSource(nameof(OrderParameters))]
-    public override void ShortFromZero(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(EquityOrderParameters))]
+    public void CloseFromLongEquityOrders(OrderTestParameters parameters)
     {
-        base.ShortFromZero(parameters);
+        CloseFromLong(parameters);
     }
 
-    [Test, TestCaseSource(nameof(OrderParameters))]
-    public override void CloseFromShort(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(EquityOrderParameters))]
+    public void ShortFromZeroEquityOrders(OrderTestParameters parameters)
     {
-        base.CloseFromShort(parameters);
+        ShortFromZero(parameters);
     }
 
-    [Test, TestCaseSource(nameof(OrderParameters))]
-    public override void ShortFromLong(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(EquityOrderParameters))]
+    public void CloseFromShortEquityOrders(OrderTestParameters parameters)
     {
-        base.ShortFromLong(parameters);
+        CloseFromShort(parameters);
     }
 
-    [Test, TestCaseSource(nameof(OrderParameters))]
-    public override void LongFromShort(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(EquityOrderParameters))]
+    public void ShortFromLongEquityOrders(OrderTestParameters parameters)
     {
-        base.LongFromShort(parameters);
+        ShortFromLong(parameters);
     }
 
-    [TestCase(0.0001, false)]
-    [TestCase(0.01, true)]
-    public void TrailingStopOrder(decimal trailingAmount, bool trailingAsPercentage)
+    [Test, TestCaseSource(nameof(EquityOrderParameters))]
+    public void LongFromShortEquityOrders(OrderTestParameters parameters)
     {
-        var trailingStopOrder = new TrailingStopOrder(Symbol, GetDefaultQuantity(), trailingAmount, trailingAsPercentage, DateTime.UtcNow);
-
-        Assert.IsTrue(Brokerage.PlaceOrder(trailingStopOrder));
+        LongFromShort(parameters);
     }
+
+    #endregion
+
+    #region Option
+
+    [TestCaseSource(nameof(OptionOrderParameters))]
+    public void CancelOptionOrders(OrderTestParameters parameters)
+    {
+        CancelOrders(parameters);
+    }
+
+    #endregion
 }

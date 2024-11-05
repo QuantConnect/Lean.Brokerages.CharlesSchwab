@@ -179,9 +179,14 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// <returns>The current holdings from the account</returns>
     public override List<Holding> GetAccountHoldings()
     {
-        var positions = _charlesSchwabApiClient.GetAccountBalanceAndPosition().SynchronouslyAwaitTaskResult().Positions;
+        var positions = _charlesSchwabApiClient.GetAccountBalanceAndPosition().SynchronouslyAwaitTaskResult()?.Positions;
 
         var holdings = new List<Holding>();
+        if (positions == null)
+        {
+            return holdings;
+        }
+
         foreach (var position in positions)
         {
             var leanSymbol = _symbolMapper.GetLeanSymbol(position.Instrument.Symbol, position.Instrument.AssetType.ConvertAssetTypeToSecurityType(), Market.USA);
@@ -191,6 +196,8 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                 AveragePrice = position.AveragePrice,
                 CurrencySymbol = Currencies.USD,
                 MarketValue = position.MarketValue,
+                ConversionRate = 1.0m,
+                MarketPrice = position.ShortQuantity != 0 ? position.AverageShortPrice : position.AverageLongPrice,
                 Quantity = position.ShortQuantity != 0 ? decimal.Negate(position.ShortQuantity) : position.LongQuantity,
                 Symbol = leanSymbol,
                 UnrealizedPnL = position.CurrentDayProfitLoss,
@@ -248,10 +255,17 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         var submitted = default(bool);
         _messageHandler.WithLockedStream(() =>
         {
-            var brokerageOrderId = _charlesSchwabApiClient.PlaceOrder(orderRequest).SynchronouslyAwaitTaskResult();
-
-            if (string.IsNullOrEmpty(brokerageOrderId))
+            var brokerageOrderId = default(string);
+            try
             {
+                brokerageOrderId = _charlesSchwabApiClient.PlaceOrder(orderRequest).SynchronouslyAwaitTaskResult();
+            }
+            catch (Exception ex)
+            {
+                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Charles Schwab: Place Order Event: {ex.Message}")
+                {
+                    Status = Orders.OrderStatus.Invalid
+                });
                 return;
             }
 
@@ -301,7 +315,14 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         var canceled = default(bool);
         _messageHandler.WithLockedStream(() =>
         {
-            canceled = _charlesSchwabApiClient.CancelOrderById(brokerageId).SynchronouslyAwaitTaskResult();
+            try
+            {
+                canceled = _charlesSchwabApiClient.CancelOrderById(brokerageId).SynchronouslyAwaitTaskResult();
+            }
+            catch (Exception ex)
+            {
+                OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, "Charles Schwab.Cancel Order: " + ex.Message));
+            }
         });
 
         return canceled;

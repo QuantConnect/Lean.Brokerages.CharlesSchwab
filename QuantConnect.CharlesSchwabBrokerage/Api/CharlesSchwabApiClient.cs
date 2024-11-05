@@ -180,16 +180,9 @@ public class CharlesSchwabApiClient
     /// </remarks>
     public async Task<string> PlaceOrder(OrderBaseRequest orderRequest)
     {
-        try
-        {
-            var httpResponseMessage = await SendRequestAsync(HttpMethod.Post, _traderBaseUrl, $"/accounts/{_accountHashNumber.Value}/orders",
-        JsonConvert.SerializeObject(orderRequest, new JsonSerializerSettings() { DateTimeZoneHandling = DateTimeZoneHandling.Utc }));
-            return httpResponseMessage.Headers.Location.Segments.Last();
-        }
-        catch
-        {
-            return string.Empty;
-        }
+        var httpResponseMessage = await SendRequestAsync(HttpMethod.Post, _traderBaseUrl, $"/accounts/{_accountHashNumber.Value}/orders",
+            JsonConvert.SerializeObject(orderRequest, new JsonSerializerSettings() { DateTimeZoneHandling = DateTimeZoneHandling.Utc }));
+        return httpResponseMessage.Headers.Location.Segments.Last();
     }
 
     /// <summary>

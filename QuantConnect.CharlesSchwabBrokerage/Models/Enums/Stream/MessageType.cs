@@ -69,5 +69,10 @@ public enum MessageType
     /// <summary>
     /// Indicates that an order update (UROut) process has been completed.
     /// </summary>
-    OrderUROutCompleted = 8
+    OrderUROutCompleted = 8,
+
+    /// <summary>
+    /// Indicates that an order has been filled, completing the order fill process.
+    /// </summary>
+    OrderFillCompleted = 9
 }

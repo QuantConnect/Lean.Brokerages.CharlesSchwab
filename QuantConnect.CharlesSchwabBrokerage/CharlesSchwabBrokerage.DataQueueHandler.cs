@@ -103,11 +103,9 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
         {
             case MessageType.OrderUROutCompleted:
                 var orderUROut = JsonConvert.DeserializeObject<OrderUROutCompleted>(accountContent.MessageData);
-                var leanOrder = _orderProvider.GetOrdersByBrokerageId(orderUROut.SchwabOrderID).FirstOrDefault();
 
-                if (leanOrder == null)
+                if (!TryGetLeanOrderByBrokerageId(orderUROut.SchwabOrderID, out var leanOrder))
                 {
-                    Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnUserMessage)}: Order od not found: {orderUROut.SchwabOrderID}");
                     break;
                 }
 
@@ -124,10 +122,47 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                         break;
                 }
 
-                var orderEvent = new OrderEvent(leanOrder, orderUROut.BaseEvent.OrderUROutCompletedEvent.ExecutionTimeStamp?.DateTime ?? DateTime.UtcNow, OrderFee.Zero, message) { Status = leanOrderStatus };
-                OnOrderEvent(orderEvent);
+                OnOrderEvent(
+                    new OrderEvent(leanOrder, orderUROut.BaseEvent.OrderUROutCompletedEvent.ExecutionTimeStamp?.DateTime ?? DateTime.UtcNow, OrderFee.Zero, message)
+                    { Status = leanOrderStatus });
+                break;
+            case MessageType.OrderFillCompleted:
+                var orderFill = JsonConvert.DeserializeObject<OrderFillCompletedEvent>(accountContent.MessageData);
+
+                if (!TryGetLeanOrderByBrokerageId(orderFill.SchwabOrderID, out leanOrder))
+                {
+                    break;
+                }
+
+                OnOrderEvent(
+                    new OrderEvent(leanOrder, orderFill.BaseEvent.OrderFillCompletedEventOrderLegQuantityInfo.ExecutionInfo.ExecutionTimeStamp?.DateTime ?? DateTime.UtcNow, OrderFee.Zero)
+                    { Status = OrderStatus.Filled });
                 break;
         }
+    }
+
+    /// <summary>
+    /// Attempts to retrieve a Lean order by its brokerage order ID.
+    /// </summary>
+    /// <param name="brokerageOrderId">The brokerage order ID to search for.</param>
+    /// <param name="leanOrder">
+    /// When this method returns, contains the Lean order associated with the specified brokerage order ID, 
+    /// if found; otherwise, <c>null</c>.
+    /// </param>
+    /// <returns>
+    /// <c>true</c> if an order with the specified brokerage ID is found; otherwise, <c>false</c>.
+    /// </returns>
+    private bool TryGetLeanOrderByBrokerageId(string brokerageOrderId, out Order leanOrder)
+    {
+        leanOrder = _orderProvider.GetOrdersByBrokerageId(brokerageOrderId).FirstOrDefault();
+
+        if (leanOrder == null)
+        {
+            Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {brokerageOrderId}");
+            return false;
+        }
+
+        return true;
     }
 
     protected override void OnMessage(object sender, WebSocketMessage e)
