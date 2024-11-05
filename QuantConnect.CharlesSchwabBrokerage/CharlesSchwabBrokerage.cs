@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -22,9 +22,8 @@ using QuantConnect.Orders;
 using QuantConnect.Logging;
 using QuantConnect.Securities;
 using QuantConnect.Orders.Fees;
-using QuantConnect.Configuration;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
+using QuantConnect.Configuration;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
 using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
@@ -111,10 +110,6 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
 
         WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, onOrderUpdate);
         _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
-
-        // Brokerage helper class to lock websocket message stream while executing an action, for example placing an order
-        // avoid race condition with placing an order and getting filled events before finished placing
-        // _messageHandler = new BrokerageConcurrentMessageHandler<>();
 
         // Rate gate limiter useful for API/WS calls
         // _connectionRateLimiter = new RateGate();
@@ -260,13 +255,26 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             orderRequest.CancelTime = cancelTime.Value;
         }
 
-        var response = default(bool);
+        var submitted = default(bool);
         _messageHandler.WithLockedStream(() =>
         {
-            response = _charlesSchwabApiClient.PlaceOrder(orderRequest).SynchronouslyAwaitTaskResult();
+            var brokerageOrderId = _charlesSchwabApiClient.PlaceOrder(orderRequest).SynchronouslyAwaitTaskResult();
+
+            if (string.IsNullOrEmpty(brokerageOrderId))
+            {
+                return;
+            }
+
+            order.BrokerId.Add(brokerageOrderId);
+
+            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "Charles Schwab Order Event")
+            {
+                Status = Orders.OrderStatus.Submitted
+            });
+            submitted = true;
         });
 
-        return response;
+        return submitted;
     }
 
     /// <summary>

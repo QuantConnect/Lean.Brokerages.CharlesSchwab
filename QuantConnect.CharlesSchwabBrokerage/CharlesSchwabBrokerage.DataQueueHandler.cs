@@ -24,6 +24,7 @@ using QuantConnect.Interfaces;
 using QuantConnect.Orders.Fees;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
@@ -110,10 +111,21 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                     break;
                 }
 
-                var orderEvent = new OrderEvent(leanOrder, orderUROut.BaseEvent.OrderUROutCompletedEvent.ExecutionTimeStamp.DateTime, OrderFee.Zero) { Status = OrderStatus.Canceled };
+                var leanOrderStatus = default(OrderStatus);
+                var message = default(string);
+                switch (orderUROut.BaseEvent.OrderUROutCompletedEvent.OutCancelType)
+                {
+                    case OrderOutCancelType.SystemReject:
+                        leanOrderStatus = OrderStatus.Invalid;
+                        message = string.Join('\n', orderUROut.BaseEvent.OrderUROutCompletedEvent.ValidationDetail.Select(x => new { Name = x.NgOMSRuleName, Description = x.NgOMSRuleDescription }));
+                        break;
+                    case OrderOutCancelType.ClientCancel:
+                        leanOrderStatus = OrderStatus.Canceled;
+                        break;
+                }
+
+                var orderEvent = new OrderEvent(leanOrder, orderUROut.BaseEvent.OrderUROutCompletedEvent.ExecutionTimeStamp?.DateTime ?? DateTime.UtcNow, OrderFee.Zero, message) { Status = leanOrderStatus };
                 OnOrderEvent(orderEvent);
-                break;
-            case "OrderAccepted":
                 break;
         }
     }
