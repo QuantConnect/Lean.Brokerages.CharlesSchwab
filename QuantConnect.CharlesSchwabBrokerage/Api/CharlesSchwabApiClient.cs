@@ -165,18 +165,31 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
-    /// Places an order using the provided order request.
+    /// Submits a new order for the account linked to this instance, using the details provided in the <paramref name="orderRequest"/>.
     /// </summary>
-    /// <param name="orderRequest">The request object containing order details.</param>
+    /// <param name="orderRequest">
+    /// An instance of <see cref="OrderBaseRequest"/> containing the order details, such as the symbol, quantity, price, and order type.
+    /// </param>
     /// <returns>
-    /// A <see cref="Task{Boolean}"/> indicating whether the cancellation request was sent successfully. 
-    /// Returns <c>true</c> if the order was canceled successfully.
+    /// On success, returns a string representing the unique order ID of the newly placed order.
+    /// If the order placement fails, returns an empty string.
     /// </returns>
-    public async Task<bool> PlaceOrder(OrderBaseRequest orderRequest)
+    /// <remarks>
+    /// This method extracts the new order ID from the 'Location' header in the HTTP response. 
+    /// Expected format of the Location header: "/trader/v1/accounts/{_accountHashNumber}/orders/{new_order_id}".
+    /// </remarks>
+    public async Task<string> PlaceOrder(OrderBaseRequest orderRequest)
     {
-        var response = await RequestTraderAsync<string>(HttpMethod.Post, $"/accounts/{_accountHashNumber.Value}/orders",
-            JsonConvert.SerializeObject(orderRequest, new JsonSerializerSettings() { DateTimeZoneHandling = DateTimeZoneHandling.Utc }));
-        return string.IsNullOrEmpty(response);
+        try
+        {
+            var httpResponseMessage = await SendRequestAsync(HttpMethod.Post, _traderBaseUrl, $"/accounts/{_accountHashNumber.Value}/orders",
+        JsonConvert.SerializeObject(orderRequest, new JsonSerializerSettings() { DateTimeZoneHandling = DateTimeZoneHandling.Utc }));
+            return httpResponseMessage.Headers.Location.Segments.Last();
+        }
+        catch
+        {
+            return string.Empty;
+        }
     }
 
     /// <summary>
@@ -281,17 +294,32 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
-    /// Sends an HTTP request and deserializes the response into an object of type <typeparamref name="T"/>.
+    /// Sends an HTTP request to a specified API endpoint and deserializes the response into an object of type <typeparamref name="T"/>.
     /// </summary>
-    /// <typeparam name="T">The type into which the response will be deserialized.</typeparam>
-    /// <param name="httpMethod">The HTTP method to use for the request (e.g., GET, POST).</param>
-    /// <param name="baseUrl">The base URL for the API endpoint.</param>
-    /// <param name="endpoint">The specific API endpoint including the path and query parameters.</param>
-    /// <param name="jsonBody">The JSON body of the request.</param>
-    /// <returns>An object of type <typeparamref name="T"/> containing the deserialized response data.</returns>
-    /// <exception cref="ArgumentException">Thrown when the API returns an unsuccessful status code along with error details.</exception>
-    /// <exception cref="Exception">Thrown when there is an error during the HTTP request or response handling.</exception>
+    /// <typeparam name="T">The type into which the response content will be deserialized.</typeparam>
+    /// <param name="httpMethod">The HTTP method to use, such as GET or POST.</param>
+    /// <param name="baseUrl">The base URL of the API.</param>
+    /// <param name="endpoint">The endpoint path, including any query parameters.</param>
+    /// <param name="jsonBody">An optional JSON payload to include in the request body, relevant for methods like POST or PUT.</param>
+    /// <returns>Containing the deserialized response as an object of type <typeparamref name="T"/>.</returns>
     private async Task<T> RequestAsync<T>(HttpMethod httpMethod, string baseUrl, string endpoint, string jsonBody = null)
+    {
+        var responseMessage = await SendRequestAsync(httpMethod, baseUrl, endpoint, jsonBody);
+        var jsonContent = await responseMessage.Content.ReadAsStringAsync();
+        return JsonConvert.DeserializeObject<T>(jsonContent);
+    }
+
+    /// <summary>
+    /// Sends an HTTP request to a specified API endpoint and retrieves the raw HTTP response.
+    /// </summary>
+    /// <param name="httpMethod">The HTTP method to use for the request, such as GET or POST.</param>
+    /// <param name="baseUrl">The base URL of the API.</param>
+    /// <param name="endpoint">The endpoint path, including any query parameters.</param>
+    /// <param name="jsonBody">An optional JSON payload to include in the request body, applicable for methods like POST or PUT.</param>
+    /// <returns>
+    ///Returning an <see cref="HttpResponseMessage"/> that contains the raw response from the server.
+    /// </returns>
+    private async Task<HttpResponseMessage> SendRequestAsync(HttpMethod httpMethod, string baseUrl, string endpoint, string jsonBody = null)
     {
         using (var requestMessage = new HttpRequestMessage(httpMethod, baseUrl + endpoint))
         {
@@ -304,19 +332,18 @@ public class CharlesSchwabApiClient
             {
                 var responseMessage = await _httpClient.SendAsync(requestMessage);
 
-                var jsonContent = await responseMessage.Content.ReadAsStringAsync();
-
                 if (!responseMessage.IsSuccessStatusCode)
                 {
+                    var jsonContent = await responseMessage.Content.ReadAsStringAsync();
                     var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
                     throw new ArgumentException($"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available." })}.");
                 }
 
-                return JsonConvert.DeserializeObject<T>(jsonContent);
+                return responseMessage;
             }
             catch (Exception ex)
             {
-                throw new Exception($"{nameof(CharlesSchwabApiClient)}.{nameof(RequestAsync)}: {ex.Message}");
+                throw new Exception($"{nameof(CharlesSchwabApiClient)}.{nameof(SendRequestAsync)}: Unexpected error while sending request - {ex.Message}", ex);
             }
         }
     }
