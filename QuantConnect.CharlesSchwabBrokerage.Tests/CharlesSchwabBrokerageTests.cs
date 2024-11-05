@@ -55,7 +55,7 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
     }
     protected override bool IsAsync()
     {
-        return true;
+        return false;
     }
 
     protected override decimal GetAskPrice(Symbol symbol)

@@ -50,5 +50,5 @@ public record AccountContent(
     [property: JsonProperty("seq")] int Sequence,
     [property: JsonProperty("key")] string Key,
     [property: JsonProperty("1")] string Account,
-    [property: JsonProperty("2")] string MessageType,
+    [property: JsonProperty("2")] MessageType MessageType,
     [property: JsonProperty("3")] string MessageData);

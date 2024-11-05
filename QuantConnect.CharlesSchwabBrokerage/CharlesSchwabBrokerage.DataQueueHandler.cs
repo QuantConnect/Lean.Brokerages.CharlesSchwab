@@ -101,7 +101,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     {
         switch (accountContent.MessageType)
         {
-            case "OrderUROutCompleted":
+            case MessageType.OrderUROutCompleted:
                 var orderUROut = JsonConvert.DeserializeObject<OrderUROutCompleted>(accountContent.MessageData);
                 var leanOrder = _orderProvider.GetOrdersByBrokerageId(orderUROut.SchwabOrderID).FirstOrDefault();
 

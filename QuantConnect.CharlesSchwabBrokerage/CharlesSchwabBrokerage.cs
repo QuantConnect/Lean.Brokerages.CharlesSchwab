@@ -267,7 +267,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
 
             order.BrokerId.Add(brokerageOrderId);
 
-            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "Charles Schwab Order Event")
+            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "Charles Schwab: Place Order Event")
             {
                 Status = Orders.OrderStatus.Submitted
             });
@@ -294,16 +294,27 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// <returns>True if the request was made for the order to be canceled, false otherwise</returns>
     public override bool CancelOrder(Order order)
     {
-        var brokerageId = order.BrokerId.Last();
-        try
+        if (order.Status == Orders.OrderStatus.Filled)
         {
-            return _charlesSchwabApiClient.CancelOrderById(brokerageId).SynchronouslyAwaitTaskResult();
-        }
-        catch (Exception ex)
-        {
-            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Cancel order {order.Id} failed: {ex.Message}") { Status = Orders.OrderStatus.Invalid });
+            OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, "Charles Schwab.Cancel Order: Order already filled"));
             return false;
         }
+
+        if (order.Status == Orders.OrderStatus.Canceled)
+        {
+            OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, "Charles Schwab.Cancel Order: Order already canceled"));
+            return false;
+        }
+
+        var brokerageId = order.BrokerId.Last();
+
+        var canceled = default(bool);
+        _messageHandler.WithLockedStream(() =>
+        {
+            canceled = _charlesSchwabApiClient.CancelOrderById(brokerageId).SynchronouslyAwaitTaskResult();
+        });
+
+        return canceled;
     }
 
     /// <summary>
@@ -319,7 +330,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// </summary>
     public override void Disconnect()
     {
-        throw new NotImplementedException();
+        WebSocket.Close();
     }
 
     #endregion

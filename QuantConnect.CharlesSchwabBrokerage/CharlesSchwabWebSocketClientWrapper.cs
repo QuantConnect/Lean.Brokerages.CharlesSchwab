@@ -70,7 +70,6 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
         _streamInfo = charlesSchwabApiClient.GetUserPreference().SynchronouslyAwaitTaskResult().StreamerInfo.First();
 
         Initialize(_streamInfo.StreamerSocketUrl);
-
         Open += async (_, _) => await LoginRequest(_cancellationTokenSource.Token);
         Message += HandleWebSocketMessage;
         OrderUpdate += orderUpdateHandler;
