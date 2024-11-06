@@ -27,4 +27,7 @@ public enum Service
 
     [EnumMember(Value = "ACCT_ACTIVITY")]
     Account = 1,
+
+    [EnumMember(Value = "LEVELONE_EQUITIES")]
+    LevelOneEquities = 2,
 }

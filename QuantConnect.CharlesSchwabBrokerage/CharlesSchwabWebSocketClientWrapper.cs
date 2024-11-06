@@ -60,11 +60,14 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
 
     private event EventHandler<AccountContent> OrderUpdate;
 
+    private event EventHandler<LevelOneContent> MarketDataUpdate;
+
     /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabWebSocketClientWrapper"/> class.
     /// </summary>
     /// <param name="charlesSchwabApiClient">The API client used to fetch user preferences and access tokens.</param>
-    public CharlesSchwabWebSocketClientWrapper(CharlesSchwabApiClient charlesSchwabApiClient, EventHandler<AccountContent> orderUpdateHandler)
+    public CharlesSchwabWebSocketClientWrapper(CharlesSchwabApiClient charlesSchwabApiClient, EventHandler<AccountContent> orderUpdateHandler,
+        EventHandler<LevelOneContent> marketDataUpdateHandler)
     {
         _charlesSchwabApiClient = charlesSchwabApiClient;
         _streamInfo = charlesSchwabApiClient.GetUserPreference().SynchronouslyAwaitTaskResult().StreamerInfo.First();
@@ -73,11 +76,19 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
         Open += async (_, _) => await LoginRequest(_cancellationTokenSource.Token);
         Message += HandleWebSocketMessage;
         OrderUpdate += orderUpdateHandler;
+        MarketDataUpdate += marketDataUpdateHandler;
     }
 
-    private void CharlesSchwabWebSocketClientWrapper_OrderUpdate(object sender, AccountContent e)
+    public void SubscribeOnLevelOneEquity(string[] symbols)
     {
-        throw new NotImplementedException();
+        var levelOneEquity = new LevelOneEquitiesStreamRequest(
+            _idRequestCount,
+            Command.Add,
+            _streamInfo.SchwabClientCustomerId,
+            _streamInfo.SchwabClientCorrelId,
+            symbols);
+
+        SendMessage(levelOneEquity);
     }
 
     /// <summary>
@@ -126,7 +137,13 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
                 case Service.Account:
                     foreach (var content in data.Content)
                     {
-                        OrderUpdate?.Invoke(this, content);
+                        OrderUpdate?.Invoke(this, content as AccountContent);
+                    }
+                    break;
+                case Service.LevelOneEquities:
+                    foreach (var content in data.Content)
+                    {
+                        MarketDataUpdate?.Invoke(this, content as LevelOneContent);
                     }
                     break;
                 default:
@@ -153,6 +170,8 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
                     SendMessage(new AccountStreamRequest(_idRequestCount, _streamInfo.SchwabClientCustomerId, _streamInfo.SchwabClientCorrelId));
                     break;
                 case Service.Account:
+                    continue;
+                case Service.LevelOneEquities when response.Content.Code == 0:
                     continue;
                 default:
                     throw new NotSupportedException($"{nameof(CharlesSchwabWebSocketClientWrapper)}.{nameof(HandleStreamResponse)}: {response.Content.Code} - {response.Content.Message}");

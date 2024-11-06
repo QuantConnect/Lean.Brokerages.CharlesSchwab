@@ -13,8 +13,11 @@
  * limitations under the License.
 */
 
+using System;
 using Newtonsoft.Json;
 using System.Collections.Generic;
+using QuantConnect.Brokerages.CharlesSchwab.Converters;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
@@ -36,7 +39,10 @@ public record Data(
     [property: JsonProperty("service")] Service Service,
     [property: JsonProperty("timestamp")] long Timestamp,
     [property: JsonProperty("command")] Command Command,
-    [property: JsonProperty("content")] IReadOnlyCollection<AccountContent> Content);
+    [property: JsonProperty("content")] IReadOnlyCollection<BaseContent> Content);
+
+[JsonConverter(typeof(StreamDataContentConverter))]
+public record BaseContent([property: JsonProperty("key")] string Key);
 
 /// <summary>
 /// Represents the content of an account-related message.
@@ -48,7 +54,37 @@ public record Data(
 /// <param name="MessageData">The core data for the message. Either JSON-formatted data describing the update, NULL in some cases, or plain text in case of ERROR.</param>
 public record AccountContent(
     [property: JsonProperty("seq")] int Sequence,
-    [property: JsonProperty("key")] string Key,
+    string Key,
     [property: JsonProperty("1")] string Account,
     [property: JsonProperty("2")] MessageType MessageType,
-    [property: JsonProperty("3")] string MessageData);
+    [property: JsonProperty("3")] string MessageData) : BaseContent(Key);
+
+/// <summary>
+/// 
+/// </summary>
+/// <param name="Key">The symbol.</param>
+/// <param name="Delayed">Whether data is from the SIP or NFL.</param>
+/// <param name="assetMainType">The <see cref="AssetType"/>.</param>
+/// <param name="assetSubType">The Asset sub type.</param>
+/// <param name="cusip">The CUSIP number for the instrument.</param>
+/// <param name="BidPrice">Current Bid Price.</param>
+/// <param name="AskPrice">Current Ask Price.</param>
+/// <param name="LastPrice">Price at which the last trade was matched.</param>
+/// <param name="BidSize">Number of shares for bid; units are in lots, typically 100 shares per lot.</param>
+/// <param name="AskSize">Number of shares for ask; units are in lots, typically 100 shares per lot.</param>
+/// <param name="LastSize">Number of shares traded in the last trade; units are in shares.</param>
+/// <param name="TradeTime">Trade Time in milliseconds since Epoch (last trade time).</param>
+public record LevelOneContent(
+    string Symbol,
+    [JsonProperty("delayed")] bool Delayed,
+    [JsonProperty("assetMainType")] AssetType assetMainType,
+    [JsonProperty("assetSubType")] string assetSubType,
+    [JsonProperty("cusip")] string cusip,
+    [property: JsonProperty("1")] decimal BidPrice,
+    [property: JsonProperty("2")] decimal AskPrice,
+    [property: JsonProperty("3")] decimal LastPrice,
+    [property: JsonProperty("4")] decimal BidSize,
+    [property: JsonProperty("5")] decimal AskSize,
+    [property: JsonProperty("9")] decimal LastSize,
+    [property: JsonProperty("35")] DateTime TradeTime
+    ) : BaseContent(Symbol);

@@ -42,8 +42,20 @@ public enum Command
     Subscription = 1,
 
     /// <summary>
+    /// Adds a new symbol for a particular service.
+    /// This does NOT wipe out previous symbols that were already subscribed.
+    /// It is OK to use ADD for first subscription command instead of SUBS.
+    /// </summary>
+    /// <example>
+    /// - ADD A,B (fresh sub for LEVELONE_EQUITIES)
+    /// - ADD C (additional symbol C added to A, B. All 3 symbols will stream)
+    /// </example>
+    [EnumMember(Value = "ADD")]
+    Add = 2,
+
+    /// <summary>
     /// Logs out of the streamer connection. Streamer will close the connection.
     /// </summary>
     [EnumMember(Value = "LOGOUT")]
-    Logout = 2,
+    Logout = 3,
 }

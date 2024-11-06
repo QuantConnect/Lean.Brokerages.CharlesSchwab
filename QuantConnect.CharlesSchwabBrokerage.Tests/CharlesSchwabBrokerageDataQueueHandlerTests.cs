@@ -13,69 +13,170 @@
  * limitations under the License.
 */
 
+using System;
+using System.Linq;
 using NUnit.Framework;
 using System.Threading;
 using QuantConnect.Data;
 using QuantConnect.Tests;
 using QuantConnect.Logging;
+using System.Threading.Tasks;
 using QuantConnect.Data.Market;
+using System.Collections.Generic;
+using System.Collections.Concurrent;
+using QuantConnect.Lean.Engine.DataFeeds.Enumerators;
 
-namespace QuantConnect.Brokerages.CharlesSchwab.Tests
+namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
+
+[TestFixture]
+public partial class CharlesSchwabBrokerageTests
 {
-    [TestFixture]
-    public partial class CharlesSchwabBrokerageTests
+    private CharlesSchwabBrokerage _brokerage;
+
+    [SetUp]
+    public void SetUp()
     {
-        private static TestCaseData[] TestParameters
+        _brokerage = (CharlesSchwabBrokerage)Brokerage;
+    }
+
+    private static IEnumerable<TestCaseData> TestParameters
+    {
+        get
         {
-            get
+            yield return new TestCaseData(Symbols.AAPL, Resolution.Tick);
+            yield return new TestCaseData(Symbols.AAPL, Resolution.Second);
+            yield return new TestCaseData(Symbols.AAPL, Resolution.Minute);
+
+        }
+    }
+
+    [Test, TestCaseSource(nameof(TestParameters))]
+    public void StreamsData(Symbol symbol, Resolution resolution)
+    {
+        var obj = new object();
+        var cancellationTokenSource = new CancellationTokenSource();
+        var resetEvent = new AutoResetEvent(false);
+
+        var incomingSymbolDataByTickType = new ConcurrentDictionary<(Symbol, TickType), int>();
+
+        Action<BaseData> callback = (dataPoint) =>
+        {
+            if (dataPoint == null)
             {
-                return new[]
+                return;
+            }
+
+            switch (dataPoint)
+            {
+                case Tick tick:
+                    switch (tick.TickType)
+                    {
+                        case TickType.Trade:
+                            incomingSymbolDataByTickType[(tick.Symbol, tick.TickType)] += 1;
+                            break;
+                        case TickType.Quote:
+                            incomingSymbolDataByTickType[(tick.Symbol, tick.TickType)] += 1;
+                            break;
+                    };
+                    break;
+                case TradeBar tradeBar:
+                    incomingSymbolDataByTickType[(tradeBar.Symbol, TickType.Trade)] += 1;
+                    break;
+                case QuoteBar quoteBar:
+                    incomingSymbolDataByTickType[(quoteBar.Symbol, TickType.Quote)] += 1;
+                    break;
+            }
+        };
+
+        var configs = GetSubscriptionDataConfigs(symbol, resolution).ToList();
+
+        foreach (var config in configs)
+        {
+            incomingSymbolDataByTickType.TryAdd((config.Symbol, config.TickType), 0);
+            ProcessFeed(_brokerage.Subscribe(config, (sender, args) =>
+            {
+                var dataPoint = ((NewDataAvailableEventArgs)args).DataPoint;
+                Log.Trace($"{dataPoint}. Time span: {dataPoint.Time} - {dataPoint.EndTime}");
+            }),
+            cancellationTokenSource.Token,
+            300,
+            callback: callback,
+            throwExceptionCallback: () => cancellationTokenSource.Cancel());
+        }
+
+        resetEvent.WaitOne(TimeSpan.FromMinutes(2), cancellationTokenSource.Token);
+
+        foreach (var config in configs)
+        {
+            _brokerage.Unsubscribe(config);
+        }
+
+        resetEvent.WaitOne(TimeSpan.FromSeconds(20), cancellationTokenSource.Token);
+
+        var symbolVolatilities = incomingSymbolDataByTickType.Where(kv => kv.Value > 0).ToList();
+
+        Assert.IsNotEmpty(symbolVolatilities);
+        Assert.That(symbolVolatilities.Count, Is.GreaterThan(1));
+
+        cancellationTokenSource.Cancel();
+    }
+
+
+    private static IEnumerable<SubscriptionDataConfig> GetSubscriptionDataConfigs(Symbol symbol, Resolution resolution)
+    {
+        if (resolution == Resolution.Tick)
+        {
+            return GetSubscriptionTickDataConfigs(symbol);
+        }
+
+        return new[]
+        {
+            GetSubscriptionDataConfig<TradeBar>(symbol, resolution),
+            GetSubscriptionDataConfig<QuoteBar>(symbol, resolution)
+        };
+    }
+
+    private static IEnumerable<SubscriptionDataConfig> GetSubscriptionTickDataConfigs(Symbol symbol)
+    {
+        yield return new SubscriptionDataConfig(GetSubscriptionDataConfig<Tick>(symbol, Resolution.Tick), tickType: TickType.Trade);
+        yield return new SubscriptionDataConfig(GetSubscriptionDataConfig<Tick>(symbol, Resolution.Tick), tickType: TickType.Quote);
+    }
+
+    private Task ProcessFeed(
+        IEnumerator<BaseData> enumerator,
+        CancellationToken cancellationToken,
+        int cancellationTokenDelayMilliseconds = 100,
+        Action<BaseData> callback = null,
+        Action throwExceptionCallback = null)
+    {
+        return Task.Factory.StartNew(() =>
+        {
+            try
+            {
+                while (enumerator.MoveNext() && !cancellationToken.IsCancellationRequested)
                 {
-                    // valid parameters, for example
-                    new TestCaseData(Symbols.BTCUSD, Resolution.Tick, false),
-                    new TestCaseData(Symbols.BTCUSD, Resolution.Minute, false),
-                    new TestCaseData(Symbols.BTCUSD, Resolution.Second, false),
-                };
-            }
-        }
+                    BaseData tick = enumerator.Current;
 
-        [Test, TestCaseSource(nameof(TestParameters))]
-        public void StreamsData(Symbol symbol, Resolution resolution, bool throwsException)
+                    if (tick != null)
+                    {
+                        callback?.Invoke(tick);
+                    }
+
+                    cancellationToken.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(cancellationTokenDelayMilliseconds));
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Debug($"{nameof(CharlesSchwabBrokerageTests)}.{nameof(ProcessFeed)}.Exception: {ex.Message}");
+                throw;
+            }
+        }, cancellationToken).ContinueWith(task =>
         {
-            var cancelationToken = new CancellationTokenSource();
-            var brokerage = (CharlesSchwabBrokerage)Brokerage;
-
-            SubscriptionDataConfig[] configs;
-            if (resolution == Resolution.Tick)
+            if (throwExceptionCallback != null)
             {
-                var tradeConfig = new SubscriptionDataConfig(GetSubscriptionDataConfig<Tick>(symbol, resolution), tickType: TickType.Trade);
-                var quoteConfig = new SubscriptionDataConfig(GetSubscriptionDataConfig<Tick>(symbol, resolution), tickType: TickType.Quote);
-                configs = new[] { tradeConfig, quoteConfig };
+                throwExceptionCallback();
             }
-            else
-            {
-                configs = new[] { GetSubscriptionDataConfig<QuoteBar>(symbol, resolution),
-                    GetSubscriptionDataConfig<TradeBar>(symbol, resolution) };
-            }
-
-            foreach (var config in configs)
-            {
-                ProcessFeed(brokerage.Subscribe(config, (s, e) => { }),
-                    cancelationToken,
-                    (baseData) => { if (baseData != null) { Log.Trace($"{baseData}"); }
-                    });
-            }
-
-            Thread.Sleep(20000);
-
-            foreach (var config in configs)
-            {
-                brokerage.Unsubscribe(config);
-            }
-
-            Thread.Sleep(20000);
-
-            cancelationToken.Cancel();
-        }
+            Log.Debug("The throwExceptionCallback is null.");
+        }, TaskContinuationOptions.OnlyOnFaulted);
     }
 }

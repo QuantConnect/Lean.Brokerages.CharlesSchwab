@@ -16,6 +16,7 @@
 using System;
 using QuantConnect.Orders;
 using QuantConnect.Interfaces;
+using QuantConnect.Securities;
 using QuantConnect.Orders.TimeInForces;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 using CharlesSchwabOrderStatus = QuantConnect.Brokerages.CharlesSchwab.Models.Enums.OrderStatus;
@@ -235,4 +236,19 @@ public static class CharlesSchwaExtensions
                 throw new NotImplementedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsOrderOpen)}: The order status '{orderStatus}' is not implemented.");
         }
     }
+
+    /// <summary>
+    /// Retrieves the time zone of the exchange for the given symbol.
+    /// </summary>
+    /// <param name="symbol">The symbol for which to get the exchange time zone.</param>
+    /// <returns>
+    /// The <see cref="NodaTime.DateTimeZone"/> representing the time zone of the exchange
+    /// where the given symbol is traded.
+    /// </returns>
+    /// <remarks>
+    /// This method uses the <see cref="MarketHoursDatabase"/> to fetch the exchange hours
+    /// and extract the time zone information for the provided symbol.
+    /// </remarks>
+    public static NodaTime.DateTimeZone GetSymbolExchangeTimeZone(this Symbol symbol)
+        => MarketHoursDatabase.FromDataFolder().GetExchangeHours(symbol.ID.Market, symbol, symbol.SecurityType).TimeZone;
 }

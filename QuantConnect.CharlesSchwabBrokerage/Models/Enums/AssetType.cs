@@ -26,50 +26,55 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 public enum AssetType
 {
     /// <summary>
+    /// An Unknown asset.
+    /// </summary>
+    Unknown = 0,
+
+    /// <summary>
     /// An equity asset, representing shares of a stock or similar security.
     /// </summary>
     [EnumMember(Value = "EQUITY")]
-    Equity = 0,
+    Equity = 1,
 
     /// <summary>
     /// An option contract, which gives the right to buy or sell an underlying asset at a specified price.
     /// </summary>
     [EnumMember(Value = "OPTION")]
-    Option = 1,
+    Option = 2,
 
     /// <summary>
     /// An index, representing a statistical measure of the performance of a group of securities.
     /// </summary>
     [EnumMember(Value = "INDEX")]
-    Index = 2,
+    Index = 3,
 
     /// <summary>
     /// A mutual fund, a collective investment that pools money from many investors to purchase securities.
     /// </summary>
     [EnumMember(Value = "MUTUAL_FUND")]
-    MutualFund = 3,
+    MutualFund = 4,
 
     /// <summary>
     /// A cash equivalent, representing highly liquid and low-risk assets like money market instruments.
     /// </summary>
     [EnumMember(Value = "CASH_EQUIVALENT")]
-    CashEquivalent = 4,
+    CashEquivalent = 5,
 
     /// <summary>
     /// A fixed income security, representing debt instruments like bonds that pay fixed interest.
     /// </summary>
     [EnumMember(Value = "FIXED_INCOME")]
-    FixedIncome = 5,
+    FixedIncome = 6,
 
     /// <summary>
     /// A currency asset, which refers to foreign exchange or other currency holdings.
     /// </summary>
     [EnumMember(Value = "CURRENCY")]
-    Currency = 6,
+    Currency = 7,
 
     /// <summary>
     /// A collective investment, representing pooled investment funds such as hedge funds.
     /// </summary> 
     [EnumMember(Value = "COLLECTIVE_INVESTMENT")]
-    CollectiveInvestment = 7,
+    CollectiveInvestment = 8,
 }

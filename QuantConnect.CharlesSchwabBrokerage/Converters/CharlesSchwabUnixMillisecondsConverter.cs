@@ -13,9 +13,9 @@
  * limitations under the License.
 */
 
+using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using System;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Converters;
 
@@ -24,8 +24,20 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Converters;
 /// </summary>
 public class CharlesSchwabUnixMillisecondsConverter : DateTimeConverterBase
 {
+    /// <summary>
+    /// Represents the Unix epoch time (1970-01-01 00:00:00 UTC) as a reference point 
+    /// for conversions between <see cref="DateTime"/> and Unix time.
+    /// </summary>
     internal static readonly DateTime UnixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
+    /// <summary>
+    /// Determines whether this converter can handle conversion for a specified type.
+    /// </summary>
+    /// <param name="objectType">The type to check for conversion compatibility.</param>
+    /// <returns>
+    /// <c>true</c> if the <paramref name="objectType"/> is either <see cref="DateTime"/> or <see cref="DateTimeOffset"/>;
+    /// otherwise, <c>false</c>.
+    /// </returns>
     public override bool CanConvert(Type objectType)
     {
         return objectType == typeof(DateTime) || objectType == typeof(DateTimeOffset);

@@ -107,15 +107,17 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             _aggregator = Composer.Instance.GetExportedValueByTypeName<IDataAggregator>(aggregatorName);
         }
 
-        _subscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager();
-        _subscriptionManager.SubscribeImpl += (s, t) => Subscribe(s);
-        _subscriptionManager.UnsubscribeImpl += (s, t) => Unsubscribe(s);
-
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
-        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, onOrderUpdate);
+        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnMarketDataUpdate);
         _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
+
+        SubscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager()
+        {
+            SubscribeImpl = (symbols, _) => Subscribe(symbols),
+            UnsubscribeImpl = (symbols, _) => Unsubscribe(symbols)
+        };
 
         // Rate gate limiter useful for API/WS calls
         // _connectionRateLimiter = new RateGate();

@@ -14,6 +14,7 @@
 */
 
 using System;
+using NodaTime;
 using System.Linq;
 using Newtonsoft.Json;
 using QuantConnect.Data;
@@ -22,7 +23,10 @@ using QuantConnect.Packets;
 using QuantConnect.Logging;
 using QuantConnect.Interfaces;
 using QuantConnect.Orders.Fees;
+using QuantConnect.Data.Market;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 
@@ -31,14 +35,28 @@ namespace QuantConnect.Brokerages.CharlesSchwab;
 public partial class CharlesSchwabBrokerage : IDataQueueHandler
 {
     /// <summary>
-    /// Count number of subscribers for each channel (Symbol, Socket) pair
-    /// </summary>
-    private EventBasedDataQueueHandlerSubscriptionManager _subscriptionManager;
-
-    /// <summary>
     /// Aggregates ticks and bars based on given subscriptions.
     /// </summary>
     private IDataAggregator _aggregator;
+
+    /// <summary>
+    /// Use like synchronization context for threads
+    /// </summary>
+    private readonly object _synchronizationContext = new();
+
+    /// <summary>
+    /// A thread-safe dictionary that stores the order books by brokerage symbols.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, DefaultOrderBook> _orderBooks = new();
+
+    /// <summary>
+    /// A thread-safe dictionary that maps a <see cref="Symbol"/> to a <see cref="DateTimeZone"/>.
+    /// </summary>
+    /// <remarks>
+    /// This dictionary is used to store the time zone information for each symbol in a concurrent environment,
+    /// ensuring thread safety when accessing or modifying the time zone data.
+    /// </remarks>
+    private readonly ConcurrentDictionary<Symbol, DateTimeZone> _exchangeTimeZoneByLeanSymbol = new();
 
     /// <summary>
     /// Sets the job we're subscribing for
@@ -63,14 +81,9 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
         }
 
         var enumerator = _aggregator.Add(dataConfig, newDataAvailableHandler);
-        _subscriptionManager.Subscribe(dataConfig);
+        SubscriptionManager.Subscribe(dataConfig);
 
         return enumerator;
-    }
-
-    protected override bool Subscribe(IEnumerable<Symbol> symbols)
-    {
-        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -79,20 +92,44 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     /// <param name="dataConfig">Subscription config to be removed</param>
     public void Unsubscribe(SubscriptionDataConfig dataConfig)
     {
-        _subscriptionManager.Unsubscribe(dataConfig);
+        SubscriptionManager.Unsubscribe(dataConfig);
         _aggregator.Remove(dataConfig);
     }
 
-    /// <summary>
-    /// Removes the specified symbols to the subscription
-    /// </summary>
-    /// <param name="symbols">The symbols to be removed keyed by SecurityType</param>
-    private bool Unsubscribe(IEnumerable<Symbol> symbols)
+    private void OnMarketDataUpdate(object _, LevelOneContent levelOneContent)
     {
-        throw new NotImplementedException();
+        if (_orderBooks.TryGetValue(levelOneContent.Symbol, out var orderBook))
+        {
+            if (levelOneContent.AskSize > 0 && levelOneContent.AskPrice > 0)
+            {
+                orderBook.UpdateAskRow(levelOneContent.AskPrice, levelOneContent.AskSize);
+            }
+            else if (levelOneContent.AskSize == 0 && levelOneContent.AskPrice != 0)
+            {
+                orderBook.RemoveAskRow(levelOneContent.AskPrice);
+            }
+
+            if (levelOneContent.BidSize > 0 && levelOneContent.BidPrice > 0)
+            {
+                orderBook.UpdateBidRow(levelOneContent.BidPrice, levelOneContent.BidSize);
+            }
+            else if (levelOneContent.BidSize == 0 && levelOneContent.BidPrice != 0)
+            {
+                orderBook.RemoveBidRow(levelOneContent.BidPrice);
+            }
+
+            if (levelOneContent.LastSize > 0 && levelOneContent.LastPrice > 0)
+            {
+                EmitTradeTick(orderBook.Symbol, levelOneContent.LastPrice, levelOneContent.LastSize, levelOneContent.TradeTime);
+            }
+        }
+        else
+        {
+            Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnMarketDataUpdate)}: Symbol {levelOneContent.Symbol} not found in order books. This could indicate an unexpected symbol or a missing initialization step.");
+        }
     }
 
-    private void onOrderUpdate(object _, AccountContent accountContent)
+    private void OnOrderUpdate(object _, AccountContent accountContent)
     {
         _messageHandler.HandleNewMessage(accountContent);
     }
@@ -165,8 +202,136 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
         return true;
     }
 
+    /// <summary>
+    /// Not used
+    /// </summary>
+    /// <param name="sender"></param>
+    /// <param name="e"></param>
+    /// <exception cref="NotImplementedException"></exception>
     protected override void OnMessage(object sender, WebSocketMessage e)
     {
         throw new NotImplementedException();
+    }
+
+    /// <summary>
+    /// Not used
+    /// </summary>
+    /// <param name="symbols"></param>
+    /// <returns></returns>
+    /// <exception cref="NotImplementedException"></exception>
+    protected override bool Subscribe(IEnumerable<Symbol> symbols)
+    {
+        var brokerageSymbols = symbols.Select(s => AddOrderBook(s)).ToArray();
+
+        (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneEquity(brokerageSymbols);
+
+        return true;
+    }
+
+    private bool Unsubscribe(IEnumerable<Symbol> symbols)
+    {
+        foreach (Symbol symbol in symbols)
+        {
+            RemoveOrderBook(symbol);
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Adds an order book for the specified symbol if it does not already exist.
+    /// </summary>
+    /// <param name="symbol">The symbol for which the order book is to be added.</param>
+    private string AddOrderBook(Symbol symbol)
+    {
+        var exchangeTimeZone = symbol.GetSymbolExchangeTimeZone();
+        _exchangeTimeZoneByLeanSymbol[symbol] = exchangeTimeZone;
+
+        var brokerageSymbol = _symbolMapper.GetBrokerageSymbol(symbol);
+
+        if (!_orderBooks.TryGetValue(brokerageSymbol, out var orderBook))
+        {
+            _orderBooks[brokerageSymbol] = new DefaultOrderBook(symbol);
+            _orderBooks[brokerageSymbol].BestBidAskUpdated += OnBestBidAskUpdated;
+        }
+
+        return brokerageSymbol;
+    }
+
+    /// <summary>
+    /// Removes the order book for the specified symbol if it exists.
+    /// </summary>
+    /// <param name="symbol">The symbol for which the order book is to be removed.</param>
+    private string RemoveOrderBook(Symbol symbol)
+    {
+        _exchangeTimeZoneByLeanSymbol.Remove(symbol, out _);
+
+        var brokerageSymbol = _symbolMapper.GetBrokerageSymbol(symbol);
+
+        if (_orderBooks.TryRemove(brokerageSymbol, out var orderBook))
+        {
+            orderBook.BestBidAskUpdated -= OnBestBidAskUpdated;
+        }
+
+        return brokerageSymbol;
+    }
+
+    /// <summary>
+    /// Handles updates to the best bid and ask prices and updates the aggregator with a new quote tick.
+    /// </summary>
+    /// <param name="sender">The source of the event.</param>
+    /// <param name="bestBidAskUpdatedEvent">The event arguments containing best bid and ask details.</param>
+    private void OnBestBidAskUpdated(object sender, BestBidAskUpdatedEventArgs bestBidAskUpdatedEvent)
+    {
+        if (!_exchangeTimeZoneByLeanSymbol.TryGetValue(bestBidAskUpdatedEvent.Symbol, out var exchangeTimeZone))
+        {
+            return;
+        }
+
+        var tick = new Tick
+        {
+            AskPrice = bestBidAskUpdatedEvent.BestAskPrice,
+            BidPrice = bestBidAskUpdatedEvent.BestBidPrice,
+            Time = DateTime.UtcNow.ConvertFromUtc(exchangeTimeZone),
+            Symbol = bestBidAskUpdatedEvent.Symbol,
+            TickType = TickType.Quote,
+            AskSize = bestBidAskUpdatedEvent.BestAskSize,
+            BidSize = bestBidAskUpdatedEvent.BestBidSize
+        };
+        tick.SetValue();
+
+        lock (_synchronizationContext)
+        {
+            _aggregator.Update(tick);
+        }
+    }
+
+    /// <summary>
+    /// Emits a trade tick with the provided details and updates the aggregator.
+    /// </summary>
+    /// <param name="symbol">The symbol of the traded instrument.</param>
+    /// <param name="price">The trade price.</param>
+    /// <param name="size">The trade size.</param>
+    /// <param name="tradeTime">The time of the trade.</param>
+    private void EmitTradeTick(Symbol symbol, decimal price, decimal size, DateTime tradeTime)
+    {
+        if (!_exchangeTimeZoneByLeanSymbol.TryGetValue(symbol, out var exchangeTimeZone))
+        {
+            return;
+        }
+
+        var tradeTick = new Tick
+        {
+            Value = price,
+            Time = tradeTime.ConvertFromUtc(exchangeTimeZone),
+            Symbol = symbol,
+            TickType = TickType.Trade,
+            Quantity = size
+        };
+
+        lock (_synchronizationContext)
+        {
+            _aggregator.Update(tradeTick);
+        }
     }
 }
