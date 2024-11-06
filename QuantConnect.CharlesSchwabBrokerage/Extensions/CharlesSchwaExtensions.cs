@@ -141,29 +141,6 @@ public static class CharlesSchwaExtensions
     }
 
     /// <summary>
-    /// Maps an <see cref="OrderDirection"/> to the corresponding <see cref="Instruction"/>.
-    /// </summary>
-    /// <param name="orderDirection">The order direction to convert.</param>
-    /// <returns>
-    /// Returns the corresponding <see cref="Instruction"/> for the specified <paramref name="orderDirection"/>.
-    /// </returns>
-    /// <exception cref="NotSupportedException">
-    /// Thrown when an unsupported <see cref="OrderDirection"/> is provided.
-    /// </exception>
-    public static Instruction GetInstructionByDirection(this OrderDirection orderDirection)
-    {
-        switch (orderDirection)
-        {
-            case OrderDirection.Sell:
-                return Instruction.Sell;
-            case OrderDirection.Buy:
-                return Instruction.Buy;
-            default:
-                throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(GetInstructionByDirection)}: The specified order direction '{orderDirection}' is not supported.");
-        }
-    }
-
-    /// <summary>
     /// Gets the duration and optional cancellation time based on the TimeInForce value.
     /// </summary>
     /// <param name="timeInForce">The TimeInForce value.</param>

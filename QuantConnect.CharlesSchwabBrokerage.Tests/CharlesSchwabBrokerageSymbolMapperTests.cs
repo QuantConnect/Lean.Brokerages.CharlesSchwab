@@ -101,9 +101,6 @@ public class CharlesSchwabBrokerageSymbolMapperTests
             yield return new TestCaseData(Symbol.CreateOption(GOOGL, Market.USA, SecurityType.Option.DefaultOptionStyle(), OptionRight.Put, 180m, new DateTime(2024, 12, 06)), "GOOGL 241206P00180000");
             // DJI - Index
             yield return new TestCaseData(Symbol.Create("DJI", SecurityType.Index, Market.USA), "$DJI");
-            // ES - Future
-            yield return new TestCaseData(Symbol.CreateFuture("ES", Market.USA, new DateTime(2024, 12, 10)), "/ESZ24");
-            yield return new TestCaseData(Symbol.CreateFuture("ES", Market.USA, new DateTime(2024, 5, 10)), "/ESK24");
         }
     }
 

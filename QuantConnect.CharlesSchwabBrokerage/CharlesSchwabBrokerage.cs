@@ -73,18 +73,23 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// </summary>
     private IOrderProvider _orderProvider;
 
+    /// <summary>
+    /// Represents a type capable of fetching the holdings for the specified symbol
+    /// </summary>
+    private ISecurityProvider _securityProvider;
+
     public CharlesSchwabBrokerage() : base(MarketName)
     {
     }
 
     public CharlesSchwabBrokerage(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
-        string refreshToken, IOrderProvider orderProvider) : base(MarketName)
+        string refreshToken, IOrderProvider orderProvider, ISecurityProvider securityProvider) : base(MarketName)
     {
-        Initialize(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken, orderProvider);
+        Initialize(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken, orderProvider, securityProvider);
     }
 
     protected void Initialize(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
-        string refreshToken, IOrderProvider orderProvider)
+        string refreshToken, IOrderProvider orderProvider, ISecurityProvider securityProvider)
     {
         if (_isInitialized)
         {
@@ -93,6 +98,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         _isInitialized = true;
 
         _orderProvider = orderProvider;
+        _securityProvider = securityProvider;
         _aggregator = Composer.Instance.GetPart<IDataAggregator>();
         if (_aggregator == null)
         {
@@ -227,7 +233,10 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     {
         var (duration, cancelTime) = order.Properties.TimeInForce.GetDurationByTimeInForce();
         var sessionType = order.Properties.GetExtendedHoursSessionTypeOrDefault(SessionType.Normal);
-        var instruction = order.Direction.GetInstructionByDirection();
+
+        var holdingQuantity = _securityProvider.GetHoldingsQuantity(order.Symbol);
+        var instruction = GetInstructionByDirection(order.Direction, order.SecurityType, holdingQuantity);
+
         var symbol = _symbolMapper.GetBrokerageSymbol(order.Symbol);
         var assetType = order.SecurityType.ConvertSecurityTypeToAssetType();
 
@@ -365,5 +374,45 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         }
 
         return _symbolMapper.SupportedSecurityType.Contains(symbol.SecurityType);
+    }
+
+    /// <summary>
+    /// Determines the appropriate trading instruction based on the order direction, security type, and holdings quantity.
+    /// </summary>
+    /// <param name="orderDirection">The direction of the order (e.g., Buy or Sell).</param>
+    /// <param name="securityType">The type of security being traded (e.g., Equity, Index, Option).</param>
+    /// <param name="holdingsQuantity">The current quantity of holdings for the security.</param>
+    /// <returns>
+    /// The corresponding <see cref="Instruction"/> for the given order direction, security type, and holdings quantity.
+    /// </returns>
+    /// <exception cref="NotSupportedException">
+    /// Thrown when the specified order position or order direction is not supported.
+    /// </exception>
+    private static Instruction GetInstructionByDirection(OrderDirection orderDirection, SecurityType securityType, decimal holdingsQuantity)
+    {
+        var orderPosition = GetOrderPosition(orderDirection, holdingsQuantity);
+
+        switch (securityType)
+        {
+            case SecurityType.Equity:
+            case SecurityType.Index:
+            case SecurityType.Option:
+            case SecurityType.IndexOption:
+                return orderPosition switch
+                {
+                    OrderPosition.BuyToOpen => securityType.IsOption() ? Instruction.BuyToOpen : Instruction.Buy,
+                    OrderPosition.SellToOpen => securityType.IsOption() ? Instruction.SellToOpen : Instruction.SellShort,
+                    OrderPosition.BuyToClose => securityType.IsOption() ? Instruction.BuyToClose : Instruction.BuyToCover,
+                    OrderPosition.SellToClose => securityType.IsOption() ? Instruction.SellToClose : Instruction.Sell,
+                    _ => throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetInstructionByDirection)}: The specified order position '{orderPosition}' is not supported.")
+                };
+            default:
+                return orderDirection switch
+                {
+                    OrderDirection.Sell => Instruction.Sell,
+                    OrderDirection.Buy => Instruction.Buy,
+                    _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(GetInstructionByDirection)}: The specified order direction '{orderDirection}' is not supported.")
+                };
+        }
     }
 }

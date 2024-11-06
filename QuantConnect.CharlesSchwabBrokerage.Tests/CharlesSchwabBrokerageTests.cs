@@ -16,6 +16,7 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using QuantConnect.Orders;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 using QuantConnect.Configuration;
@@ -48,9 +49,9 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
                 throw new ArgumentException("RedirectUrl or AuthorizationCode cannot be empty or null. Please ensure these values are correctly set in the configuration file.");
             }
 
-            return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCode, string.Empty, orderProvider);
+            return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCode, string.Empty, orderProvider, securityProvider);
         }
-        return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, string.Empty, string.Empty, refreshToken, orderProvider);
+        return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, string.Empty, string.Empty, refreshToken, orderProvider, securityProvider);
     }
     protected override bool IsAsync()
     {
@@ -62,86 +63,88 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
         throw new NotImplementedException();
     }
 
-
-    /// <summary>
-    /// Provides the data required to test each order type in various cases
-    /// </summary>
-    private static IEnumerable<TestCaseData> EquityOrderParameters
+    private static IEnumerable<OrderTestMetaData> OrderTestParameters
     {
         get
         {
             var symbol = Symbol.Create("F", SecurityType.Equity, Market.USA);
-            yield return new TestCaseData(new MarketOrderTestParameters(symbol)).SetCategory("Equity");
-            yield return new TestCaseData(new LimitOrderTestParameters(symbol, 11m, 10m)).SetCategory("Equity");
-            yield return new TestCaseData(new StopMarketOrderTestParameters(symbol, 11m, 10m)).SetCategory("Equity");
-        }
-    }
+            yield return new OrderTestMetaData(OrderType.Market, symbol);
+            yield return new OrderTestMetaData(OrderType.Limit, symbol, 11m, 10m);
+            yield return new OrderTestMetaData(OrderType.StopMarket, symbol, 11m, 10m);
 
-    private static IEnumerable<TestCaseData> OptionOrderParameters
-    {
-        get
-        {
-            var symbol = Symbol.Create("F", SecurityType.Equity, Market.USA);
             var option = Symbol.CreateOption(symbol, symbol.ID.Market, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 10m, new DateTime(2024, 11, 08));
-            yield return new TestCaseData(new MarketOrderTestParameters(option)).SetCategory("Option");
-            yield return new TestCaseData(new LimitOrderTestParameters(option, 0.5m, 0.1m)).SetCategory("Option");
-            yield return new TestCaseData(new StopMarketOrderTestParameters(option, 0.5m, 0.1m)).SetCategory("Option");
+            yield return new OrderTestMetaData(OrderType.Market, option);
+            yield return new OrderTestMetaData(OrderType.Limit, option, 0.5m, 0.1m);
+            yield return new OrderTestMetaData(OrderType.StopMarket, option, 0.5m, 0.1m);
         }
     }
 
-    #region Equtiy
-
-    [TestCaseSource(nameof(EquityOrderParameters))]
-    public void CancelEquityOrders(OrderTestParameters parameters)
+    [TestCaseSource(nameof(OrderTestParameters))]
+    public void CancelOrders(OrderTestMetaData orderTestMetaData)
     {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         CancelOrders(parameters);
     }
 
-    [Test, TestCaseSource(nameof(EquityOrderParameters))]
-    public void LongFromZeroEquityOrders(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(OrderTestParameters))]
+    public void LongFromZero(OrderTestMetaData orderTestMetaData)
     {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         LongFromZero(parameters);
     }
 
-    [Test, TestCaseSource(nameof(EquityOrderParameters))]
-    public void CloseFromLongEquityOrders(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(OrderTestParameters))]
+    public void CloseFromLong(OrderTestMetaData orderTestMetaData)
     {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         CloseFromLong(parameters);
     }
 
-    [Test, TestCaseSource(nameof(EquityOrderParameters))]
-    public void ShortFromZeroEquityOrders(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(OrderTestParameters))]
+    public void ShortFromZero(OrderTestMetaData orderTestMetaData)
     {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         ShortFromZero(parameters);
     }
 
-    [Test, TestCaseSource(nameof(EquityOrderParameters))]
-    public void CloseFromShortEquityOrders(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(OrderTestParameters))]
+    public void CloseFromShort(OrderTestMetaData orderTestMetaData)
     {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         CloseFromShort(parameters);
     }
 
-    [Test, TestCaseSource(nameof(EquityOrderParameters))]
-    public void ShortFromLongEquityOrders(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(OrderTestParameters))]
+    public void ShortFromLong(OrderTestMetaData orderTestMetaData)
     {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         ShortFromLong(parameters);
     }
 
-    [Test, TestCaseSource(nameof(EquityOrderParameters))]
-    public void LongFromShortEquityOrders(OrderTestParameters parameters)
+    [Test, TestCaseSource(nameof(OrderTestParameters))]
+    public void LongFromShort(OrderTestMetaData orderTestMetaData)
     {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         LongFromShort(parameters);
     }
 
-    #endregion
+    /// <summary>
+    /// Represents the parameters required for testing an order, including order type, symbol, and price limits.
+    /// </summary>
+    /// <param name="OrderType">The type of order being tested (e.g., Market, Limit, Stop).</param>
+    /// <param name="Symbol">The financial symbol for the order, such as a stock or option ticker.</param>
+    /// <param name="HighLimit">The high limit price for the order (if applicable).</param>
+    /// <param name="LowLimit">The low limit price for the order (if applicable).</param>
+    public record OrderTestMetaData(OrderType OrderType, Symbol Symbol, decimal HighLimit = 0, decimal LowLimit = 0);
 
-    #region Option
-
-    [TestCaseSource(nameof(OptionOrderParameters))]
-    public void CancelOptionOrders(OrderTestParameters parameters)
+    private static OrderTestParameters GetOrderTestParameters(OrderType orderType, Symbol symbol, decimal highLimit, decimal lowLimit)
     {
-        CancelOrders(parameters);
+        return orderType switch
+        {
+            OrderType.Market => new MarketOrderTestParameters(symbol),
+            OrderType.Limit => new LimitOrderTestParameters(symbol, highLimit, lowLimit),
+            OrderType.StopMarket => new StopMarketOrderTestParameters(symbol, highLimit, lowLimit),
+            _ => throw new NotImplementedException()
+        };
     }
-
-    #endregion
 }

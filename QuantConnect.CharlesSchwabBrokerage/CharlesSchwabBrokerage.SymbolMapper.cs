@@ -33,7 +33,6 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     {
         SecurityType.Index,
         SecurityType.Equity,
-        SecurityType.Future,
         SecurityType.Option,
         SecurityType.IndexOption,
     };
@@ -50,8 +49,6 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
         {
             case SecurityType.Equity:
                 return symbol.Value;
-            case SecurityType.Future:
-                return GenerateBrokerageFuture(symbol);
             case SecurityType.Index:
                 return GenerateBrokerageIndex(symbol);
             case SecurityType.Option:
@@ -99,17 +96,6 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     {
         var strike = symbol.ID.StrikePrice.ToStringInvariant("00000.000").Replace(".", "");
         return $"{symbol.Underlying.Value,-6}{symbol.ID.Date:yyMMdd}{symbol.ID.OptionRight.ToString()[0]}{strike}";
-    }
-
-    /// <summary>
-    /// Generates a brokerage future string based on the provided symbol.
-    /// </summary>
-    /// <param name="symbol">The symbol object containing information about the future.</param>
-    /// <returns>A string representing the brokerage future.</returns>
-    /// <example>{/ESZ24}</example>
-    private string GenerateBrokerageFuture(Symbol symbol)
-    {
-        return $"/{symbol.ID.Symbol}{SymbolRepresentation.FuturesMonthLookup[symbol.ID.Date.Month]}{symbol.ID.Date:yy}";
     }
 
     /// <summary>
