@@ -22,12 +22,28 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 [JsonConverter(typeof(StringEnumConverter))]
 public enum Service
 {
+    /// <summary>
+    /// Represents administrative functions and operations.
+    /// use for <see cref="Command.Login"/> or <seealso cref="Command.Logout"/>
+    /// </summary>
     [EnumMember(Value = "ADMIN")]
     Admin = 0,
 
+    /// <summary>
+    /// Provides access to account activity details, including order fills and other account transactions.
+    /// </summary>
     [EnumMember(Value = "ACCT_ACTIVITY")]
     Account = 1,
 
+    /// <summary>
+    /// Service for streaming Level 1 market data for equities.
+    /// </summary>
     [EnumMember(Value = "LEVELONE_EQUITIES")]
     LevelOneEquities = 2,
+
+    /// <summary>
+    /// Service for streaming Level 1 market data for options.
+    /// </summary>
+    [EnumMember(Value = "LEVELONE_OPTIONS")]
+    LevelOneOptions = 3,
 }

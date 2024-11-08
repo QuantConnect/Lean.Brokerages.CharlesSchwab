@@ -23,7 +23,8 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 public enum Command
 {
     /// <summary>
-    /// Initial request when opening a new connection. This must be successful before sending other commands.
+    /// Represents the initial request when opening a new connection.
+    /// This command must be successful before any other commands are sent.
     /// </summary>
     [EnumMember(Value = "LOGIN")]
     Login = 0,
@@ -54,8 +55,15 @@ public enum Command
     Add = 2,
 
     /// <summary>
-    /// Logs out of the streamer connection. Streamer will close the connection.
+    /// This unsubscribes a symbol to a list of subscribed symbol for a particular service.
+    /// </summary>
+    [EnumMember(Value = "UNSUBS")]
+    UnSubscription = 3,
+
+    /// <summary>
+    /// Terminates the current connection by logging out from the streamer service.
+    /// The streamer will close the connection upon receiving this command.
     /// </summary>
     [EnumMember(Value = "LOGOUT")]
-    Logout = 3,
+    Logout = 4,
 }

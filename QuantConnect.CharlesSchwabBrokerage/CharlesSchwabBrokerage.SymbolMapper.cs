@@ -90,8 +90,40 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// Generates a brokerage option string based on the Lean symbol.
     /// </summary>
     /// <param name="symbol">The symbol object containing information about the option.</param>
-    /// <returns>A string representing the brokerage option.</returns>
-    /// <example>{AAPL 240510C167.5}</example>
+    /// <returns>A string representing the brokerage option. (e.g.: AAPL  251219C00200000)</returns>
+    /// <remarks>
+    /// The Option symbol format: RRRRRRYYMMDDsWWWWWddd
+    /// <list type="bullet">
+    ///    <item>
+    ///        <term>R</term>
+    ///        <description>is the space-filled root</description>
+    ///    </item>
+    ///     <item>
+    ///        <term>YY</term>
+    ///        <description>is the expiration year</description>
+    ///    </item>
+    ///     <item>
+    ///        <term>MM</term>
+    ///        <description>is the expiration month</description>
+    ///    </item>
+    ///     <item>
+    ///        <term>DD</term>
+    ///        <description>is the expiration day</description>
+    ///    </item>
+    ///     <item>
+    ///        <term>s</term>
+    ///        <description>is the side: C/P(call/put)</description>
+    ///    </item>
+    ///     <item>
+    ///        <term>WWWWW</term>
+    ///        <description>is the whole portion of the strike price</description>
+    ///    </item>
+    ///     <item>
+    ///        <term>nnn</term>
+    ///        <description>is the decimal portion of the strike price</description>
+    ///    </item>
+    ///</list>
+    /// </remarks>
     private string GenerateBrokerageOption(Symbol symbol)
     {
         var strike = symbol.ID.StrikePrice.ToStringInvariant("00000.000").Replace(".", "");

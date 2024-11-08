@@ -58,14 +58,25 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
     /// </summary>
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+    /// <summary>
+    /// Occurs when there is an update to the account content (such as order status or changes).
+    /// </summary>
     private event EventHandler<AccountContent> OrderUpdate;
 
+    /// <summary>
+    /// Occurs when there is an update to the market data (level one content).
+    /// </summary>
     private event EventHandler<LevelOneContent> MarketDataUpdate;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabWebSocketClientWrapper"/> class.
     /// </summary>
     /// <param name="charlesSchwabApiClient">The API client used to fetch user preferences and access tokens.</param>
+    /// <param name="orderUpdateHandler">An event handler to handle account content updates (order updates).</param>
+    /// <param name="marketDataUpdateHandler">An event handler to handle market data updates (level one content).</param>
+    /// <remarks>
+    /// This constructor initializes the WebSocket connection, sets up event handlers, and logs in asynchronously.
+    /// </remarks>
     public CharlesSchwabWebSocketClientWrapper(CharlesSchwabApiClient charlesSchwabApiClient, EventHandler<AccountContent> orderUpdateHandler,
         EventHandler<LevelOneContent> marketDataUpdateHandler)
     {
@@ -79,7 +90,18 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
         MarketDataUpdate += marketDataUpdateHandler;
     }
 
-    public void SubscribeOnLevelOneEquity(string[] symbols)
+    /// <summary>
+    /// Subscribes to the LevelOne data stream for a single equity symbol.
+    /// </summary>
+    /// <param name="symbol">The symbol of the equity to subscribe to for LevelOne market data.</param>
+    public void SubscribeOnLevelOneEquity(string symbol)
+        => SubscribeOnLevelOneEquities(new[] { symbol });
+
+    /// <summary>
+    /// Subscribes to the LevelOne data stream for multiple equity symbols.
+    /// </summary>
+    /// <param name="symbols">An array of symbols representing the equities to subscribe to for LevelOne market data.</param>
+    public void SubscribeOnLevelOneEquities(string[] symbols)
     {
         var levelOneEquity = new LevelOneEquitiesStreamRequest(
             _idRequestCount,
@@ -87,8 +109,74 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
             _streamInfo.SchwabClientCustomerId,
             _streamInfo.SchwabClientCorrelId,
             symbols);
-
         SendMessage(levelOneEquity);
+    }
+
+    /// <summary>
+    /// Unsubscribes from the LevelOne data stream for a single equity symbol.
+    /// </summary>
+    /// <param name="symbol">The symbol of the equity to unsubscribe from LevelOne market data.</param>
+    public void UnSubscribeOnLevelOneEquity(string symbol)
+        => UnSubscribeOnLevelOneEquities(new[] { symbol });
+
+    /// <summary>
+    /// Unsubscribes from the LevelOne data stream for multiple equity symbols.
+    /// </summary>
+    /// <param name="symbols">An array of symbols representing the equities to unsubscribe from LevelOne market data.</param>
+    public void UnSubscribeOnLevelOneEquities(string[] symbols)
+    {
+        var levelOneEquity = new LevelOneEquitiesStreamRequest(
+            _idRequestCount,
+            Command.UnSubscription,
+            _streamInfo.SchwabClientCustomerId,
+            _streamInfo.SchwabClientCorrelId,
+            symbols);
+        SendMessage(levelOneEquity);
+    }
+
+    /// <summary>
+    /// Subscribes to the LevelOne data stream for a single option symbol.
+    /// </summary>
+    /// <param name="symbol">The symbol of the option to subscribe to for LevelOne market data.</param>
+    public void SubscribeOnLevelOneOption(string symbol)
+        => SubscribeOnLevelOneOptions(new[] { symbol });
+
+    /// <summary>
+    /// Subscribes to the LevelOne data stream for multiple option symbols.
+    /// </summary>
+    /// <param name="symbols">An array of symbols representing the options to subscribe to for LevelOne market data.</param>
+    public void SubscribeOnLevelOneOptions(string[] symbols)
+    {
+        var levelOneOption = new LevelOneOptionsStreamRequest(
+            _idRequestCount,
+            Command.Add,
+            _streamInfo.SchwabClientCustomerId,
+            _streamInfo.SchwabClientCorrelId,
+            symbols);
+        SendMessage(levelOneOption);
+    }
+
+    /// <summary>
+    /// Unsubscribes from the LevelOne data stream for a single option symbol.
+    /// </summary>
+    /// <param name="symbol">The symbol of the option to unsubscribe from LevelOne market data.</param>
+
+    public void UnSubscribeOnLevelOneOption(string symbol)
+    => UnSubscribeOnLevelOneOptions(new[] { symbol });
+
+    /// <summary>
+    /// Unsubscribes from the LevelOne data stream for multiple option symbols.
+    /// </summary>
+    /// <param name="symbols">An array of symbols representing the options to unsubscribe from LevelOne market data.</param>
+    public void UnSubscribeOnLevelOneOptions(string[] symbols)
+    {
+        var levelOneOption = new LevelOneOptionsStreamRequest(
+            _idRequestCount,
+            Command.UnSubscription,
+            _streamInfo.SchwabClientCustomerId,
+            _streamInfo.SchwabClientCorrelId,
+            symbols);
+        SendMessage(levelOneOption);
     }
 
     /// <summary>
@@ -141,6 +229,7 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
                     }
                     break;
                 case Service.LevelOneEquities:
+                case Service.LevelOneOptions:
                     foreach (var content in data.Content)
                     {
                         MarketDataUpdate?.Invoke(this, content as LevelOneContent);
@@ -172,6 +261,8 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
                 case Service.Account:
                     continue;
                 case Service.LevelOneEquities when response.Content.Code == 0:
+                    continue;
+                case Service.LevelOneOptions when response.Content.Code == 0:
                     continue;
                 default:
                     throw new NotSupportedException($"{nameof(CharlesSchwabWebSocketClientWrapper)}.{nameof(HandleStreamResponse)}: {response.Content.Code} - {response.Content.Message}");

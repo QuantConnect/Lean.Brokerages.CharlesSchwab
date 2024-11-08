@@ -96,7 +96,20 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
         _aggregator.Remove(dataConfig);
     }
 
-    private void OnMarketDataUpdate(object _, LevelOneContent levelOneContent)
+    /// <summary>
+    /// Handles updates for Level One market data and updates the corresponding order book with the new data.
+    /// </summary>
+    /// <param name="_">The sender of the event. Unused in this method.</param>
+    /// <param name="levelOneContent">The <see cref="LevelOneContent"/> object containing updated market data for a specific symbol.</param>
+    /// <remarks>
+    /// This method processes market data updates, including ask and bid prices/sizes, and trade ticks. If the market data 
+    /// is for an option (i.e., <see cref="LevelOneOptionContent"/>), it also processes open interest and indicative prices.
+    /// The method logs an error if the provided symbol is not found in the order books.
+    /// </remarks>
+    /// <exception cref="KeyNotFoundException">
+    /// Thrown if <paramref name="levelOneContent"/> contains a symbol that is not present in the <c>_orderBooks</c>.
+    /// </exception>
+    private void OnLevelOneMarketDataUpdate(object _, LevelOneContent levelOneContent)
     {
         if (_orderBooks.TryGetValue(levelOneContent.Symbol, out var orderBook))
         {
@@ -122,18 +135,49 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             {
                 EmitTradeTick(orderBook.Symbol, levelOneContent.LastPrice, levelOneContent.LastSize, levelOneContent.TradeTime);
             }
+
+            if (levelOneContent is LevelOneOptionContent levelOneOption)
+            {
+                if (levelOneOption.OpenInterest != 0)
+                {
+                    EmitOpenInterestTick(orderBook.Symbol, levelOneOption.OpenInterest);
+                }
+
+                if (levelOneOption.IndicativeAskPrice != 0)
+                {
+                    orderBook.UpdateAskRow(levelOneOption.IndicativeAskPrice, 0m);
+                }
+
+                if (levelOneOption.IndicativeBidPrice != 0)
+                {
+                    orderBook.UpdateBidRow(levelOneOption.IndicativeBidPrice, 0m);
+                }
+            }
         }
         else
         {
-            Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnMarketDataUpdate)}: Symbol {levelOneContent.Symbol} not found in order books. This could indicate an unexpected symbol or a missing initialization step.");
+            Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnLevelOneMarketDataUpdate)}: Symbol {levelOneContent.Symbol} not found in order books. This could indicate an unexpected symbol or a missing initialization step.");
         }
     }
 
+    /// <summary>
+    /// Processes an update to an order by delegating it to the message handler.
+    /// </summary>
+    /// <param name="_">The sender of the event. This parameter is unused.</param>
+    /// <param name="accountContent">The <see cref="AccountContent"/> containing the update information for the order.</param>
     private void OnOrderUpdate(object _, AccountContent accountContent)
     {
         _messageHandler.HandleNewMessage(accountContent);
     }
 
+    /// <summary>
+    /// Processes user messages related to order updates and fills.
+    /// </summary>
+    /// <param name="accountContent">The <see cref="AccountContent"/> containing details about the user message.</param>
+    /// <remarks>
+    /// This method handles different types of user messages including completed order updates and order fills.
+    /// Depending on the <see cref="MessageType"/>, it updates the order status and emits an order event.
+    /// </remarks>
     private void OnUserMessage(AccountContent accountContent)
     {
         switch (accountContent.MessageType)
@@ -210,29 +254,66 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     /// <exception cref="NotImplementedException"></exception>
     protected override void OnMessage(object sender, WebSocketMessage e)
     {
+        // This method is currently not used.
         throw new NotImplementedException();
     }
 
     /// <summary>
-    /// Not used
+    /// Subscribes to real-time market data for the specified symbols.
     /// </summary>
-    /// <param name="symbols"></param>
-    /// <returns></returns>
-    /// <exception cref="NotImplementedException"></exception>
+    /// <param name="symbols">An <see cref="IEnumerable{T}"/> collection of <see cref="Symbol"/> objects representing the symbols to subscribe to.</param>
+    /// <returns><c>true</c> if the subscription process completes successfully.</returns>
+    /// <exception cref="NotImplementedException">
+    /// Thrown if the security type of a symbol is not supported for the subscription process.
+    /// </exception>
     protected override bool Subscribe(IEnumerable<Symbol> symbols)
     {
-        var brokerageSymbols = symbols.Select(s => AddOrderBook(s)).ToArray();
-
-        (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneEquity(brokerageSymbols);
-
+        foreach (var symbol in symbols)
+        {
+            var brokerageSymbol = AddOrderBook(symbol);
+            switch (symbol.SecurityType)
+            {
+                case SecurityType.Equity:
+                case SecurityType.Index:
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneEquity(brokerageSymbol);
+                    break;
+                case SecurityType.Option:
+                case SecurityType.IndexOption:
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneOption(brokerageSymbol);
+                    break;
+                default:
+                    throw new NotImplementedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(Subscribe)}: The security type '{symbol.SecurityType}' is not supported subscription process.");
+            }
+        }
         return true;
     }
 
+    /// <summary>
+    /// Unsubscribes from real-time market data for the specified symbols.
+    /// </summary>
+    /// <param name="symbols">An <see cref="IEnumerable{T}"/> collection of <see cref="Symbol"/> objects representing the symbols to unsubscribe from.</param>
+    /// <returns><c>true</c> if the unsubscription process completes successfully.</returns>
+    /// <exception cref="NotImplementedException">
+    /// Thrown if the security type of a symbol is not supported for the unsubscription process.
+    /// </exception>
     private bool Unsubscribe(IEnumerable<Symbol> symbols)
     {
-        foreach (Symbol symbol in symbols)
+        foreach (var symbol in symbols)
         {
-            RemoveOrderBook(symbol);
+            var brokerageSymbol = RemoveOrderBook(symbol);
+            switch (symbol.SecurityType)
+            {
+                case SecurityType.Equity:
+                case SecurityType.Index:
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).UnSubscribeOnLevelOneEquity(brokerageSymbol);
+                    break;
+                case SecurityType.Option:
+                case SecurityType.IndexOption:
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).UnSubscribeOnLevelOneOption(brokerageSymbol);
+                    break;
+                default:
+                    throw new NotImplementedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(Unsubscribe)}: The security type '{symbol.SecurityType}' is not supported unSubscription process.");
+            }
         }
 
         return true;
@@ -303,6 +384,26 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
         lock (_synchronizationContext)
         {
             _aggregator.Update(tick);
+        }
+    }
+
+    /// <summary>
+    /// Emits a open interest tick with the provided details and updates the aggregator.
+    /// </summary>
+    /// <param name="symbol">The symbol of the traded instrument.</param>
+    /// <param name="openInterest">The open interest size.</param>
+    private void EmitOpenInterestTick(Symbol symbol, decimal openInterest)
+    {
+        if (!_exchangeTimeZoneByLeanSymbol.TryGetValue(symbol, out var exchangeTimeZone))
+        {
+            return;
+        }
+
+        var openInterestTick = new Tick(DateTime.UtcNow.ConvertFromUtc(exchangeTimeZone), symbol, openInterest);
+
+        lock (_synchronizationContext)
+        {
+            _aggregator.Update(openInterestTick);
         }
     }
 

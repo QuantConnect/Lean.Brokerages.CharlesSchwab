@@ -64,8 +64,14 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// </summary>
     private CharlesSchwabBrokerageSymbolMapper _symbolMapper;
 
+    /// <summary>
+    /// Handles incoming account content messages and processes them using the <see cref="BrokerageConcurrentMessageHandler{T}"/>.
+    /// </summary>
     private BrokerageConcurrentMessageHandler<AccountContent> _messageHandler;
 
+    /// <summary>
+    /// Signals to a <see cref="CancellationToken"/> that it should be canceled.
+    /// </summary>
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
     /// <summary>
@@ -110,7 +116,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
-        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnMarketDataUpdate);
+        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate);
         _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
 
         SubscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager()

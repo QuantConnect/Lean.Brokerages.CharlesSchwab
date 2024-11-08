@@ -43,21 +43,41 @@ public partial class CharlesSchwabBrokerageTests
     {
         get
         {
-            yield return new TestCaseData(Symbols.AAPL, Resolution.Tick);
-            yield return new TestCaseData(Symbols.AAPL, Resolution.Second);
-            yield return new TestCaseData(Symbols.AAPL, Resolution.Minute);
+            var AAPL = Symbols.AAPL;
+            yield return new TestCaseData(new[] { AAPL }, Resolution.Tick);
+            yield return new TestCaseData(new[] { AAPL }, Resolution.Second);
+            yield return new TestCaseData(new[] { AAPL }, Resolution.Minute);
 
+            var DJI_Index = Symbol.Create("DJI", SecurityType.Index, Market.USA);
+            yield return new TestCaseData(new[] { DJI_Index }, Resolution.Tick);
+
+            var NVDA = Symbol.Create("NVDA", SecurityType.Equity, Market.USA);
+            var DJT = Symbol.Create("DJT", SecurityType.Equity, Market.USA);
+            var TSLA = Symbol.Create("TSLA", SecurityType.Equity, Market.USA);
+            yield return new TestCaseData(new[] { AAPL, DJI_Index, NVDA, DJT, TSLA }, Resolution.Tick);
+            yield return new TestCaseData(new[] { AAPL, DJI_Index, NVDA, DJT, TSLA }, Resolution.Second);
+            yield return new TestCaseData(new[] { AAPL, DJI_Index, NVDA, DJT, TSLA }, Resolution.Minute);
+
+            var AAPL_Option = Symbol.CreateOption(AAPL, AAPL.ID.Market, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 230m, new DateTime(2024, 11, 15));
+            yield return new TestCaseData(new[] { AAPL_Option }, Resolution.Tick);
+
+            yield return new TestCaseData(new[] { AAPL, AAPL_Option }, Resolution.Tick);
+
+            var SPX = Symbol.Create("SPX", SecurityType.Index, Market.USA);
+            var SPX_IndexOption = Symbol.CreateOption(SPX, SPX.ID.Market, SecurityType.IndexOption.DefaultOptionStyle(), OptionRight.Put, 5000m, new DateTime(2024, 11, 15));
+            yield return new TestCaseData(new[] { SPX, SPX_IndexOption }, Resolution.Tick);
         }
     }
 
     [Test, TestCaseSource(nameof(TestParameters))]
-    public void StreamsData(Symbol symbol, Resolution resolution)
+    public void StreamsData(Symbol[] symbol, Resolution resolution)
     {
         var obj = new object();
         var cancellationTokenSource = new CancellationTokenSource();
         var resetEvent = new AutoResetEvent(false);
 
-        var incomingSymbolDataByTickType = new ConcurrentDictionary<(Symbol, TickType), int>();
+        var incomingSymbolDataByTickType = new ConcurrentDictionary<(Symbol, TickType), List<BaseData>>();
+        var configs = symbol.SelectMany(s => GetSubscriptionDataConfigs(s, resolution)).ToList();
 
         Action<BaseData> callback = (dataPoint) =>
         {
@@ -69,30 +89,27 @@ public partial class CharlesSchwabBrokerageTests
             switch (dataPoint)
             {
                 case Tick tick:
-                    switch (tick.TickType)
-                    {
-                        case TickType.Trade:
-                            incomingSymbolDataByTickType[(tick.Symbol, tick.TickType)] += 1;
-                            break;
-                        case TickType.Quote:
-                            incomingSymbolDataByTickType[(tick.Symbol, tick.TickType)] += 1;
-                            break;
-                    };
+                    AddOrUpdateDataPoint(incomingSymbolDataByTickType, tick.Symbol, tick.TickType, tick);
                     break;
                 case TradeBar tradeBar:
-                    incomingSymbolDataByTickType[(tradeBar.Symbol, TickType.Trade)] += 1;
+                    AddOrUpdateDataPoint(incomingSymbolDataByTickType, tradeBar.Symbol, TickType.Trade, tradeBar);
                     break;
                 case QuoteBar quoteBar:
-                    incomingSymbolDataByTickType[(quoteBar.Symbol, TickType.Quote)] += 1;
+                    AddOrUpdateDataPoint(incomingSymbolDataByTickType, quoteBar.Symbol, TickType.Quote, quoteBar);
                     break;
+            }
+
+            lock (obj)
+            {
+                if (incomingSymbolDataByTickType.Count == configs.Count && incomingSymbolDataByTickType.All(d => d.Value.Count > 2))
+                {
+                    resetEvent.Set();
+                }
             }
         };
 
-        var configs = GetSubscriptionDataConfigs(symbol, resolution).ToList();
-
         foreach (var config in configs)
         {
-            incomingSymbolDataByTickType.TryAdd((config.Symbol, config.TickType), 0);
             ProcessFeed(_brokerage.Subscribe(config, (sender, args) =>
             {
                 var dataPoint = ((NewDataAvailableEventArgs)args).DataPoint;
@@ -104,21 +121,38 @@ public partial class CharlesSchwabBrokerageTests
             throwExceptionCallback: () => cancellationTokenSource.Cancel());
         }
 
-        resetEvent.WaitOne(TimeSpan.FromMinutes(2), cancellationTokenSource.Token);
+        resetEvent.WaitOne(TimeSpan.FromMinutes(5), cancellationTokenSource.Token);
 
         foreach (var config in configs)
         {
             _brokerage.Unsubscribe(config);
         }
 
-        resetEvent.WaitOne(TimeSpan.FromSeconds(20), cancellationTokenSource.Token);
+        resetEvent.WaitOne(TimeSpan.FromSeconds(5), cancellationTokenSource.Token);
 
-        var symbolVolatilities = incomingSymbolDataByTickType.Where(kv => kv.Value > 0).ToList();
+        var symbolVolatilities = incomingSymbolDataByTickType.Where(kv => kv.Value.Count > 0).ToList();
 
         Assert.IsNotEmpty(symbolVolatilities);
         Assert.That(symbolVolatilities.Count, Is.GreaterThan(1));
 
         cancellationTokenSource.Cancel();
+    }
+
+    private void AddOrUpdateDataPoint(
+    ConcurrentDictionary<(Symbol, TickType), List<BaseData>> dictionary,
+    Symbol symbol,
+    TickType tickType,
+    BaseData dataPoint)
+    {
+        dictionary.AddOrUpdate(
+            (symbol, tickType),
+            new List<BaseData> { dataPoint }, // Add scenario: create a new list with the dataPoint
+            (key, existingList) =>
+            {
+                existingList.Add(dataPoint); // Add dataPoint to the existing list
+                return existingList; // Return the updated list
+            }
+        );
     }
 
 
