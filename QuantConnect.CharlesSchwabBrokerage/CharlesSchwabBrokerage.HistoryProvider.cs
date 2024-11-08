@@ -44,6 +44,17 @@ public partial class CharlesSchwabBrokerage
     private volatile bool _unsupportedTickTypeTypeWarningFired;
 
     /// <summary>
+    /// Indicates if a warning has been logged for minute-resolution requests outside the available data range.
+    /// </summary>
+    private volatile bool _minuteResolutionWarningLogged;
+
+
+    /// <summary>
+    /// The earliest date available for <see cref="Resolution.Minute"/> requests, limited to a maximum of 45 days in the past.
+    /// </summary>
+    private DateTime EarliestMinuteResolutionDate { get => DateTime.UtcNow.AddDays(-45).Date; }
+
+    /// <summary>
     /// Gets the historical data for the requested symbols.
     /// </summary>
     /// <param name="request">The historical data request.</param>
@@ -84,6 +95,16 @@ public partial class CharlesSchwabBrokerage
             {
                 _unsupportedTickTypeTypeWarningFired = true;
                 Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: Unsupported TickType '{request.TickType}'");
+            }
+            return null;
+        }
+
+        if (request.Resolution == Resolution.Minute && (request.EndTimeUtc < EarliestMinuteResolutionDate || request.StartTimeUtc < EarliestMinuteResolutionDate))
+        {
+            if (!_minuteResolutionWarningLogged)
+            {
+                _minuteResolutionWarningLogged = true;
+                Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: The specified time range (StartTime: {request.StartTimeUtc}, EndTime: {request.EndTimeUtc}) exceeds the available data range for minute resolution. The response will be empty to prevent unnecessary processing.");
             }
             return null;
         }
