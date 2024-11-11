@@ -76,10 +76,10 @@ namespace QuantConnect.Brokerages.CharlesSchwab
         {
             var errors = new List<string>();
 
-            var baseUrl = Config.Get("charles-schwab-api-url");
-            var appKey = Config.Get("charles-schwab-app-key");
-            var secret = Config.Get("charles-schwab-secret");
-            var accountNumber = Config.Get("charles-schwab-account-number");
+            var baseUrl = Read<string>(job.BrokerageData, "charles-schwab-api-url", errors);
+            var appKey = Read<string>(job.BrokerageData, "charles-schwab-app-key", errors);
+            var secret = Read<string>(job.BrokerageData, "charles-schwab-secret", errors);
+            var accountNumber = Read<string>(job.BrokerageData, "charles-schwab-account-number", errors);
 
             if (errors.Count != 0)
             {
@@ -89,11 +89,11 @@ namespace QuantConnect.Brokerages.CharlesSchwab
 
             var cs = default(CharlesSchwabBrokerage);
 
-            var refreshToken = Config.Get("charles-schwab-refresh-token");
+            var refreshToken = Read<string>(job.BrokerageData, "charles-schwab-refresh-token", errors);
             if (string.IsNullOrEmpty(refreshToken))
             {
-                var redirectUrl = Config.Get("charles-schwab-redirect-url");
-                var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
+                var redirectUrl = Read<string>(job.BrokerageData, "charles-schwab-redirect-url", errors);
+                var authorizationCode = Read<string>(job.BrokerageData, "charles-schwab-authorization-code-from-url", errors);
 
                 if (new string[] { redirectUrl, authorizationCode }.Any(string.IsNullOrEmpty))
                 {
