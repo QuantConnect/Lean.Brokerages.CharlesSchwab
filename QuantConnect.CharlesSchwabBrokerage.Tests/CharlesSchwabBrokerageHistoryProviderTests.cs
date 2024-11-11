@@ -33,34 +33,10 @@ public class CharlesSchwabBrokerageHistoryProviderTests
 {
     private BrokerageHistoryProvider _historyProvider;
 
-    private MarketHoursDatabase _marketHoursDatabase = MarketHoursDatabase.FromDataFolder();
-
     [OneTimeSetUp]
     public void OneTimeSetUp()
     {
-        var baseUrl = Config.Get("charles-schwab-api-url");
-        var appKey = Config.Get("charles-schwab-app-key");
-        var secret = Config.Get("charles-schwab-secret");
-        var accountNumber = Config.Get("charles-schwab-account-number");
-
-        var refreshToken = Config.Get("charles-schwab-refresh-token");
-
-        if (string.IsNullOrEmpty(refreshToken))
-        {
-            throw new ArgumentNullException(nameof(refreshToken),
-                $"{nameof(CharlesSchwabBrokerageHistoryProviderTests)}.{nameof(OneTimeSetUp)}: The refresh token cannot be null or empty. Please ensure that a valid refresh token is configured.");
-        }
-
-        var brokerage = new CharlesSchwabBrokerage(
-            baseUrl,
-            appKey,
-            secret,
-            accountNumber: string.Empty,
-            redirectUrl: string.Empty,
-            authorizationCodeFromUrl: string.Empty,
-            refreshToken: refreshToken,
-            orderProvider: null,
-            securityProvider: null);
+        var brokerage = TestSetup.CreateBrokerage(null, null);
 
         _historyProvider = new BrokerageHistoryProvider();
         _historyProvider.SetBrokerage(brokerage);

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -33,25 +33,7 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
 
     protected override IBrokerage CreateBrokerage(IOrderProvider orderProvider, ISecurityProvider securityProvider)
     {
-        var baseUrl = Config.Get("charles-schwab-api-url");
-        var appKey = Config.Get("charles-schwab-app-key");
-        var secret = Config.Get("charles-schwab-secret");
-        var accountNumber = Config.Get("charles-schwab-account-number");
-
-        var refreshToken = Config.Get("charles-schwab-refresh-token");
-        if (string.IsNullOrEmpty(refreshToken))
-        {
-            var redirectUrl = Config.Get("charles-schwab-redirect-url");
-            var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
-
-            if (new string[] { redirectUrl, authorizationCode }.Any(string.IsNullOrEmpty))
-            {
-                throw new ArgumentException("RedirectUrl or AuthorizationCode cannot be empty or null. Please ensure these values are correctly set in the configuration file.");
-            }
-
-            return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCode, string.Empty, orderProvider, securityProvider);
-        }
-        return new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, string.Empty, string.Empty, refreshToken, orderProvider, securityProvider);
+        return TestSetup.CreateBrokerage(orderProvider, securityProvider, forceCreateBrokerageInstance: true);
     }
     protected override bool IsAsync()
     {

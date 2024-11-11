@@ -14,14 +14,17 @@
 */
 
 using System;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Net.Http;
 using Newtonsoft.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.IO.Compression;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
+using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Api;
@@ -197,6 +200,22 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
+    /// Retrieves the option chain data for the specified symbol and option type (call or put).
+    /// </summary>
+    /// <param name="symbol">The symbol for which the option chain is requested.</param>
+    /// <param name="optionRight">
+    /// An <see cref="OptionRight"/> enumeration value indicating whether to fetch call or put options.
+    /// </param>
+    /// <returns>
+    /// An <see cref="OptionChainResponse"/> object containing the option chain data for the specified symbol and contract type.
+    /// </returns>
+    public async Task<OptionChainResponse> GetOptionChainBySymbolAndOptionRight(string symbol, OptionRight optionRight)
+    {
+        var contractType = optionRight.ToUpperStringInvariant();
+        return await RequestMarketDataAsync<OptionChainResponse>(HttpMethod.Get, $"/chains?symbol={symbol}&contractType={contractType}&includeUnderlyingQuote=false");
+    }
+
+    /// <summary>
     /// Retrieves the balance and positions of the securities account.
     /// </summary>
     /// <returns>A <see cref="SecuritiesAccount"/> object that represents the account balance and positions.</returns>
@@ -327,9 +346,37 @@ public class CharlesSchwabApiClient
 
                 if (!responseMessage.IsSuccessStatusCode)
                 {
-                    var jsonContent = await responseMessage.Content.ReadAsStringAsync();
-                    var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
-                    throw new ArgumentException($"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available." })}.");
+                    foreach (var contentEncoding in responseMessage.Content.Headers.ContentEncoding)
+                    {
+                        var errorMessage = new StringBuilder();
+                        switch (contentEncoding)
+                        {
+                            case "json":
+                                var jsonContent = await responseMessage.Content.ReadAsStringAsync();
+                                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
+                                errorMessage.Append($"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available." })}.");
+                                break;
+                            case "gzip":
+                                using (var responseStream = await responseMessage.Content.ReadAsStreamAsync())
+                                {
+                                    using (var decompressedStream = new GZipStream(responseStream, CompressionMode.Decompress))
+                                    {
+                                        using (var reader = new StreamReader(decompressedStream))
+                                        {
+                                            jsonContent = await reader.ReadToEndAsync();
+                                        }
+                                    }
+                                }
+
+                                foreach (var error in JsonConvert.DeserializeObject<ErrorsResponse>(jsonContent).Errors)
+                                {
+                                    errorMessage.Append(error.ToString());
+                                }
+                                break;
+                        }
+
+                        throw new ArgumentException(errorMessage.ToString());
+                    }
                 }
 
                 return responseMessage;

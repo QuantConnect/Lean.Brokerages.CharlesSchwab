@@ -26,7 +26,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Extensions;
 /// <summary>
 /// Provides extension methods.
 /// </summary
-public static class CharlesSchwaExtensions
+public static class CharlesSchwabExtensions
 {
     /// <summary>
     /// Converts a Charles Schwab asset type to its equivalent Lean SecurityType.
@@ -41,7 +41,7 @@ public static class CharlesSchwaExtensions
         AssetType.Equity => SecurityType.Equity,
         AssetType.Option => SecurityType.Option,
         AssetType.Index => SecurityType.Index,
-        _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(ConvertAssetTypeToSecurityType)}: " +
+        _ => throw new NotSupportedException($"{nameof(CharlesSchwabExtensions)}.{nameof(ConvertAssetTypeToSecurityType)}: " +
             $"The AssetType '{assetType}' is not supported.")
     };
 
@@ -60,7 +60,7 @@ public static class CharlesSchwaExtensions
         SecurityType.Equity => AssetType.Equity,
         SecurityType.Option => AssetType.Option,
         SecurityType.Index => AssetType.Index,
-        _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(ConvertSecurityTypeToAssetType)}: " +
+        _ => throw new NotSupportedException($"{nameof(CharlesSchwabExtensions)}.{nameof(ConvertSecurityTypeToAssetType)}: " +
             $"The SecurityType '{securityType}' is not supported.")
     };
 
@@ -118,7 +118,7 @@ public static class CharlesSchwaExtensions
                 return false;
 
             default:
-                throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsShort)}: The '{instruction}' is not supported. Please provide a valid instruction type.");
+                throw new NotSupportedException($"{nameof(CharlesSchwabExtensions)}.{nameof(IsShort)}: The '{instruction}' is not supported. Please provide a valid instruction type.");
         }
     }
 
@@ -163,7 +163,7 @@ public static class CharlesSchwaExtensions
                 expiryDateTime = goodTilDateTime.Expiry;
                 break;
             default:
-                throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(GetDurationByTimeInForce)}: The TimeInForce '{timeInForce}' is not supported.");
+                throw new NotSupportedException($"{nameof(CharlesSchwabExtensions)}.{nameof(GetDurationByTimeInForce)}: The TimeInForce '{timeInForce}' is not supported.");
         }
         return (duration, expiryDateTime);
     }
@@ -191,7 +191,7 @@ public static class CharlesSchwaExtensions
             case SessionType.Normal:
                 return false;
             default:
-                throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsExtendedRegularTradingHoursBySessionType)}: The session type '{sessionType}' is not supported.");
+                throw new NotSupportedException($"{nameof(CharlesSchwabExtensions)}.{nameof(IsExtendedRegularTradingHoursBySessionType)}: The session type '{sessionType}' is not supported.");
         }
     }
 
@@ -233,7 +233,7 @@ public static class CharlesSchwaExtensions
             case CharlesSchwabOrderStatus.Unknown:
                 return false;
             default:
-                throw new NotImplementedException($"{nameof(CharlesSchwaExtensions)}.{nameof(IsOrderOpen)}: The order status '{orderStatus}' is not implemented.");
+                throw new NotImplementedException($"{nameof(CharlesSchwabExtensions)}.{nameof(IsOrderOpen)}: The order status '{orderStatus}' is not implemented.");
         }
     }
 
@@ -251,4 +251,23 @@ public static class CharlesSchwaExtensions
     /// </remarks>
     public static NodaTime.DateTimeZone GetSymbolExchangeTimeZone(this Symbol symbol)
         => MarketHoursDatabase.FromDataFolder().GetExchangeHours(symbol.ID.Market, symbol, symbol.SecurityType).TimeZone;
+
+    /// <summary>
+    /// Converts the given <see cref="IConvertible"/> object to its string representation
+    /// in an uppercase format using invariant culture.
+    /// </summary>
+    /// <param name="convertible">The <see cref="IConvertible"/> object to be converted.</param>
+    /// <returns>
+    /// A string representation of the object in uppercase using invariant culture, or an empty
+    /// string if the input is <c>null</c>.
+    /// </returns>
+    public static string ToUpperStringInvariant(this IConvertible convertible)
+    {
+        if (convertible == null)
+        {
+            return string.Empty;
+        }
+
+        return convertible.ToStringInvariant().ToUpperInvariant();
+    }
 }

@@ -79,6 +79,7 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
             case SecurityType.Equity:
                 return Symbol.Create(brokerageSymbol, securityType, market);
             case SecurityType.Option:
+            case SecurityType.IndexOption:
                 return SymbolRepresentation.ParseOptionTickerOSI(brokerageSymbol, securityType, securityType.DefaultOptionStyle(), market);
             default:
                 throw new NotImplementedException($"{nameof(CharlesSchwabBrokerageSymbolMapper)}.{nameof(GetLeanSymbol)}: " +

@@ -15,64 +15,101 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
 using System.Collections;
 using QuantConnect.Logging;
+using QuantConnect.Securities;
 using QuantConnect.Configuration;
 
-namespace QuantConnect.Brokerages.CharlesSchwab.Tests
+namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
+
+[TestFixture]
+public class TestSetup
 {
-    [TestFixture]
-    public class TestSetup
+    private static CharlesSchwabBrokerage _charlesSchwabBrokerage;
+
+    [Test, TestCaseSource(nameof(TestParameters))]
+    public void TestSetupCase()
     {
-        [Test, TestCaseSource(nameof(TestParameters))]
-        public void TestSetupCase()
+    }
+
+    public static CharlesSchwabBrokerage CreateBrokerage(IOrderProvider orderProvider, ISecurityProvider securityProvider, bool forceCreateBrokerageInstance = false)
+    {
+        if (!forceCreateBrokerageInstance && _charlesSchwabBrokerage != null)
         {
+            return _charlesSchwabBrokerage;
         }
 
-        public static void ReloadConfiguration()
+        var charlesSchwabBrokerage = default(CharlesSchwabBrokerage);
+
+        var baseUrl = Config.Get("charles-schwab-api-url");
+        var appKey = Config.Get("charles-schwab-app-key");
+        var secret = Config.Get("charles-schwab-secret");
+        var accountNumber = Config.Get("charles-schwab-account-number");
+
+        var refreshToken = Config.Get("charles-schwab-refresh-token");
+        if (string.IsNullOrEmpty(refreshToken))
         {
-            // nunit 3 sets the current folder to a temp folder we need it to be the test bin output folder
-            var dir = TestContext.CurrentContext.TestDirectory;
-            Environment.CurrentDirectory = dir;
-            Directory.SetCurrentDirectory(dir);
-            // reload config from current path
-            Config.Reset();
+            var redirectUrl = Config.Get("charles-schwab-redirect-url");
+            var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
 
-            var environment = Environment.GetEnvironmentVariables();
-            foreach (DictionaryEntry entry in environment)
+            if (new string[] { redirectUrl, authorizationCode }.Any(string.IsNullOrEmpty))
             {
-                var envKey = entry.Key.ToString();
-                var value = entry.Value.ToString();
-
-                if (envKey.StartsWith("QC_"))
-                {
-                    var key = envKey.Substring(3).Replace("_", "-").ToLower();
-
-                    Log.Trace($"TestSetup(): Updating config setting '{key}' from environment var '{envKey}'");
-                    Config.Set(key, value);
-                }
+                throw new ArgumentException("RedirectUrl or AuthorizationCode cannot be empty or null. Please ensure these values are correctly set in the configuration file.");
             }
 
-            // resets the version among other things
-            Globals.Reset();
+            charlesSchwabBrokerage = new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCode, string.Empty, orderProvider, securityProvider);
         }
+        charlesSchwabBrokerage = new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, string.Empty, string.Empty, refreshToken, orderProvider, securityProvider);
 
-        private static void SetUp()
-        {
-            Log.LogHandler = new CompositeLogHandler();
-            Log.Trace("TestSetup(): starting...");
-            ReloadConfiguration();
-            Log.DebuggingEnabled = Config.GetBool("debug-mode");
-        }
+        _charlesSchwabBrokerage = charlesSchwabBrokerage;
 
-        private static TestCaseData[] TestParameters
+        return charlesSchwabBrokerage;
+    }
+
+    public static void ReloadConfiguration()
+    {
+        // nunit 3 sets the current folder to a temp folder we need it to be the test bin output folder
+        var dir = TestContext.CurrentContext.TestDirectory;
+        Environment.CurrentDirectory = dir;
+        Directory.SetCurrentDirectory(dir);
+        // reload config from current path
+        Config.Reset();
+
+        var environment = Environment.GetEnvironmentVariables();
+        foreach (DictionaryEntry entry in environment)
         {
-            get
+            var envKey = entry.Key.ToString();
+            var value = entry.Value.ToString();
+
+            if (envKey.StartsWith("QC_"))
             {
-                SetUp();
-                return new [] { new TestCaseData() };
+                var key = envKey.Substring(3).Replace("_", "-").ToLower();
+
+                Log.Trace($"TestSetup(): Updating config setting '{key}' from environment var '{envKey}'");
+                Config.Set(key, value);
             }
+        }
+
+        // resets the version among other things
+        Globals.Reset();
+    }
+
+    private static void SetUp()
+    {
+        Log.LogHandler = new CompositeLogHandler();
+        Log.Trace("TestSetup(): starting...");
+        ReloadConfiguration();
+        Log.DebuggingEnabled = Config.GetBool("debug-mode");
+    }
+
+    private static TestCaseData[] TestParameters
+    {
+        get
+        {
+            SetUp();
+            return new[] { new TestCaseData() };
         }
     }
 }

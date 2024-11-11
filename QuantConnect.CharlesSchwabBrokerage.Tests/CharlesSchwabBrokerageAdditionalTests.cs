@@ -13,20 +13,62 @@
  * limitations under the License.
 */
 
+using System.Linq;
 using NUnit.Framework;
 using QuantConnect.Util;
+using QuantConnect.Tests;
 using QuantConnect.Interfaces;
+using System.Collections.Generic;
 
-namespace QuantConnect.Brokerages.CharlesSchwab.Tests
+namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
+
+[TestFixture]
+public class CharlesSchwabBrokerageAdditionalTests
 {
-    [TestFixture]
-    public class CharlesSchwabBrokerageAdditionalTests
+    private IDataQueueUniverseProvider _dataQueueUniverseProvider;
+
+    [OneTimeSetUp]
+    public void OneTimeSetUp()
     {
-        [Test]
-        public void ParameterlessConstructorComposerUsage()
+        _dataQueueUniverseProvider = TestSetup.CreateBrokerage(null, null);
+    }
+
+    [Test]
+    public void ParameterlessConstructorComposerUsage()
+    {
+        var brokerage = Composer.Instance.GetExportedValueByTypeName<IDataQueueHandler>("CharlesSchwabBrokerage");
+        Assert.IsNotNull(brokerage);
+    }
+
+    private static IEnumerable<TestCaseData> LookUpSymbolsTestParameters
+    {
+        get
         {
-            var brokerage = Composer.Instance.GetExportedValueByTypeName<IDataQueueHandler>("CharlesSchwabBrokerage");
-            Assert.IsNotNull(brokerage);
+            yield return new TestCaseData(Symbols.AAPL, false);
+            yield return new TestCaseData(Symbols.SPY, false);
+            yield return new TestCaseData(Symbol.Create("VIX", SecurityType.Index, Market.USA), false);
+            yield return new TestCaseData(Symbol.Create("DJI", SecurityType.Index, Market.USA), true);
+        }
+    }
+
+    [Test, TestCaseSource(nameof(LookUpSymbolsTestParameters))]
+    public void LookUpSymbols(Symbol symbol, bool isEmptyResult)
+    {
+        var option = Symbol.CreateCanonicalOption(symbol);
+
+        var optionChain = _dataQueueUniverseProvider.LookupSymbols(option, false).ToList();
+
+        Assert.IsNotNull(optionChain);
+
+        if (isEmptyResult)
+        {
+            Assert.IsEmpty(optionChain);
+        }
+        else
+        {
+            Assert.True(optionChain.Any());
+            Assert.Greater(optionChain.Count, 0);
+            Assert.That(optionChain.Distinct().ToList().Count, Is.EqualTo(optionChain.Count));
         }
     }
 }
