@@ -14,11 +14,13 @@
 */
 
 using System;
+using System.Linq;
+using QuantConnect.Util;
 using QuantConnect.Packets;
-using QuantConnect.Brokerages;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
 using System.Collections.Generic;
+using QuantConnect.Configuration;
 
 namespace QuantConnect.Brokerages.CharlesSchwab
 {
@@ -34,7 +36,22 @@ namespace QuantConnect.Brokerages.CharlesSchwab
         /// The implementation of this property will create the brokerage data dictionary required for
         /// running live jobs. See <see cref="IJobQueueHandler.NextJob"/>
         /// </remarks>
-        public override Dictionary<string, string> BrokerageData { get; }
+        public override Dictionary<string, string> BrokerageData => new()
+        {
+            // The URL to connect to brokerage environment:
+            { "charles-schwab-api-url", Config.Get("charles-schwab-api-url", "https://api.schwabapi.com")},
+            { "charles-schwab-app-key", Config.Get("charles-schwab-app-key") },
+            { "charles-schwab-secret", Config.Get("charles-schwab-secret") },
+            // Users can have multiple different accounts
+            { "charles-schwab-account-number", Config.Get("charles-schwab-account-number") },
+
+            // USE CASE 1 (normal): lean CLI & live clous wizard
+            {  "charles-schwab-refresh-token", Config.Get("charles-schwab-refresh-token") },
+
+            // USE CASE 2 (developing): Only if refresh token is not provided
+            { "charles-schwab-authorization-code-from-url", Config.Get("charles-schwab-authorization-code-from-url") },
+            { "charles-schwab-redirect-url", Config.Get("charles-schwab-redirect-url") },
+        };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CharlesSchwabBrokerageFactory"/> class
@@ -47,10 +64,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab
         /// Gets a brokerage model that can be used to model this brokerage's unique behaviors
         /// </summary>
         /// <param name="orderProvider">The order provider</param>
-        public override IBrokerageModel GetBrokerageModel(IOrderProvider orderProvider)
-        {
-            throw new NotImplementedException();
-        }
+        public override IBrokerageModel GetBrokerageModel(IOrderProvider orderProvider) => new CharlesSchwabBrokerageModel();
 
         /// <summary>
         /// Creates a new IBrokerage instance
@@ -60,7 +74,43 @@ namespace QuantConnect.Brokerages.CharlesSchwab
         /// <returns>A new brokerage instance</returns>
         public override IBrokerage CreateBrokerage(LiveNodePacket job, IAlgorithm algorithm)
         {
-            throw new NotImplementedException();
+            var errors = new List<string>();
+
+            var baseUrl = Config.Get("charles-schwab-api-url");
+            var appKey = Config.Get("charles-schwab-app-key");
+            var secret = Config.Get("charles-schwab-secret");
+            var accountNumber = Config.Get("charles-schwab-account-number");
+
+            if (errors.Count != 0)
+            {
+                // if we had errors then we can't create the instance
+                throw new ArgumentException(string.Join(Environment.NewLine, errors));
+            }
+
+            var cs = default(CharlesSchwabBrokerage);
+
+            var refreshToken = Config.Get("charles-schwab-refresh-token");
+            if (string.IsNullOrEmpty(refreshToken))
+            {
+                var redirectUrl = Config.Get("charles-schwab-redirect-url");
+                var authorizationCode = Config.Get("charles-schwab-authorization-code-from-url");
+
+                if (new string[] { redirectUrl, authorizationCode }.Any(string.IsNullOrEmpty))
+                {
+                    throw new ArgumentException("RedirectUrl or AuthorizationCode cannot be empty or null. Please ensure these values are correctly set in the configuration file.");
+                }
+
+                // Case 1: authentication with using redirectUrl, authorizationCode
+                cs = new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCode, refreshToken: string.Empty, algorithm);
+            }
+            else
+            {
+                cs = new CharlesSchwabBrokerage(baseUrl, appKey, secret, accountNumber, redirectUrl: string.Empty, authorizationCodeFromUrl: string.Empty, refreshToken, algorithm);
+            }
+
+            Composer.Instance.AddPart<IDataQueueHandler>(cs);
+
+            return cs;
         }
 
         /// <summary>
@@ -68,7 +118,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab
         /// </summary>
         public override void Dispose()
         {
-            throw new NotImplementedException();
+            // Not Needed
         }
     }
 }

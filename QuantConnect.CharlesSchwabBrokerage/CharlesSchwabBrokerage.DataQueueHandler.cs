@@ -64,7 +64,22 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     /// <param name="job">Job we're subscribing for</param>
     public void SetJob(LiveNodePacket job)
     {
-        throw new NotImplementedException();
+        Initialize(
+            baseUrl: job.BrokerageData["charles-schwab-api-url"],
+            appKey: job.BrokerageData["charles-schwab-app-key"],
+            secret: job.BrokerageData["charles-schwab-secret"],
+            accountNumber: job.BrokerageData.TryGetValue("charles-schwab-account-number", out var accountNumber) ? accountNumber : string.Empty,
+            redirectUrl: job.BrokerageData.TryGetValue("charles-schwab-redirect-url", out var redirectUrl) ? redirectUrl : string.Empty,
+            authorizationCodeFromUrl: job.BrokerageData.TryGetValue("charles-schwab-authorization-code-from-url", out var authorizationCode) ? authorizationCode : string.Empty,
+            refreshToken: job.BrokerageData.TryGetValue("charles-schwab-refresh-token", out var refreshToken) ? refreshToken : string.Empty,
+            orderProvider: null,
+            securityProvider: null
+            );
+
+        if (!IsConnected)
+        {
+            Connect();
+        }
     }
 
     /// <summary>
@@ -143,6 +158,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                     EmitOpenInterestTick(orderBook.Symbol, levelOneOption.OpenInterest);
                 }
 
+                // TODO: Should we send trade?
                 if (levelOneOption.IndicativeAskPrice != 0)
                 {
                     orderBook.UpdateAskRow(levelOneOption.IndicativeAskPrice, 0m);

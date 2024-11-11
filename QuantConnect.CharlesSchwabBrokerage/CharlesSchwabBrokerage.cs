@@ -21,6 +21,7 @@ using QuantConnect.Util;
 using QuantConnect.Orders;
 using QuantConnect.Logging;
 using QuantConnect.Securities;
+using QuantConnect.Interfaces;
 using QuantConnect.Orders.Fees;
 using System.Collections.Generic;
 using QuantConnect.Configuration;
@@ -84,16 +85,59 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// </summary>
     private ISecurityProvider _securityProvider;
 
+    /// <summary>
+    /// Parameterless constructor for brokerage
+    /// </summary>
     public CharlesSchwabBrokerage() : base(MarketName)
     {
     }
 
+    /// <summary>
+    /// Constructor for the Charles Schwab brokerage.
+    /// </summary>
+    /// <param name="baseUrl">The URL to connect to brokerage environment</param>
+    /// <param name="appKey">The API app key for authentication.</param>
+    /// <param name="secret">The API key secret for authentication.</param>
+    /// <param name="accountNumber">The specific user account number.</param>
+    /// <param name="redirectUrl">The redirect URL to generate great link to get right "authorizationCodeFromUrl"</param>
+    /// <param name="authorizationCodeFromUrl">The authorization code obtained from the URL.</param>
+    /// <param name="refreshToken">The refresh token used to obtain new access tokens for authentication.</param>
+    /// <param name="algorithm">The algorithm instance is required to retrieve account type.</param>
+    public CharlesSchwabBrokerage(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
+        string refreshToken, IAlgorithm algorithm)
+        : this(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken, algorithm?.Portfolio?.Transactions, algorithm?.Portfolio)
+    { }
+
+    /// <summary>
+    /// Constructor for the Charles Schwab brokerage.
+    /// </summary>
+    /// <param name="baseUrl">The URL to connect to brokerage environment</param>
+    /// <param name="appKey">The API app key for authentication.</param>
+    /// <param name="secret">The API key secret for authentication.</param>
+    /// <param name="accountNumber">The specific user account number.</param>
+    /// <param name="redirectUrl">The redirect URL to generate great link to get right "authorizationCodeFromUrl"</param>
+    /// <param name="authorizationCodeFromUrl">The authorization code obtained from the URL.</param>
+    /// <param name="refreshToken">The refresh token used to obtain new access tokens for authentication.</param>
+    /// <param name="orderProvider">The order provider.</param>
+    /// <param name="securityProvider">The type capable of fetching the holdings for the specified symbol.</param>
     public CharlesSchwabBrokerage(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
         string refreshToken, IOrderProvider orderProvider, ISecurityProvider securityProvider) : base(MarketName)
     {
         Initialize(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken, orderProvider, securityProvider);
     }
 
+    /// <summary>
+    /// Initializer for the Charles Schwab brokerage.
+    /// </summary>
+    /// <param name="baseUrl">The URL to connect to brokerage environment</param>
+    /// <param name="appKey">The API app key for authentication.</param>
+    /// <param name="secret">The API key secret for authentication.</param>
+    /// <param name="accountNumber">The specific user account number.</param>
+    /// <param name="redirectUrl">The redirect URL to generate great link to get right "authorizationCodeFromUrl"</param>
+    /// <param name="authorizationCodeFromUrl">The authorization code obtained from the URL.</param>
+    /// <param name="refreshToken">The refresh token used to obtain new access tokens for authentication.</param>
+    /// <param name="orderProvider">The order provider.</param>
+    /// <param name="securityProvider">The type capable of fetching the holdings for the specified symbol.</param>
     protected void Initialize(string baseUrl, string appKey, string secret, string accountNumber, string redirectUrl, string authorizationCodeFromUrl,
         string refreshToken, IOrderProvider orderProvider, ISecurityProvider securityProvider)
     {
@@ -350,6 +394,11 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// </summary>
     public override void Connect()
     {
+        if (IsConnected)
+        {
+            return;
+        }
+
         base.Connect();
     }
 
