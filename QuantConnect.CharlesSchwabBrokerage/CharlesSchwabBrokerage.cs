@@ -419,7 +419,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                 {
                     OrderDirection.Sell => Instruction.Sell,
                     OrderDirection.Buy => Instruction.Buy,
-                    _ => throw new NotSupportedException($"{nameof(CharlesSchwaExtensions)}.{nameof(GetInstructionByDirection)}: The specified order direction '{orderDirection}' is not supported.")
+                    _ => throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetInstructionByDirection)}: The specified order direction '{orderDirection}' is not supported.")
                 };
         }
     }
