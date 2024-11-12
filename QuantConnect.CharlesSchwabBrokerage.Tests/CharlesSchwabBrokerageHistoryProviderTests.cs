@@ -19,11 +19,11 @@ using System.Linq;
 using NUnit.Framework;
 using QuantConnect.Util;
 using QuantConnect.Data;
+using QuantConnect.Tests;
 using Microsoft.CodeAnalysis;
 using QuantConnect.Securities;
 using QuantConnect.Data.Market;
 using System.Collections.Generic;
-using QuantConnect.Configuration;
 using QuantConnect.Lean.Engine.HistoricalData;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
@@ -48,45 +48,61 @@ public class CharlesSchwabBrokerageHistoryProviderTests
         get
         {
             var AAPL = CreateSymbol("AAPL", SecurityType.Equity);
-            yield return new TestCaseData(AAPL, Resolution.Minute, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8));
+            yield return new TestCaseData(AAPL, Resolution.Minute, TickType.Trade, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8), false);
             var endDate = DateTime.UtcNow.Date;
-            yield return new TestCaseData(AAPL, Resolution.Minute, endDate.AddDays(-45), endDate);
-            yield return new TestCaseData(AAPL, Resolution.Hour, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18));
-            yield return new TestCaseData(AAPL, Resolution.Daily, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18));
+            var startDate = endDate.AddDays(-45);
+            yield return new TestCaseData(AAPL, Resolution.Minute, TickType.Trade, startDate, endDate, false);
+            yield return new TestCaseData(AAPL, Resolution.Hour, TickType.Trade, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18), false);
+            yield return new TestCaseData(AAPL, Resolution.Daily, TickType.Trade, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18), false);
 
             var DJI_Index = Symbol.Create("DJI", SecurityType.Index, Market.USA);
-            yield return new TestCaseData(DJI_Index, Resolution.Minute, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8));
-            yield return new TestCaseData(DJI_Index, Resolution.Minute, endDate.AddDays(-45), endDate);
-            yield return new TestCaseData(DJI_Index, Resolution.Hour, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18));
-            yield return new TestCaseData(DJI_Index, Resolution.Daily, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18));
+            yield return new TestCaseData(DJI_Index, Resolution.Minute, TickType.Trade, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8), false);
+            yield return new TestCaseData(DJI_Index, Resolution.Minute, TickType.Trade, startDate, endDate, false);
+            yield return new TestCaseData(DJI_Index, Resolution.Hour, TickType.Trade, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18), false);
+            yield return new TestCaseData(DJI_Index, Resolution.Daily, TickType.Trade, new DateTime(2024, 06, 18), new DateTime(2024, 07, 18), false);
 
-            var AAPLOption = CreateSymbol("AAPL", SecurityType.Option, OptionRight.Call, 230m, new DateTime(2024, 11, 15));
-            yield return new TestCaseData(AAPLOption, Resolution.Minute, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8));
-            yield return new TestCaseData(AAPLOption, Resolution.Hour, new DateTime(2024, 9, 1), new DateTime(2024, 11, 8));
-            yield return new TestCaseData(AAPLOption, Resolution.Daily, new DateTime(2024, 10, 18), new DateTime(2024, 11, 8));
+            var AAPLOption = Symbol.CreateOption(AAPL, Market.USA, AAPL.SecurityType.DefaultOptionStyle(), OptionRight.Call, 15m, new DateTime(2024, 11, 15));
+            yield return new TestCaseData(AAPLOption, Resolution.Minute, TickType.Trade, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8), true).SetDescription("Not Support Option contract history.");
+            yield return new TestCaseData(AAPLOption, Resolution.Hour, TickType.Trade, new DateTime(2024, 9, 1), new DateTime(2024, 11, 8), true).SetDescription("Not Support Option contract history.");
+            yield return new TestCaseData(AAPLOption, Resolution.Daily, TickType.Trade, new DateTime(2024, 10, 18), new DateTime(2024, 11, 8), true).SetDescription("Not Support Option contract history.");
+
+            yield return new TestCaseData(Symbols.BTCUSD, Resolution.Daily, TickType.Trade, default(DateTime), default(DateTime), true).SetDescription("Not Support Crypto contract history");
+
+            yield return new TestCaseData(AAPL, Resolution.Tick, TickType.Trade, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8), true).SetDescription("Not Support Tick Resolution request.");
+            yield return new TestCaseData(AAPL, Resolution.Second, TickType.Trade, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8), true).SetDescription("Not Support Second Resolution request.");
+            yield return new TestCaseData(AAPL, Resolution.Second, TickType.Quote, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8), true).SetDescription("Not Support Quote TickType request.");
+            yield return new TestCaseData(AAPL, Resolution.Second, TickType.OpenInterest, new DateTime(2024, 10, 1), new DateTime(2024, 11, 8), true).SetDescription("Not Support OpenInterest TickType request.");
+            yield return new TestCaseData(AAPL, Resolution.Minute, TickType.Trade, new DateTime(2024, 11, 8), new DateTime(2024, 10, 1), true).SetDescription("StartDate > EndDate");
         }
     }
 
     [TestCaseSource(nameof(ValidHistoryParameters))]
-    public void GetsHistory(Symbol symbol, Resolution resolution, DateTime startDateTime, DateTime endDateTime)
+    public void GetsHistory(Symbol symbol, Resolution resolution, TickType tickType, DateTime startDateTime, DateTime endDateTime, bool isNullResult)
     {
-        var historyRequest = CreateHistoryRequest(symbol, resolution, TickType.Trade, startDateTime, endDateTime);
+        var historyRequest = CreateHistoryRequest(symbol, resolution, tickType, startDateTime, endDateTime);
 
-        var history = _historyProvider.GetHistory(new[] { historyRequest }, TimeZones.NewYork);
+        var history = _historyProvider.GetHistory(new[] { historyRequest }, TimeZones.NewYork)?.ToList();
 
-        Assert.IsNotNull(history);
-        Assert.IsNotEmpty(history);
-
-        AssertTradeBars(history.SelectMany(t => t.Bars.Values), symbol, resolution.ToTimeSpan());
-
-        if (_historyProvider.DataPointCount > 0)
+        if (isNullResult)
         {
-            // Ordered by time
-            Assert.That(history, Is.Ordered.By("Time"));
+            Assert.IsNull(history);
+        }
+        else
+        {
+            Assert.IsNotNull(history);
+            Assert.IsNotEmpty(history);
 
-            // No repeating bars
-            var timesArray = history.Select(x => x.Time).ToArray();
-            Assert.AreEqual(timesArray.Length, timesArray.Distinct().Count());
+            AssertTradeBars(history.SelectMany(t => t.Bars.Values), symbol, resolution.ToTimeSpan());
+
+            if (_historyProvider.DataPointCount > 0)
+            {
+                // Ordered by time
+                Assert.That(history, Is.Ordered.By("Time"));
+
+                // No repeating bars
+                var timesArray = history.Select(x => x.Time).ToArray();
+                Assert.AreEqual(timesArray.Length, timesArray.Distinct().Count());
+            }
         }
     }
 

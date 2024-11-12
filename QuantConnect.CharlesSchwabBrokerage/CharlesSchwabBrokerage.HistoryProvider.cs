@@ -48,6 +48,10 @@ public partial class CharlesSchwabBrokerage
     /// </summary>
     private volatile bool _minuteResolutionWarningLogged;
 
+    /// <summary>
+    /// Indicates whether a warning about an invalid time range has already been logged.
+    /// </summary>
+    private bool _invalidTimeRangeWarningLogged;
 
     /// <summary>
     /// The earliest date available for <see cref="Resolution.Minute"/> requests, limited to a maximum of 45 days in the past.
@@ -61,7 +65,8 @@ public partial class CharlesSchwabBrokerage
     /// <returns>An enumerable of bars covering the span specified in the request, or null if unsupported types are encountered.</returns>
     public override IEnumerable<BaseData> GetHistory(HistoryRequest request)
     {
-        if (!CanSubscribe(request.Symbol))
+        // Charles Schwab does not retain price history for Option or IndexOption contracts.
+        if (!CanSubscribe(request.Symbol) || request.Symbol.SecurityType.IsOption())
         {
             if (!_unsupportedSecurityTypeWarningFired)
             {
@@ -76,6 +81,18 @@ public partial class CharlesSchwabBrokerage
                     Log.Trace(error.Append($"Unsupported SecurityType '{request.Symbol.SecurityType}' for symbol '{request.Symbol}'").ToString());
                 }
             }
+            return null;
+        }
+
+        if (request.StartTimeUtc >= request.EndTimeUtc)
+        {
+            if (!_invalidTimeRangeWarningLogged)
+            {
+                _invalidTimeRangeWarningLogged = true;
+                OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, "InvalidDateRange",
+                    "The history request start date must precede the end date, no history returned"));
+            }
+
             return null;
         }
 
