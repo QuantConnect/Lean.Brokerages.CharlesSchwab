@@ -60,6 +60,11 @@ public class CharlesSchwabApiClient
     private readonly CharlesSchwabTokenRefreshHandler _tokenRefreshHandler;
 
     /// <summary>
+    /// Provides JSON serializer settings for order requests, ensuring that DateTime values are handled in UTC format.
+    /// </summary>
+    private readonly JsonSerializerSettings _orderRequestJsonSerializerSettings = new() { DateTimeZoneHandling = DateTimeZoneHandling.Utc };
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabApiClient"/> class.
     /// </summary>
     /// <param name="baseUrl">The base URL of the Charles Schwab API.</param>
@@ -184,7 +189,21 @@ public class CharlesSchwabApiClient
     public async Task<string> PlaceOrder(OrderBaseRequest orderRequest)
     {
         var httpResponseMessage = await SendRequestAsync(HttpMethod.Post, _traderBaseUrl, $"/accounts/{_accountHashNumber.Value}/orders",
-            JsonConvert.SerializeObject(orderRequest, new JsonSerializerSettings() { DateTimeZoneHandling = DateTimeZoneHandling.Utc }));
+            JsonConvert.SerializeObject(orderRequest, _orderRequestJsonSerializerSettings));
+        return httpResponseMessage.Headers.Location.Segments.Last();
+    }
+
+    /// <summary>
+    /// Replace an existing order for an account. The existing order will be replaced by the new order.
+    /// Once replaced, the old order will be canceled and a new order will be created.
+    /// </summary>
+    /// <param name="orderId">The ID of the order being retrieved.</param>
+    /// <param name="orderRequest">An instance of <see cref="OrderBaseRequest"/> containing the order details, such as the symbol, quantity, price, and order type.</param>
+    /// <returns></returns>
+    public async Task<string> UpdateOrder(string orderId, OrderBaseRequest orderRequest)
+    {
+        var httpResponseMessage = await SendRequestAsync(HttpMethod.Put, _traderBaseUrl, $"/accounts/{_accountHashNumber.Value}/orders/{orderId}",
+            JsonConvert.SerializeObject(orderRequest, _orderRequestJsonSerializerSettings));
         return httpResponseMessage.Headers.Location.Segments.Last();
     }
 
@@ -346,17 +365,16 @@ public class CharlesSchwabApiClient
 
                 if (!responseMessage.IsSuccessStatusCode)
                 {
+                    var errorMessage = new StringBuilder();
                     foreach (var contentEncoding in responseMessage.Content.Headers.ContentEncoding)
                     {
-                        var errorMessage = new StringBuilder();
                         switch (contentEncoding)
                         {
                             case "json":
-                                var jsonContent = await responseMessage.Content.ReadAsStringAsync();
-                                var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
-                                errorMessage.Append($"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available." })}.");
+                                errorMessage.Append(await GetErrorMessageByJsonContent(responseMessage));
                                 break;
                             case "gzip":
+                                var jsonContent = default(string);
                                 using (var responseStream = await responseMessage.Content.ReadAsStreamAsync())
                                 {
                                     using (var decompressedStream = new GZipStream(responseStream, CompressionMode.Decompress))
@@ -374,9 +392,14 @@ public class CharlesSchwabApiClient
                                 }
                                 break;
                         }
-
-                        throw new ArgumentException(errorMessage.ToString());
                     }
+
+                    if (errorMessage.Length == 0 && responseMessage.Content.Headers.ContentType.MediaType.Contains("application/json"))
+                    {
+                        errorMessage.Append(await GetErrorMessageByJsonContent(responseMessage));
+                    }
+
+                    throw new ArgumentException(errorMessage.ToString());
                 }
 
                 return responseMessage;
@@ -386,5 +409,12 @@ public class CharlesSchwabApiClient
                 throw new Exception($"{nameof(CharlesSchwabApiClient)}.{nameof(SendRequestAsync)}: Unexpected error while sending request - {ex.Message}", ex);
             }
         }
+    }
+
+    private static async Task<string> GetErrorMessageByJsonContent(HttpResponseMessage responseMessage)
+    {
+        var jsonContent = await responseMessage.Content.ReadAsStringAsync();
+        var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
+        return $"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available." })}.";
     }
 }

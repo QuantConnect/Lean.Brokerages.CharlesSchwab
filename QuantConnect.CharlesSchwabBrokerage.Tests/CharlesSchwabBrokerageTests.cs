@@ -16,10 +16,11 @@
 using System;
 using System.Linq;
 using NUnit.Framework;
+using System.Threading;
 using QuantConnect.Orders;
+using QuantConnect.Logging;
 using QuantConnect.Interfaces;
 using QuantConnect.Securities;
-using QuantConnect.Configuration;
 using System.Collections.Generic;
 using QuantConnect.Tests.Brokerages;
 
@@ -51,15 +52,17 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
         {
             var symbol = Symbol.Create("F", SecurityType.Equity, Market.USA);
             yield return new OrderTestMetaData(OrderType.Market, symbol);
-            yield return new OrderTestMetaData(OrderType.Limit, symbol, 11m, 10m);
-            yield return new OrderTestMetaData(OrderType.StopMarket, symbol, 11m, 10m);
+            yield return new OrderTestMetaData(OrderType.Limit, symbol, 12m, 10m);
+            yield return new OrderTestMetaData(OrderType.StopMarket, symbol, 12m, 10m);
 
-            var option = Symbol.CreateOption(symbol, symbol.ID.Market, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 10m, new DateTime(2024, 11, 08));
+            var option = Symbol.CreateOption(symbol, symbol.ID.Market, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 11m, new DateTime(2024, 11, 15));
             yield return new OrderTestMetaData(OrderType.Market, option);
-            yield return new OrderTestMetaData(OrderType.Limit, option, 0.5m, 0.1m);
+            yield return new OrderTestMetaData(OrderType.Limit, option, 0.18m, 0.1m);
             yield return new OrderTestMetaData(OrderType.StopMarket, option, 0.5m, 0.1m);
         }
     }
+
+    private static IEnumerable<OrderTestMetaData> LimitOrderTestParameters => OrderTestParameters.Where(o => o.OrderType == OrderType.Limit);
 
     [TestCaseSource(nameof(OrderTestParameters))]
     public void CancelOrders(OrderTestMetaData orderTestMetaData)
@@ -108,6 +111,51 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
     {
         var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
         LongFromShort(parameters);
+    }
+
+    [TestCaseSource(nameof(LimitOrderTestParameters))]
+    public void LongFromZeroUpdateAndCancel(OrderTestMetaData orderTestMetaData)
+    {
+        Log.Trace("");
+        Log.Trace("LONG FROM ZERO THEN UPDATE AND CANCEL");
+        Log.Trace("");
+
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
+
+        var order = PlaceOrderWaitForStatus(parameters.CreateLongOrder(GetDefaultQuantity()), parameters.ExpectedStatus) as LimitOrder;
+
+        using var updatedOrderStatusEvent = new AutoResetEvent(false);
+        Brokerage.OrdersStatusChanged += (_, orderEvents) =>
+        {
+            var eventOrderStatus = orderEvents[0].Status;
+
+            order.Status = eventOrderStatus;
+
+            switch (eventOrderStatus)
+            {
+                case OrderStatus.UpdateSubmitted:
+                    updatedOrderStatusEvent.Set();
+                    break;
+            }
+        };
+
+        Brokerage.OrderIdChanged += (_, args) =>
+        {
+            Log.Trace($"ORDER ID CHANGED EVENT: Id = {args.OrderId}, BrokerageId = [{string.Join(',', args.BrokerId)}]");
+        };
+
+        var updateOrderRequest = new UpdateOrderRequest(DateTime.UtcNow, order.Id, new()
+        {
+            LimitPrice = order.LimitPrice + 0.01m,
+            Quantity = order.Quantity + 1m
+        });
+
+        order.ApplyUpdateOrderRequest(updateOrderRequest);
+
+        if (!Brokerage.UpdateOrder(order) || !updatedOrderStatusEvent.WaitOne(TimeSpan.FromSeconds(5)))
+        {
+            Assert.Fail("Order is not updated well.");
+        }
     }
 
     /// <summary>

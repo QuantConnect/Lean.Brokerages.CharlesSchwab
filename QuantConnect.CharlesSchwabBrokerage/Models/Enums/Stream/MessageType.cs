@@ -74,5 +74,15 @@ public enum MessageType
     /// <summary>
     /// Indicates that an order has been filled, completing the order fill process.
     /// </summary>
-    OrderFillCompleted = 9
+    OrderFillCompleted = 9,
+
+    /// <summary>
+    /// Indicates that a change request for an order has been created in the system.
+    /// </summary>
+    ChangeCreated = 10,
+
+    /// <summary>
+    /// Indicates that a change request for an order has been accepted by the system.
+    /// </summary>
+    ChangeAccepted = 11,
 }

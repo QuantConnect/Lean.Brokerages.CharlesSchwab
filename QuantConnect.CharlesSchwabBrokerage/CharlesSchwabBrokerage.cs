@@ -25,6 +25,7 @@ using QuantConnect.Interfaces;
 using QuantConnect.Orders.Fees;
 using System.Collections.Generic;
 using QuantConnect.Configuration;
+using System.Collections.Concurrent;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
 using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
@@ -74,6 +75,12 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// Signals to a <see cref="CancellationToken"/> that it should be canceled.
     /// </summary>
     private readonly CancellationTokenSource _cancellationTokenSource = new();
+
+    /// <summary>
+    /// A thread-safe collection used to temporarily store brokerage IDs to bypass log errors 
+    /// if an order is not found or has been successfully processed.
+    /// </summary>
+    private readonly ConcurrentDictionary<string, bool> _tempUpdateBrokerageId = new();
 
     /// <summary>
     /// Order provider
@@ -283,35 +290,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// <returns>True if the request for a new order has been placed, false otherwise</returns>
     public override bool PlaceOrder(Order order)
     {
-        var (duration, cancelTime) = order.Properties.TimeInForce.GetDurationByTimeInForce();
-        var sessionType = order.Properties.GetExtendedHoursSessionTypeOrDefault(SessionType.Normal);
-
-        var holdingQuantity = _securityProvider.GetHoldingsQuantity(order.Symbol);
-        var instruction = GetInstructionByDirection(order.Direction, order.SecurityType, holdingQuantity);
-
-        var symbol = _symbolMapper.GetBrokerageSymbol(order.Symbol);
-        var assetType = order.SecurityType.ConvertSecurityTypeToAssetType();
-
-        OrderBaseRequest orderRequest;
-        switch (order)
-        {
-            case MarketOrder:
-                orderRequest = new MarketOrderRequest(instruction, order.AbsoluteQuantity, symbol, assetType);
-                break;
-            case LimitOrder lo:
-                orderRequest = new LimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, lo.LimitPrice);
-                break;
-            case StopMarketOrder smo when order.Type == Orders.OrderType.StopMarket:
-                orderRequest = new StopMarketOrderRequest(duration, instruction, order.AbsoluteQuantity, symbol, assetType, smo.StopPrice);
-                break;
-            default:
-                throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(PlaceOrder)}: The order type '{order.GetType().Name}' is not supported.");
-        };
-
-        if (cancelTime.HasValue)
-        {
-            orderRequest.CancelTime = cancelTime.Value;
-        }
+        var orderRequest = CreateBrokerageOrderRequest(order);
 
         var submitted = default(bool);
         _messageHandler.WithLockedStream(() =>
@@ -349,7 +328,44 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// <returns>True if the request was made for the order to be updated, false otherwise</returns>
     public override bool UpdateOrder(Order order)
     {
-        throw new NotImplementedException();
+        var oldBrokerageId = order.BrokerId.Last();
+
+        var orderRequest = CreateBrokerageOrderRequest(order);
+
+        var updated = default(bool);
+        _messageHandler.WithLockedStream(() =>
+        {
+            var newBrokerageId = default(string);
+            try
+            {
+                newBrokerageId = _charlesSchwabApiClient.UpdateOrder(oldBrokerageId, orderRequest).SynchronouslyAwaitTaskResult();
+            }
+            catch (Exception ex)
+            {
+                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Charles Schwab: Place Order Event: {ex.Message}")
+                {
+                    Status = Orders.OrderStatus.Invalid
+                });
+                return;
+            }
+
+            // Add the old brokerage ID to a temporary collection to bypass log errors if the order is not found
+            _tempUpdateBrokerageId[oldBrokerageId] = true;
+
+            order.BrokerId.Remove(oldBrokerageId);
+            order.BrokerId.Add(newBrokerageId);
+
+            OnOrderIdChangedEvent(new() { BrokerId = order.BrokerId, OrderId = order.Id });
+
+            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "Charles Schwab: Place Order Event")
+            {
+                Status = Orders.OrderStatus.UpdateSubmitted
+            });
+            updated = true;
+        });
+
+        return updated;
+
     }
 
     /// <summary>
@@ -471,5 +487,46 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                     _ => throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetInstructionByDirection)}: The specified order direction '{orderDirection}' is not supported.")
                 };
         }
+    }
+
+    /// <summary>
+    /// Creates an order request object for the specified order.
+    /// </summary>
+    /// <param name="order">The Lean <see cref="Order"/> for which the request is being created.</param>
+    /// <returns>An <see cref="OrderBaseRequest"/> object representing the brokerage order request.</returns>
+    /// <exception cref="NotSupportedException">Thrown when the order type is not supported.</exception>
+    private OrderBaseRequest CreateBrokerageOrderRequest(Order order)
+    {
+        var (duration, cancelTime) = order.Properties.TimeInForce.GetDurationByTimeInForce();
+        var sessionType = order.Properties.GetExtendedHoursSessionTypeOrDefault(SessionType.Normal);
+
+        var holdingQuantity = _securityProvider.GetHoldingsQuantity(order.Symbol);
+        var instruction = GetInstructionByDirection(order.Direction, order.SecurityType, holdingQuantity);
+
+        var symbol = _symbolMapper.GetBrokerageSymbol(order.Symbol);
+        var assetType = order.SecurityType.ConvertSecurityTypeToAssetType();
+
+        OrderBaseRequest orderRequest;
+        switch (order)
+        {
+            case MarketOrder:
+                orderRequest = new MarketOrderRequest(instruction, order.AbsoluteQuantity, symbol, assetType);
+                break;
+            case LimitOrder lo:
+                orderRequest = new LimitOrderRequest(sessionType, duration, instruction, order.AbsoluteQuantity, symbol, assetType, lo.LimitPrice);
+                break;
+            case StopMarketOrder smo when order.Type == Orders.OrderType.StopMarket:
+                orderRequest = new StopMarketOrderRequest(duration, instruction, order.AbsoluteQuantity, symbol, assetType, smo.StopPrice);
+                break;
+            default:
+                throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(CreateBrokerageOrderRequest)}: The order type '{order.GetType().Name}' is not supported.");
+        };
+
+        if (cancelTime.HasValue)
+        {
+            orderRequest.CancelTime = cancelTime.Value;
+        }
+
+        return orderRequest;
     }
 }

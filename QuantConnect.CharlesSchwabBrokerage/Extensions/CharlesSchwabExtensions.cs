@@ -218,12 +218,12 @@ public static class CharlesSchwabExtensions
             case CharlesSchwabOrderStatus.Queued:
             case CharlesSchwabOrderStatus.Working:
             case CharlesSchwabOrderStatus.PendingReplace:
-            case CharlesSchwabOrderStatus.Replaced:
             case CharlesSchwabOrderStatus.New:
             case CharlesSchwabOrderStatus.AwaitingReleaseTime:
             case CharlesSchwabOrderStatus.PendingAcknowledgement:
             case CharlesSchwabOrderStatus.PendingRecall:
                 return true;
+            case CharlesSchwabOrderStatus.Replaced:
             case CharlesSchwabOrderStatus.AwaitingUrOut:
             case CharlesSchwabOrderStatus.Rejected:
             case CharlesSchwabOrderStatus.PendingCancel:

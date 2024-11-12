@@ -203,6 +203,11 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
 
                 if (!TryGetLeanOrderByBrokerageId(orderUROut.SchwabOrderID, out var leanOrder))
                 {
+                    // If order was removed successfully, we should skip log error message 
+                    if (!_tempUpdateBrokerageId.TryRemove(orderUROut.SchwabOrderID, out _))
+                    {
+                        Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {orderUROut.SchwabOrderID}. Order detail: {accountContent.MessageData}");
+                    }
                     break;
                 }
 
@@ -228,6 +233,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
 
                 if (!TryGetLeanOrderByBrokerageId(orderFill.SchwabOrderID, out leanOrder))
                 {
+                    Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {orderFill.SchwabOrderID}. Order detail: {accountContent.MessageData}");
                     break;
                 }
 
@@ -255,7 +261,6 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
 
         if (leanOrder == null)
         {
-            Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {brokerageOrderId}");
             return false;
         }
 
