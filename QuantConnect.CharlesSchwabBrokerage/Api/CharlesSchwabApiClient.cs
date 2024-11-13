@@ -288,8 +288,8 @@ public class CharlesSchwabApiClient
         }
 
         breakPoint.Append($"&frequencyType={frequencyType}&frequency={frequency}");
-        breakPoint.Append("&startDate=" + Time.DateTimeToUnixTimeStampMilliseconds(startDateUtc));
-        breakPoint.Append("&endDate=" + Time.DateTimeToUnixTimeStampMilliseconds(endDateUtc));
+        breakPoint.Append("&startDate=" + Time.DateTimeToUnixTimeStampMilliseconds(startDateUtc.Truncate(TimeSpan.FromMilliseconds(1))));
+        breakPoint.Append("&endDate=" + Time.DateTimeToUnixTimeStampMilliseconds(endDateUtc.Truncate(TimeSpan.FromMilliseconds(1))));
         breakPoint.Append("&needExtendedHoursData=" + needExtendedHoursData);
 
         return await RequestMarketDataAsync<CandleResponse>(HttpMethod.Get, breakPoint.ToString());

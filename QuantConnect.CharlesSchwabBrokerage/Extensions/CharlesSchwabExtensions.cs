@@ -271,4 +271,18 @@ public static class CharlesSchwabExtensions
 
         return convertible.ToStringInvariant().ToUpperInvariant();
     }
+
+    /// <summary>
+    /// Truncates the given <see cref="DateTime"/> to the specified <see cref="TimeSpan"/> precision.
+    /// </summary>
+    /// <param name="dateTime">The <see cref="DateTime"/> value to be truncated.</param>
+    /// <param name="timeSpan">The <see cref="TimeSpan"/> indicating the precision to truncate to. 
+    /// For example, use <c>TimeSpan.FromSeconds(1)</c> to truncate to the nearest second.</param>
+    /// <returns>A new <see cref="DateTime"/> truncated to the specified precision. If <paramref name="timeSpan"/> is <see cref="TimeSpan.Zero"/>, the original <see cref="DateTime"/> is returned.</returns>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="timeSpan"/> has a value that exceeds the <see cref="DateTime.Ticks"/> range.</exception>
+    public static DateTime Truncate(this DateTime dateTime, TimeSpan timeSpan)
+    {
+        if (timeSpan == TimeSpan.Zero) return dateTime;
+        return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
+    }
 }
