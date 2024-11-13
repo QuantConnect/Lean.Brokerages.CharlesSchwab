@@ -60,6 +60,7 @@ public static class CharlesSchwabExtensions
         SecurityType.Equity => AssetType.Equity,
         SecurityType.Option => AssetType.Option,
         SecurityType.Index => AssetType.Index,
+        SecurityType.IndexOption => AssetType.Option,
         _ => throw new NotSupportedException($"{nameof(CharlesSchwabExtensions)}.{nameof(ConvertSecurityTypeToAssetType)}: " +
             $"The SecurityType '{securityType}' is not supported.")
     };

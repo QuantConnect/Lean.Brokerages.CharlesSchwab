@@ -211,6 +211,12 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                     break;
                 }
 
+                // Occasionally, the server may send duplicate events for the same order.
+                if (leanOrder.Status == OrderStatus.Canceled)
+                {
+                    break;
+                }
+
                 var leanOrderStatus = default(OrderStatus);
                 var message = default(string);
                 switch (orderUROut.BaseEvent.OrderUROutCompletedEvent.OutCancelType)

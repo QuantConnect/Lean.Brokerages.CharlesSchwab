@@ -399,6 +399,7 @@ public class CharlesSchwabApiClient
                         errorMessage.Append(await GetErrorMessageByJsonContent(responseMessage));
                     }
 
+                    errorMessage.AppendLine($"HttpMethod: {httpMethod}, RequestUri: {baseUrl + endpoint}" + (string.IsNullOrEmpty(jsonBody) ? "" : $", RequestBody: {jsonBody}"));
                     throw new ArgumentException(errorMessage.ToString());
                 }
 
@@ -415,6 +416,6 @@ public class CharlesSchwabApiClient
     {
         var jsonContent = await responseMessage.Content.ReadAsStringAsync();
         var errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(jsonContent);
-        return $"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available." })}.";
+        return $"{errorResponse.Error} - {string.Join('\n', errorResponse.ErrorDescription ?? new List<string> { "No error description available" })}.";
     }
 }

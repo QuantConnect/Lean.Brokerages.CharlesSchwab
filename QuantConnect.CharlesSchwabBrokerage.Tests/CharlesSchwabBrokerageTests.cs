@@ -1,4 +1,4 @@
-/*
+﻿/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -59,6 +59,17 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
             yield return new OrderTestMetaData(OrderType.Market, option);
             yield return new OrderTestMetaData(OrderType.Limit, option, 0.18m, 0.1m);
             yield return new OrderTestMetaData(OrderType.StopMarket, option, 0.5m, 0.1m);
+
+            var index = Symbol.Create("VIX", SecurityType.Index, Market.USA);
+            // The brokerage does not support placing new orders for the index security type.
+            // yield return new OrderTestMetaData(OrderType.Limit, index, 15m, 14m);
+
+            var indexOption = Symbol.CreateOption(index, Market.USA, SecurityType.IndexOption.DefaultOptionStyle(), OptionRight.Call, 17m, new DateTime(2024, 11, 20));
+            yield return new OrderTestMetaData(OrderType.Limit, indexOption, 0.30m, 0.25m);
+
+            var VIXW = Symbol.Create("VIXW", SecurityType.Index, Market.USA);
+            var VIXW_IndexOption = Symbol.CreateOption(VIXW, Market.USA, SecurityType.IndexOption.DefaultOptionStyle(), OptionRight.Call, 20m, new DateTime(2024, 11, 27));
+            yield return new OrderTestMetaData(OrderType.Limit, VIXW_IndexOption, 0.30m, 0.25m);
         }
     }
 

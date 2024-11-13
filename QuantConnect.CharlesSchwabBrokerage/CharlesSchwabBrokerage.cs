@@ -290,6 +290,12 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// <returns>True if the request for a new order has been placed, false otherwise</returns>
     public override bool PlaceOrder(Order order)
     {
+        if (!CanSubmitOrder(order.Symbol))
+        {
+            OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Symbol is not supported {order.Symbol}"));
+            return false;
+        }
+
         var orderRequest = CreateBrokerageOrderRequest(order);
 
         var submitted = default(bool);
@@ -447,6 +453,23 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         }
 
         return _symbolMapper.SupportedSecurityType.Contains(symbol.SecurityType);
+    }
+
+    /// <summary>
+    /// Determines whether an order can be submitted for a given symbol.
+    /// </summary>
+    /// <param name="symbol">The symbol to check for order submission eligibility.</param>
+    /// <returns>
+    ///   <c>true</c> if the order can be submitted for the symbol; otherwise, <c>false</c>.
+    /// </returns>
+    /// <remarks>
+    /// This method checks if the provided symbol meets the criteria for order submission.
+    /// Symbols with a security type of <see cref="SecurityType.Index"/> are not eligible.
+    /// Additionally, the method ensures that the symbol is eligible for subscription by calling <see cref="CanSubscribe(Symbol)"/>.
+    /// </remarks>
+    private bool CanSubmitOrder(Symbol symbol)
+    {
+        return symbol.SecurityType != SecurityType.Index && CanSubscribe(symbol);
     }
 
     /// <summary>
