@@ -173,6 +173,8 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             _aggregator = Composer.Instance.GetExportedValueByTypeName<IDataAggregator>(aggregatorName);
         }
 
+        ValidateSubscription();
+
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
