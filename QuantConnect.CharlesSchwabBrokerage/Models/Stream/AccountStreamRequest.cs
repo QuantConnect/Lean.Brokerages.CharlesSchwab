@@ -31,13 +31,13 @@ public class AccountStreamRequest : StreamRequest
     /// Specifies the fields included in the account activity response. Each field represents distinct information:
     /// <list type="bullet">
     /// <item>
-    /// <term>"1"</term> - <description>Account: The account number where the activity occurred.</description>
+    /// <term>"1"</term><description>Account: The account number where the activity occurred.</description>
     /// </item>
     /// <item>
-    /// <term>"2"</term> - <description>Message Type: A string that specifies the format of the Message Data field.</description>
+    /// <term>"2"</term><description>Message Type: A string that specifies the format of the Message Data field.</description>
     /// </item>
     /// <item>
-    /// <term>"3"</term> - <description>Message Data: The main content of the message, which may be JSON-formatted data, plain text, or NULL in case of an error.</description>
+    /// <term>"3"</term><description>Message Data: The main content of the message, which may be JSON-formatted data, plain text, or NULL in case of an error.</description>
     /// </item>
     /// </list>
     /// </summary>

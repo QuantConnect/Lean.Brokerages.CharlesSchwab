@@ -69,16 +69,22 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
     private event EventHandler<LevelOneContent> MarketDataUpdate;
 
     /// <summary>
+    /// Event triggered to initiate the re-subscription process.
+    /// </summary>
+    private event Action ReSubscriptionProcess;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabWebSocketClientWrapper"/> class.
     /// </summary>
     /// <param name="charlesSchwabApiClient">The API client used to fetch user preferences and access tokens.</param>
     /// <param name="orderUpdateHandler">An event handler to handle account content updates (order updates).</param>
     /// <param name="marketDataUpdateHandler">An event handler to handle market data updates (level one content).</param>
+    /// <param name="reSubscriptionHandler">An event handler for re-subscribing to data streams when needed.</param>
     /// <remarks>
     /// This constructor initializes the WebSocket connection, sets up event handlers, and logs in asynchronously.
     /// </remarks>
     public CharlesSchwabWebSocketClientWrapper(CharlesSchwabApiClient charlesSchwabApiClient, EventHandler<AccountContent> orderUpdateHandler,
-        EventHandler<LevelOneContent> marketDataUpdateHandler)
+        EventHandler<LevelOneContent> marketDataUpdateHandler, Action reSubscriptionHandler)
     {
         _charlesSchwabApiClient = charlesSchwabApiClient;
         _streamInfo = charlesSchwabApiClient.GetUserPreference().SynchronouslyAwaitTaskResult().StreamerInfo.First();
@@ -88,6 +94,7 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
         Message += HandleWebSocketMessage;
         OrderUpdate += orderUpdateHandler;
         MarketDataUpdate += marketDataUpdateHandler;
+        ReSubscriptionProcess += reSubscriptionHandler;
     }
 
     /// <summary>
@@ -258,6 +265,9 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
                 case Service.Admin when response.Content.Code == 0:
                     SendMessage(new AccountStreamRequest(_idRequestCount, _streamInfo.SchwabClientCustomerId, _streamInfo.SchwabClientCorrelId));
                     break;
+                case Service.Account when response.Command == Command.Subscription && response.Content.Code == 0:
+                    ReSubscriptionProcess?.Invoke();
+                    continue;
                 case Service.Account:
                     continue;
                 case Service.LevelOneEquities when response.Content.Code == 0:

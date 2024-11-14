@@ -167,7 +167,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
-        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate);
+        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate, OnReSubscriptionProcess);
         _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
 
         SubscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager()

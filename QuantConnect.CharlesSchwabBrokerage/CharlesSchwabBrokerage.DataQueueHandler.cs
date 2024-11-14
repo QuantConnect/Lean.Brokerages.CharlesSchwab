@@ -177,6 +177,42 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     }
 
     /// <summary>
+    /// Initiates the re-subscription process for available symbols grouped by security type.
+    /// If there are no subscriptions available, the process is exited early.
+    /// </summary>
+    private void OnReSubscriptionProcess()
+    {
+        Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Starting re-subscription process...");
+        if (_orderBooks.IsEmpty)
+        {
+            Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: No active subscriptions found. Skipping the re-subscription process.");
+            return;
+        }
+
+        var symbolsBySecurityType = _orderBooks.GroupBy(s => s.Value.Symbol.SecurityType).ToDictionary(securityType => securityType.Key, x => x.Select(x => x.Key).ToArray());
+
+
+        foreach (var (securityType, symbols) in symbolsBySecurityType)
+        {
+            Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Initiating subscription for {symbols.Length} symbol(s) under {securityType}...");
+            switch (securityType)
+            {
+                case SecurityType.Equity:
+                case SecurityType.Index:
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneEquities(symbols);
+                    break;
+                case SecurityType.Option:
+                case SecurityType.IndexOption:
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneOptions(symbols);
+                    break;
+                default:
+                    throw new NotImplementedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: The security type '{securityType}' is not supported subscription process.");
+            }
+        }
+        Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Re-subscription process completed successfully.");
+    }
+
+    /// <summary>
     /// Processes an update to an order by delegating it to the message handler.
     /// </summary>
     /// <param name="_">The sender of the event. This parameter is unused.</param>
