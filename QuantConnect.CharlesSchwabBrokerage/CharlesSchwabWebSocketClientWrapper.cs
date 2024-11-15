@@ -154,13 +154,16 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
     /// <param name="symbols">An array of symbols representing the options to subscribe to for LevelOne market data.</param>
     public void SubscribeOnLevelOneOptions(string[] symbols)
     {
-        var levelOneOption = new LevelOneOptionsStreamRequest(
-            _idRequestCount,
-            Command.Add,
-            _streamInfo.SchwabClientCustomerId,
-            _streamInfo.SchwabClientCorrelId,
-            symbols);
-        SendMessage(levelOneOption);
+        foreach (var chunk in symbols.Chunk(500))
+        {
+            var levelOneOption = new LevelOneOptionsStreamRequest(
+                _idRequestCount,
+                Command.Add,
+                _streamInfo.SchwabClientCustomerId,
+                _streamInfo.SchwabClientCorrelId,
+                chunk);
+            SendMessage(levelOneOption);
+        }
     }
 
     /// <summary>
