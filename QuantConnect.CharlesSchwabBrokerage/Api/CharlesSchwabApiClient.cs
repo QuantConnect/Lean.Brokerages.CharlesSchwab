@@ -140,9 +140,10 @@ public class CharlesSchwabApiClient
     /// </returns>
     public async Task<IReadOnlyCollection<OrderResponse>> GetAllOrders()
     {
+        var dateTimeUtcNow = DateTime.UtcNow;
         // Docs remark: Date must be within 60 days from today's date.
-        var fromEnteredTime = DateTime.UtcNow.AddDays(-60).ToIso8601Invariant();
-        var toEnteredTime = DateTime.UtcNow.ToIso8601Invariant();
+        var fromEnteredTime = dateTimeUtcNow.AddDays(-60).ToIso8601Invariant();
+        var toEnteredTime = dateTimeUtcNow.ToIso8601Invariant();
 
         return await RequestTraderAsync<IReadOnlyCollection<OrderResponse>>(
             HttpMethod.Get,
