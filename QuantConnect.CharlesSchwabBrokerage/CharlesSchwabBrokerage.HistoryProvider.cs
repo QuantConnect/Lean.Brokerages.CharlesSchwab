@@ -147,9 +147,10 @@ public partial class CharlesSchwabBrokerage
 
         var histories = (resolution switch
         {
-            Resolution.Minute => _charlesSchwabApiClient.GetMinutePriceHistory(brokerageSymbol, startDateTime, endDateTime, includeExtendedMarketHours),
-            Resolution.Daily => _charlesSchwabApiClient.GetDailyPriceHistory(brokerageSymbol, startDateTime, endDateTime, includeExtendedMarketHours),
-            Resolution.Hour => _charlesSchwabApiClient.GetThirtyMinutesPriceHistory(brokerageSymbol, startDateTime, endDateTime, includeExtendedMarketHours),
+            Resolution.Minute => _charlesSchwabApiClient.GetPriceHistory(brokerageSymbol, startDateTime, endDateTime, "minute", 1, includeExtendedMarketHours),
+            Resolution.Daily => _charlesSchwabApiClient.GetPriceHistory(brokerageSymbol, startDateTime, endDateTime, "daily", 1, includeExtendedMarketHours, "month"),
+            // API provides a maximum resolution of 30-minute bars; consolidate them for 1-hour intervals (bellow).
+            Resolution.Hour => _charlesSchwabApiClient.GetPriceHistory(brokerageSymbol, startDateTime, endDateTime, "minute", 30, includeExtendedMarketHours),
             _ => throw new NotSupportedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetTradeBarByResolution)}: Unsupported time Resolution type '{resolution}'")
         }).SynchronouslyAwaitTaskResult().Candles;
 

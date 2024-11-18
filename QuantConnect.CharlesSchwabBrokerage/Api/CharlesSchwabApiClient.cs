@@ -102,43 +102,34 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
-    /// Retrieves historical price data aggregated by minute for the specified symbol.
+    /// Retrieves historical price data including Open, High, Low, Close, and Volume for the specified symbol.
+    /// The frequency and periodType parameters determine the granularity of the data.
     /// </summary>
     /// <param name="symbol">The symbol for the equity being queried (e.g., stock symbol).</param>
-    /// <param name="startDateUtc">The start date in UTC, represented in milliseconds since the UNIX epoch.</param>
-    /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.</param>
+    /// <param name="startDateUtc">The start date in UTC, represented in milliseconds since the UNIX epoch (e.g., 1451624400000).</param>
+    /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.
+    /// If not provided, defaults to the previous business day.</param>
+    /// <param name="frequencyType">The type of frequency to aggregate the data (e.g., minute, daily, weekly, monthly).</param>
+    /// <param name="frequency">The interval or duration of the frequency (e.g., 1 minute, 30 minutes).</param>
     /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
-    /// <returns>The task result contains the historical price data aggregated by minute.</returns>
-    public async Task<CandleResponse> GetMinutePriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
+    /// <param name="periodType">Optional: The period for which the data is requested (e.g., day, month, year, ytd). Defaults to null.</param>
+    /// <returns>The task result contains the historical price data for the specified symbol.</returns>
+    public async Task<CandleResponse> GetPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, string frequencyType,
+        int frequency, bool needExtendedHoursData, string periodType = null)
     {
-        return await GetPriceHistory(symbol, startDateUtc, endDateUtc, "minute", 1, needExtendedHoursData);
-    }
+        var breakPoint = new StringBuilder($"/pricehistory?symbol={symbol}");
 
-    /// <summary>
-    /// Retrieves historical price data aggregated by 30-minute intervals for the specified symbol.
-    /// </summary>
-    /// <param name="symbol">The symbol for the equity being queried (e.g., stock symbol).</param>
-    /// <param name="startDateUtc">The start date in UTC, represented in milliseconds since the UNIX epoch.</param>
-    /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.</param>
-    /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
-    /// <returns>The task result contains the historical price data aggregated by 30-minute intervals.</returns>
-    public async Task<CandleResponse> GetThirtyMinutesPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
-    {
-        return await GetPriceHistory(symbol, startDateUtc, endDateUtc, "minute", 30, needExtendedHoursData);
-    }
+        if (!string.IsNullOrEmpty(periodType))
+        {
+            breakPoint.Append($"&periodType={periodType}");
+        }
 
-    /// <summary>
-    /// Retrieves historical price data aggregated by daily intervals for the specified symbol.
-    /// The data is aggregated monthly.
-    /// </summary>
-    /// <param name="symbol">The symbol for the equity being queried (e.g., stock symbol).</param>
-    /// <param name="startDateUtc">The start date in UTC, represented in milliseconds since the UNIX epoch.</param>
-    /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.</param>
-    /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
-    /// <returns>The task result contains the historical price data aggregated by daily intervals.</returns>
-    public async Task<CandleResponse> GetDailyPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, bool needExtendedHoursData)
-    {
-        return await GetPriceHistory(symbol, startDateUtc, endDateUtc, "daily", 1, needExtendedHoursData, "month");
+        breakPoint.Append($"&frequencyType={frequencyType}&frequency={frequency}");
+        breakPoint.Append("&startDate=" + Time.DateTimeToUnixTimeStampMilliseconds(startDateUtc.Truncate(TimeSpan.FromMilliseconds(1))));
+        breakPoint.Append("&endDate=" + Time.DateTimeToUnixTimeStampMilliseconds(endDateUtc.Truncate(TimeSpan.FromMilliseconds(1))));
+        breakPoint.Append("&needExtendedHoursData=" + needExtendedHoursData);
+
+        return await RequestMarketDataAsync<CandleResponse>(HttpMethod.Get, breakPoint.ToString());
     }
 
     /// <summary>
@@ -262,37 +253,6 @@ public class CharlesSchwabApiClient
     private async Task<IReadOnlyCollection<AccountNumberResponse>> GetAccountNumbers()
     {
         return await RequestTraderAsync<IReadOnlyCollection<AccountNumberResponse>>(HttpMethod.Get, "/accounts/accountNumbers");
-    }
-
-    /// <summary>
-    /// Retrieves historical price data including Open, High, Low, Close, and Volume for the specified symbol.
-    /// The frequency and periodType parameters determine the granularity of the data.
-    /// </summary>
-    /// <param name="symbol">The symbol for the equity being queried (e.g., stock symbol).</param>
-    /// <param name="startDateUtc">The start date in UTC, represented in milliseconds since the UNIX epoch (e.g., 1451624400000).</param>
-    /// <param name="endDateUtc">The end date in UTC, represented in milliseconds since the UNIX epoch.
-    /// If not provided, defaults to the previous business day.</param>
-    /// <param name="frequencyType">The type of frequency to aggregate the data (e.g., minute, daily, weekly, monthly).</param>
-    /// <param name="frequency">The interval or duration of the frequency (e.g., 1 minute, 30 minutes).</param>
-    /// <param name="needExtendedHoursData">Indicates whether extended hours data is required.</param>
-    /// <param name="periodType">Optional: The period for which the data is requested (e.g., day, month, year, ytd). Defaults to null.</param>
-    /// <returns>The task result contains the historical price data for the specified symbol.</returns>
-    private async Task<CandleResponse> GetPriceHistory(string symbol, DateTime startDateUtc, DateTime endDateUtc, string frequencyType,
-        int frequency, bool needExtendedHoursData, string periodType = null)
-    {
-        var breakPoint = new StringBuilder($"/pricehistory?symbol={symbol}");
-
-        if (!string.IsNullOrEmpty(periodType))
-        {
-            breakPoint.Append($"&periodType={periodType}");
-        }
-
-        breakPoint.Append($"&frequencyType={frequencyType}&frequency={frequency}");
-        breakPoint.Append("&startDate=" + Time.DateTimeToUnixTimeStampMilliseconds(startDateUtc.Truncate(TimeSpan.FromMilliseconds(1))));
-        breakPoint.Append("&endDate=" + Time.DateTimeToUnixTimeStampMilliseconds(endDateUtc.Truncate(TimeSpan.FromMilliseconds(1))));
-        breakPoint.Append("&needExtendedHoursData=" + needExtendedHoursData);
-
-        return await RequestMarketDataAsync<CandleResponse>(HttpMethod.Get, breakPoint.ToString());
     }
 
     /// <summary>
