@@ -42,7 +42,7 @@ public class CharlesSchwabApiClient
     /// <summary>
     /// The account hash number associated with the Charles Schwab account.
     /// </summary>
-    private readonly Lazy<string> _accountHashNumber;
+    private readonly string _accountHashNumber;
 
     /// <summary>
     /// The base URL for the Charles Schwab Trader API.
@@ -80,15 +80,10 @@ public class CharlesSchwabApiClient
     {
         _traderBaseUrl = baseUrl + "/trader/v1";
         _marketDataBaseUrl = baseUrl + "/marketdata/v1";
-        _accountHashNumber = new Lazy<string>(() =>
-        {
-            // Charles Schwab's web UI returns account numbers with hyphens.
-            accountNumber = accountNumber.Replace("-", "");
-            return GetAccountNumbers().SynchronouslyAwaitTaskResult().Single(an => an.AccountNumber == accountNumber).HashValue;
-        });
         var httpClient = httpClientHandler ?? new HttpClientHandler();
         _tokenRefreshHandler = new CharlesSchwabTokenRefreshHandler(httpClient, baseUrl, appKey, secret, redirectUri, authorizationCodeFromUrl, refreshToken);
         _httpClient = new(_tokenRefreshHandler);
+        _accountHashNumber = GetAccountNumber(accountNumber).SynchronouslyAwaitTaskResult().HashValue;
     }
 
     /// <summary>
@@ -147,7 +142,7 @@ public class CharlesSchwabApiClient
 
         return await RequestTraderAsync<IReadOnlyCollection<OrderResponse>>(
             HttpMethod.Get,
-            $"/accounts/{_accountHashNumber.Value}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}");
+            $"/accounts/{_accountHashNumber}/orders?fromEnteredTime={fromEnteredTime}&toEnteredTime={toEnteredTime}");
     }
 
     /// <summary>
@@ -160,7 +155,7 @@ public class CharlesSchwabApiClient
     /// </returns>
     public async Task<bool> CancelOrderById(string orderId)
     {
-        var response = await RequestTraderAsync<string>(HttpMethod.Delete, $"/accounts/{_accountHashNumber.Value}/orders/{orderId}");
+        var response = await RequestTraderAsync<string>(HttpMethod.Delete, $"/accounts/{_accountHashNumber}/orders/{orderId}");
         return string.IsNullOrEmpty(response);
     }
 
@@ -180,7 +175,7 @@ public class CharlesSchwabApiClient
     /// </remarks>
     public async Task<string> PlaceOrder(OrderBaseRequest orderRequest)
     {
-        var httpResponseMessage = await SendRequestAsync(HttpMethod.Post, _traderBaseUrl, $"/accounts/{_accountHashNumber.Value}/orders",
+        var httpResponseMessage = await SendRequestAsync(HttpMethod.Post, _traderBaseUrl, $"/accounts/{_accountHashNumber}/orders",
             JsonConvert.SerializeObject(orderRequest, _orderRequestJsonSerializerSettings));
         return httpResponseMessage.Headers.Location.Segments.Last();
     }
@@ -194,7 +189,7 @@ public class CharlesSchwabApiClient
     /// <returns></returns>
     public async Task<string> UpdateOrder(string orderId, OrderBaseRequest orderRequest)
     {
-        var httpResponseMessage = await SendRequestAsync(HttpMethod.Put, _traderBaseUrl, $"/accounts/{_accountHashNumber.Value}/orders/{orderId}",
+        var httpResponseMessage = await SendRequestAsync(HttpMethod.Put, _traderBaseUrl, $"/accounts/{_accountHashNumber}/orders/{orderId}",
             JsonConvert.SerializeObject(orderRequest, _orderRequestJsonSerializerSettings));
         return httpResponseMessage.Headers.Location.Segments.Last();
     }
@@ -232,7 +227,7 @@ public class CharlesSchwabApiClient
     /// <returns>A <see cref="SecuritiesAccount"/> object that represents the account balance and positions.</returns>
     public async Task<SecuritiesAccount> GetAccountBalanceAndPosition()
     {
-        return (await GetAccountByNumber(_accountHashNumber.Value)).SecuritiesAccount;
+        return (await GetAccountByNumber(_accountHashNumber)).SecuritiesAccount;
     }
 
     /// <summary>
@@ -246,14 +241,37 @@ public class CharlesSchwabApiClient
     }
 
     /// <summary>
-    /// Retrieves a read-only collection of account numbers and their hash values from the API.
+    /// Asynchronously retrieves an account number and its hash value from the API.
     /// </summary>
+    /// <param name="accountNumber">
+    /// The account number to retrieve, with or without hyphens.
+    /// Hyphens will be removed automatically.
+    /// </param>
     /// <returns>
-    /// A read-only collection of <see cref="AccountNumberResponse"/> objects, each containing an account number and its hash value.
+    /// An <see cref="AccountNumberResponse"/> object containing the account number and its corresponding hash value.
     /// </returns>
-    private async Task<IReadOnlyCollection<AccountNumberResponse>> GetAccountNumbers()
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the specified account number is not found in the API response.
+    /// </exception>
+    /// <remarks>
+    /// The Charles Schwab web UI formats account numbers with hyphens. 
+    /// This method ensures they are removed before performing the lookup.
+    /// </remarks>
+    private async Task<AccountNumberResponse> GetAccountNumber(string accountNumber)
     {
-        return await RequestTraderAsync<IReadOnlyCollection<AccountNumberResponse>>(HttpMethod.Get, "/accounts/accountNumbers");
+        // Charles Schwab's web UI returns account numbers with hyphens.
+        accountNumber = accountNumber.Replace("-", "");
+
+        var accountNumbers = await RequestTraderAsync<IReadOnlyCollection<AccountNumberResponse>>(HttpMethod.Get, "/accounts/accountNumbers");
+
+        var result = accountNumbers.SingleOrDefault(an => an.AccountNumber == accountNumber, null);
+
+        if (result == null)
+        {
+            throw new ArgumentException($"The specified account number '{accountNumber}' could not be found. Ensure the account number is correct and try again. Available account numbers: {string.Join(", ", accountNumbers.Select(x => x.AccountNumber))}");
+        }
+
+        return result;
     }
 
     /// <summary>
