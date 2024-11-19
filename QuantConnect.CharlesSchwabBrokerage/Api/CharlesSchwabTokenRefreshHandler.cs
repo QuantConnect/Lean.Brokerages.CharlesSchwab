@@ -29,11 +29,6 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Api;
 public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
 {
     /// <summary>
-    /// Represents the number of retry attempts made for an authenticated request.
-    /// </summary>
-    private int _retryCount = 0;
-
-    /// <summary>
     /// Represents the maximum number of retry attempts for an authenticated request.
     /// </summary>
     private int _maxRetryCount = 3;
@@ -116,7 +111,7 @@ public class CharlesSchwabTokenRefreshHandler : DelegatingHandler
     {
         var response = default(HttpResponseMessage);
         var accessToken = await GetAccessToken(cancellationToken);
-        for (_retryCount = 0; _retryCount < _maxRetryCount; _retryCount++)
+        for (var retryCount = 0; retryCount < _maxRetryCount; retryCount++)
         {
             request.Headers.Authorization = new AuthenticationHeaderValue(_accessTokenMetaData.TokenType, accessToken);
 

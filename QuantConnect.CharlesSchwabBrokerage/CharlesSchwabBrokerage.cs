@@ -222,7 +222,13 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             }
 
             var leg = brokerageOrder.OrderLegCollection[0];
-            var leanSymbol = _symbolMapper.GetLeanSymbol(leg.Instrument.Symbol, leg.Instrument.AssetType.ConvertAssetTypeToSecurityType(), Market.USA);
+
+            if (!TryGetLeanSymbol(leg.Instrument.Symbol, leg.Instrument.AssetType, out var leanSymbol, out var exceptionMessage))
+            {
+                OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, 1, $"{exceptionMessage}. Order details: {brokerageOrder}."));
+                continue;
+            }
+
             var orderQuantity = leg.Instruction.IsShort() ? decimal.Negate(leg.Quantity) : leg.Quantity;
             switch (brokerageOrder.OrderType)
             {
@@ -235,16 +241,9 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                 case CharlesSchwabOrderType.Stop:
                     leanOrder = new StopMarketOrder(leanSymbol, orderQuantity, brokerageOrder.StopPrice, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
                     break;
-                case CharlesSchwabOrderType.StopLimit:
-                    leanOrder = new StopLimitOrder(leanSymbol, orderQuantity, brokerageOrder.StopPrice, brokerageOrder.Price, brokerageOrder.EnteredTime, brokerageOrder.Tag);
-                    break;
-                case CharlesSchwabOrderType.TrailingStop:
-                    var trailingAsPercent = brokerageOrder.StopPriceLinkType == StopPriceLinkType.Percent ? true : false;
-                    leanOrder = new TrailingStopOrder(leanSymbol, orderQuantity, brokerageOrder.StopPriceOffset, trailingAsPercent, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
-                    break;
-                case CharlesSchwabOrderType.MarketOnClose:
-                    leanOrder = new MarketOnCloseOrder(leanSymbol, orderQuantity, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
-                    break;
+                default:
+                    Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetOpenOrders)}: Skipping unsupported order type '{brokerageOrder.OrderType}'. Order details: {brokerageOrder}.");
+                    continue;
             }
             leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? Orders.OrderStatus.PartiallyFilled : Orders.OrderStatus.Submitted;
             leanOrder.BrokerId.Add(brokerageOrder.OrderId.ToStringInvariant());
@@ -270,15 +269,19 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
 
         foreach (var position in positions)
         {
-            var leanSymbol = _symbolMapper.GetLeanSymbol(position.Instrument.Symbol, position.Instrument.AssetType.ConvertAssetTypeToSecurityType(), Market.USA);
+            if (!TryGetLeanSymbol(position.Instrument.Symbol, position.Instrument.AssetType, out var leanSymbol, out var exceptionMessage))
+            {
+                OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, 1, $"{exceptionMessage}. Position details: {position}."));
+                continue;
+            }
 
             holdings.Add(new Holding()
             {
                 AveragePrice = position.AveragePrice,
                 CurrencySymbol = Currencies.USD,
-                MarketValue = position.MarketValue,
+                MarketPrice = position.MarketValue,
+                MarketValue = (position.ShortQuantity != 0 ? position.ShortQuantity : position.LongQuantity) * position.MarketValue,
                 ConversionRate = 1.0m,
-                MarketPrice = position.ShortQuantity != 0 ? position.AverageShortPrice : position.AverageLongPrice,
                 Quantity = position.ShortQuantity != 0 ? decimal.Negate(position.ShortQuantity) : position.LongQuantity,
                 Symbol = leanSymbol,
                 UnrealizedPnL = position.CurrentDayProfitLoss,
@@ -580,6 +583,32 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         }
 
         return orderRequest;
+    }
+
+    /// <summary>
+    /// Attempts to map a given symbol and asset type to a Lean <see cref="Symbol"/>.
+    /// </summary>
+    /// <param name="symbol">The string representation of the financial instrument's symbol.</param>
+    /// <param name="assetType">The type of the asset (e.g., Stock, Option).</param>
+    /// <param name="leanSymbol">The resulting Lean <see cref="Symbol"/> if the mapping is successful.</param>
+    /// <param name="exceptionMessage">The error message if the mapping fails.</param>
+    /// <returns>
+    /// <c>true</c> if the mapping succeeds; otherwise, <c>false</c>.
+    /// </returns>
+    private bool TryGetLeanSymbol(string symbol, AssetType assetType, out Symbol leanSymbol, out string exceptionMessage)
+    {
+        leanSymbol = default;
+        exceptionMessage = default;
+        try
+        {
+            leanSymbol = _symbolMapper.GetLeanSymbol(symbol, assetType.ConvertAssetTypeToSecurityType(), Market.USA);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            exceptionMessage = ex.Message;
+            return false;
+        }
     }
 
     #region ValidateSubscription

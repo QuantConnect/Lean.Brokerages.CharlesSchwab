@@ -401,16 +401,15 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     /// <param name="symbol">The symbol for which the order book is to be added.</param>
     private string AddOrderBook(Symbol symbol)
     {
-        var exchangeTimeZone = symbol.GetSymbolExchangeTimeZone();
-        _exchangeTimeZoneByLeanSymbol[symbol] = exchangeTimeZone;
+        if (!_exchangeTimeZoneByLeanSymbol.TryGetValue(symbol, out _))
+        {
+            _exchangeTimeZoneByLeanSymbol[symbol] = symbol.GetSymbolExchangeTimeZone();
+        }
 
         var brokerageSymbol = _symbolMapper.GetBrokerageSymbol(symbol);
 
-        if (!_orderBooks.TryGetValue(brokerageSymbol, out var orderBook))
-        {
-            _orderBooks[brokerageSymbol] = new DefaultOrderBook(symbol);
-            _orderBooks[brokerageSymbol].BestBidAskUpdated += OnBestBidAskUpdated;
-        }
+        _orderBooks[brokerageSymbol] = new DefaultOrderBook(symbol);
+        _orderBooks[brokerageSymbol].BestBidAskUpdated += OnBestBidAskUpdated;
 
         return brokerageSymbol;
     }
