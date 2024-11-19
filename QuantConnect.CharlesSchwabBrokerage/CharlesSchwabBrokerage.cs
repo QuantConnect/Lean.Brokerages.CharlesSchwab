@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -90,6 +90,11 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// if an order is not found or has been successfully processed.
     /// </summary>
     private readonly ConcurrentDictionary<string, bool> _tempUpdateBrokerageId = new();
+
+    /// <summary>
+    /// A synchronization event used to signal the completion of an order update process.
+    /// </summary>
+    private readonly AutoResetEvent _pendingUpdateOrderEvent = new(false);
 
     /// <summary>
     /// Order provider
@@ -349,40 +354,53 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
 
         var orderRequest = CreateBrokerageOrderRequest(order);
 
-        var updated = default(bool);
+        var newBrokerageId = default(string);
         _messageHandler.WithLockedStream(() =>
         {
-            var newBrokerageId = default(string);
             try
             {
                 newBrokerageId = _charlesSchwabApiClient.UpdateOrder(oldBrokerageId, orderRequest).SynchronouslyAwaitTaskResult();
             }
             catch (Exception ex)
             {
-                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Charles Schwab: Place Order Event: {ex.Message}")
+                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Charles Schwab: Update Order Event: {ex.Message}")
                 {
                     Status = Orders.OrderStatus.Invalid
                 });
                 return;
             }
 
-            // Add the old brokerage ID to a temporary collection to bypass log errors if the order is not found
-            _tempUpdateBrokerageId[oldBrokerageId] = true;
-
-            order.BrokerId.Remove(oldBrokerageId);
-            order.BrokerId.Add(newBrokerageId);
-
-            OnOrderIdChangedEvent(new() { BrokerId = order.BrokerId, OrderId = order.Id });
-
-            OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "Charles Schwab: Place Order Event")
-            {
-                Status = Orders.OrderStatus.UpdateSubmitted
-            });
-            updated = true;
+            _tempUpdateBrokerageId[oldBrokerageId] = false;
+            _tempUpdateBrokerageId[newBrokerageId] = true;
         });
 
-        return updated;
+        var updated = default(bool);
+        if (_pendingUpdateOrderEvent.WaitOne(TimeSpan.FromSeconds(5), _cancellationTokenSource.Token))
+        {
+            _messageHandler.WithLockedStream(() =>
+            {
+                updated = true;
 
+                order.BrokerId.Remove(oldBrokerageId);
+                order.BrokerId.Add(newBrokerageId);
+
+                OnOrderIdChangedEvent(new() { BrokerId = order.BrokerId, OrderId = order.Id });
+
+                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, "Charles Schwab: Update Order Event")
+                {
+                    Status = Orders.OrderStatus.UpdateSubmitted
+                });
+
+                // the order update process has completed successfully.
+                _tempUpdateBrokerageId.TryRemove(newBrokerageId, out var _);
+            });
+        }
+        else
+        {
+            _tempUpdateBrokerageId.TryRemove(oldBrokerageId, out _);
+        }
+
+        return updated;
     }
 
     /// <summary>

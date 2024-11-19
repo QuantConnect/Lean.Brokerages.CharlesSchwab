@@ -237,22 +237,6 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             case MessageType.OrderUROutCompleted:
                 var orderUROut = JsonConvert.DeserializeObject<OrderUROutCompleted>(accountContent.MessageData);
 
-                if (!TryGetLeanOrderByBrokerageId(orderUROut.SchwabOrderID, out var leanOrder))
-                {
-                    // If order was removed successfully, we should skip log error message 
-                    if (!_tempUpdateBrokerageId.TryRemove(orderUROut.SchwabOrderID, out _))
-                    {
-                        Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {orderUROut.SchwabOrderID}. Order detail: {accountContent.MessageData}");
-                    }
-                    break;
-                }
-
-                // Occasionally, the server may send duplicate events for the same order.
-                if (leanOrder.Status == OrderStatus.Canceled)
-                {
-                    break;
-                }
-
                 var leanOrderStatus = default(OrderStatus);
                 var message = default(string);
                 switch (orderUROut.BaseEvent.OrderUROutCompletedEvent.OutCancelType)
@@ -264,6 +248,35 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                     case OrderOutCancelType.ClientCancel:
                         leanOrderStatus = OrderStatus.Canceled;
                         break;
+                }
+
+                if (_tempUpdateBrokerageId.TryRemove(orderUROut.SchwabOrderID, out var isNewBrokerageId))
+                {
+                    // If a new brokerage ID was removed, it indicates invalid request parameters.
+                    // Log the error and skip triggering update events.
+                    if (isNewBrokerageId && leanOrderStatus == OrderStatus.Invalid)
+                    {
+                        Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Failed to update order with SchwabOrderID '{orderUROut.SchwabOrderID}'. Additional details: {message}. Order detail: {accountContent.MessageData}");
+                        break;
+                    }
+                    // If an existing (old) brokerage ID was removed, it means the order update process completed successfully.
+                    else if (isNewBrokerageId == false)
+                    {
+                        _pendingUpdateOrderEvent.Set();
+                        break;
+                    }
+                }
+
+                if (!TryGetLeanOrderByBrokerageId(orderUROut.SchwabOrderID, out var leanOrder))
+                {
+                    Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {orderUROut.SchwabOrderID}. Order detail: {accountContent.MessageData}");
+                    break;
+                }
+
+                // Occasionally, the server may send duplicate events for the same order.
+                if (leanOrder.Status == OrderStatus.Canceled)
+                {
+                    break;
                 }
 
                 OnOrderEvent(

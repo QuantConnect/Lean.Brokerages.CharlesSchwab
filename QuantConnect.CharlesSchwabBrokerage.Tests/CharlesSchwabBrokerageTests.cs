@@ -136,6 +136,7 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
         var order = PlaceOrderWaitForStatus(parameters.CreateLongOrder(GetDefaultQuantity()), parameters.ExpectedStatus) as LimitOrder;
 
         using var updatedOrderStatusEvent = new AutoResetEvent(false);
+        using var canceledOrderStatusEvent = new AutoResetEvent(false);
         Brokerage.OrdersStatusChanged += (_, orderEvents) =>
         {
             var eventOrderStatus = orderEvents[0].Status;
@@ -146,6 +147,9 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
             {
                 case OrderStatus.UpdateSubmitted:
                     updatedOrderStatusEvent.Set();
+                    break;
+                case OrderStatus.Canceled:
+                    canceledOrderStatusEvent.Set();
                     break;
             }
         };
@@ -166,6 +170,65 @@ public partial class CharlesSchwabBrokerageTests : BrokerageTests
         if (!Brokerage.UpdateOrder(order) || !updatedOrderStatusEvent.WaitOne(TimeSpan.FromSeconds(5)))
         {
             Assert.Fail("Order is not updated well.");
+        }
+
+        if (!Brokerage.CancelOrder(order) || !canceledOrderStatusEvent.WaitOne(TimeSpan.FromSeconds(5)))
+        {
+            Assert.Fail("Order is not canceled well.");
+        }
+    }
+
+    [TestCase("1", Description = "The brokerage ID does not exist.")]
+    [TestCase("1002232841620", Description = "The brokerage ID corresponds to an already canceled order.")]
+    public void CancelOrderInvalidBrokerageIdTest(string brokerageId)
+    {
+        var order = new LimitOrder(Symbol, GetDefaultQuantity(), 1m, DateTime.UtcNow);
+        order.BrokerId.Add(brokerageId);
+
+        if (Brokerage.CancelOrder(order))
+        {
+            Assert.Fail("Order cancellation failed: The order cannot be canceled.");
+        }
+    }
+
+    [TestCaseSource(nameof(LimitOrderTestParameters))]
+    public void TryUpdateOrderWithInvalidQuantityParameter(OrderTestMetaData orderTestMetaData)
+    {
+        var parameters = GetOrderTestParameters(orderTestMetaData.OrderType, orderTestMetaData.Symbol, orderTestMetaData.HighLimit, orderTestMetaData.LowLimit);
+
+        var order = PlaceOrderWaitForStatus(parameters.CreateLongOrder(GetDefaultQuantity()), parameters.ExpectedStatus) as LimitOrder;
+
+        var updateOrderRequest = new UpdateOrderRequest(DateTime.UtcNow, order.Id, new()
+        {
+            LimitPrice = order.LimitPrice - 0.01m,
+            Quantity = order.Quantity + 1000m
+        });
+
+        order.ApplyUpdateOrderRequest(updateOrderRequest);
+
+        using var canceledOrderStatusEvent = new AutoResetEvent(false);
+        Brokerage.OrdersStatusChanged += (_, orderEvents) =>
+        {
+            var eventOrderStatus = orderEvents[0].Status;
+
+            order.Status = eventOrderStatus;
+
+            switch (eventOrderStatus)
+            {
+                case OrderStatus.Canceled:
+                    canceledOrderStatusEvent.Set();
+                    break;
+            }
+        };
+
+        if (Brokerage.UpdateOrder(order))
+        {
+            Assert.Fail("Order is updated well.");
+        }
+
+        if (!Brokerage.CancelOrder(order) || !canceledOrderStatusEvent.WaitOne(TimeSpan.FromSeconds(5)))
+        {
+            Assert.Fail("Order is not canceled well.");
         }
     }
 
