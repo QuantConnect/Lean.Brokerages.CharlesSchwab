@@ -17,7 +17,6 @@ using System;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
-using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 using StreamDataResponse = QuantConnect.Brokerages.CharlesSchwab.Models.Stream.Data;
@@ -51,67 +50,36 @@ public class StreamDataConverter : JsonConverter<StreamDataResponse>
         var jToken = JToken.Load(reader);
 
         var service = jToken["service"].ToObject<Service>();
-        var command = jToken["command"].ToObject<Command>();
 
         switch (service)
         {
             case Service.Account:
-                var accountContents = new List<AccountContent>();
-                foreach (var accountContent in jToken["content"])
-                {
-                    var con = new AccountContent(
-                        accountContent.Value<int>("seq"),
-                        accountContent.Value<string>("key"),
-                        accountContent.Value<string>("1"),
-                        accountContent["2"].ToObject<MessageType>(),
-                        accountContent.Value<string>("3"));
-                    accountContents.Add(con);
-                }
-                return new StreamDataResponse(service, jToken.Value<long>("timestamp"), command, accountContents);
+                return CreateStreamDataResponse<AccountContent>(service, jToken);
             case Service.LevelOneEquities:
-                var levelOneEquities = new List<LevelOneEquityContent>();
-                foreach (JObject content in jToken["content"])
-                {
-                    var equity = new LevelOneEquityContent(
-                        content.Value<string>("key"),
-                        content.Value<bool>("delayed"),
-                        content.TryGetValue("assetMainType", StringComparison.InvariantCultureIgnoreCase, out var assetType) ? assetType.ToObject<AssetType>() : default,
-                        content.Value<decimal>("1"),
-                        content.Value<decimal>("2"),
-                        content.Value<decimal>("3"),
-                        content.Value<decimal>("4"),
-                        content.Value<decimal>("5"),
-                        content.Value<decimal>("9"),
-                        Time.UnixMillisecondTimeStampToDateTime(content.Value<long>("35"))
-                        );
-                    levelOneEquities.Add(equity);
-                }
-                return new StreamDataResponse(service, jToken.Value<long>("timestamp"), command, levelOneEquities);
+                return CreateStreamDataResponse<LevelOneEquityContent>(service, jToken);
             case Service.LevelOneOptions:
-                var levelOneOptions = new List<LevelOneOptionContent>();
-                foreach (JObject content in jToken["content"])
-                {
-                    var option = new LevelOneOptionContent(
-                        content.Value<string>("key"),
-                        content.Value<bool>("delayed"),
-                        content.TryGetValue("assetMainType", StringComparison.InvariantCultureIgnoreCase, out var assetType) ? assetType.ToObject<AssetType>() : default,
-                        content.Value<decimal>("2"),
-                        content.Value<decimal>("3"),
-                        content.Value<decimal>("4"),
-                        content.Value<decimal>("9"),
-                        content.Value<decimal>("16"),
-                        content.Value<decimal>("17"),
-                        content.Value<decimal>("18"),
-                        Time.UnixMillisecondTimeStampToDateTime(content.Value<long>("39")),
-                        content.Value<decimal>("52"),
-                        content.Value<decimal>("53"),
-                        Time.UnixMillisecondTimeStampToDateTime(content.Value<long>("54")));
-                    levelOneOptions.Add(option);
-                }
-                return new StreamDataResponse(service, jToken.Value<long>("timestamp"), command, levelOneOptions);
+                return CreateStreamDataResponse<LevelOneOptionContent>(service, jToken);
             default:
                 throw new NotImplementedException($"{nameof(StreamDataConverter)}.{nameof(ReadJson)}: The service '{service}' is not supported or implemented.");
         }
+    }
+
+    /// <summary>
+    /// Creates a <see cref="StreamDataResponse"/> for the specified service by deserializing the provided JSON token into a collection of content objects.
+    /// </summary>
+    /// <typeparam name="TContent">The type of content to deserialize, which must inherit from <see cref="BaseContent"/>.</typeparam>
+    /// <param name="service">The service type associated with the response.</param>
+    /// <param name="jToken">The JSON token containing the data for the response, including the command and content.</param>
+    /// <returns>
+    /// A <see cref="StreamDataResponse"/> containing the deserialized content and metadata such as timestamp and command.
+    /// </returns>
+    /// <exception cref="JsonSerializationException">Thrown if deserialization of the content fails.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if <paramref name="jToken"/> is null.</exception>
+    private StreamDataResponse CreateStreamDataResponse<TContent>(Service service, JToken jToken) where TContent : BaseContent
+    {
+        var command = jToken["command"].ToObject<Command>();
+        var deserializedContent = JsonConvert.DeserializeObject<IReadOnlyCollection<TContent>>(jToken["content"].ToString());
+        return new StreamDataResponse(service, jToken.Value<long>("timestamp"), command, deserializedContent);
     }
 
     /// <summary>

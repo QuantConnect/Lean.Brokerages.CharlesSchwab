@@ -49,6 +49,11 @@ public partial class CharlesSchwabBrokerage
     private volatile bool _minuteResolutionWarningLogged;
 
     /// <summary>
+    /// Indicates whether the warning for exceeding the maximum available range of minute-resolution trade data.
+    /// </summary>
+    private volatile bool _minuteResolutionLimitExceededWarningLogged;
+
+    /// <summary>
     /// Indicates whether a warning about an invalid time range has already been logged.
     /// </summary>
     private bool _invalidTimeRangeWarningLogged;
@@ -116,7 +121,7 @@ public partial class CharlesSchwabBrokerage
             return null;
         }
 
-        if (request.Resolution == Resolution.Minute && (request.EndTimeUtc < EarliestMinuteResolutionDate || request.StartTimeUtc < EarliestMinuteResolutionDate))
+        if (request.Resolution == Resolution.Minute && request.EndTimeUtc < EarliestMinuteResolutionDate)
         {
             if (!_minuteResolutionWarningLogged)
             {
@@ -124,6 +129,12 @@ public partial class CharlesSchwabBrokerage
                 Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: The specified time range (StartTime: {request.StartTimeUtc}, EndTime: {request.EndTimeUtc}) exceeds the available data range for minute resolution. The response will be empty to prevent unnecessary processing.");
             }
             return null;
+        }
+
+        if (!_minuteResolutionLimitExceededWarningLogged && request.Resolution == Resolution.Minute && request.StartTimeUtc < EarliestMinuteResolutionDate)
+        {
+            _minuteResolutionLimitExceededWarningLogged = true;
+            Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetHistory)}: The requested trade data exceeds the available range for minute-resolution data. Only data from the last 45 days is accessible. Please adjust the start date to {EarliestMinuteResolutionDate:yyyy-MM-dd} or later.");
         }
 
         return GetTradeBarByResolution(request.Resolution, request.Symbol, request.StartTimeUtc, request.EndTimeUtc, request.IncludeExtendedMarketHours,

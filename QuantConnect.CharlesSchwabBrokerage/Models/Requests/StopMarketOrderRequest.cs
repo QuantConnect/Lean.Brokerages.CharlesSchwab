@@ -31,7 +31,6 @@ public sealed class StopMarketOrderRequest : OrderBaseRequest
     /// <summary>
     /// The stop price for the stop market order.
     /// </summary>
-    [JsonProperty("stopPrice")]
     public decimal StopPrice { get; }
 
     /// <summary>

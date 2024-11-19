@@ -19,7 +19,6 @@ using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Converters;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
-using static QuantConnect.Messages;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 
@@ -78,9 +77,9 @@ public record AccountContent(
 /// <param name="LastSize">The number of shares traded in the last transaction; typically measured in shares.</param>
 /// <param name="TradeTime">The timestamp of the last trade, expressed in UTC DateTime.</param>
 public record LevelOneContent(
-    string Symbol,
-    bool Delayed,
-    AssetType assetMainType,
+    [property: JsonProperty("key")] string Symbol,
+    [property: JsonProperty("delayed")] bool Delayed,
+    [property: JsonProperty("assetMainType")] AssetType assetMainType,
     decimal BidPrice,
     decimal AskPrice,
     decimal LastPrice,
@@ -106,13 +105,13 @@ public record LevelOneEquityContent(
     string Symbol,
     bool Delayed,
     AssetType AssetMainType,
-    decimal BidPrice,
-    decimal AskPrice,
-    decimal LastPrice,
-    decimal BidSize,
-    decimal AskSize,
-    decimal LastSize,
-    DateTime TradeTime
+    [JsonProperty("1")] decimal BidPrice,
+    [JsonProperty("2")] decimal AskPrice,
+    [JsonProperty("3")] decimal LastPrice,
+    [JsonProperty("4")] decimal BidSize,
+    [JsonProperty("5")] decimal AskSize,
+    [JsonProperty("9")] decimal LastSize,
+    [JsonProperty("35"), JsonConverter(typeof(CharlesSchwabUnixMillisecondsConverter))] DateTime TradeTime
     ) : LevelOneContent(Symbol, Delayed, AssetMainType, BidPrice, AskPrice, LastPrice, BidSize, AskSize, LastSize, TradeTime);
 
 /// <summary>
@@ -136,15 +135,15 @@ public record LevelOneOptionContent(
     string Symbol,
     bool Delayed,
     AssetType AssetMainType,
-    decimal BidPrice,
-    decimal AskPrice,
-    decimal LastPrice,
-    decimal OpenInterest,
-    decimal BidSize,
-    decimal AskSize,
-    decimal LastSize,
-    DateTime TradeTime,
-    decimal IndicativeAskPrice,
-    decimal IndicativeBidPrice,
-    DateTime IndicativeQuoteTime
+    [JsonProperty("2")] decimal BidPrice,
+    [JsonProperty("3")] decimal AskPrice,
+    [JsonProperty("4")] decimal LastPrice,
+    [JsonProperty("9")] decimal OpenInterest,
+    [JsonProperty("16")] decimal BidSize,
+    [JsonProperty("17")] decimal AskSize,
+    [JsonProperty("18")] decimal LastSize,
+    [JsonProperty("39"), JsonConverter(typeof(CharlesSchwabUnixMillisecondsConverter))] DateTime TradeTime,
+    [JsonProperty("52")] decimal IndicativeAskPrice,
+    [JsonProperty("53")] decimal IndicativeBidPrice,
+    [JsonProperty("54"), JsonConverter(typeof(CharlesSchwabUnixMillisecondsConverter))] DateTime IndicativeQuoteTime
     ) : LevelOneContent(Symbol, Delayed, AssetMainType, BidPrice, AskPrice, LastPrice, BidSize, AskSize, LastSize, TradeTime);

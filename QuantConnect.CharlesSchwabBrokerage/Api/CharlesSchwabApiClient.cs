@@ -23,6 +23,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.IO.Compression;
 using System.Collections.Generic;
+using Newtonsoft.Json.Serialization;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
 using QuantConnect.Brokerages.CharlesSchwab.Extensions;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
@@ -62,7 +63,11 @@ public class CharlesSchwabApiClient
     /// <summary>
     /// Provides JSON serializer settings for order requests, ensuring that DateTime values are handled in UTC format.
     /// </summary>
-    private readonly JsonSerializerSettings _orderRequestJsonSerializerSettings = new() { DateTimeZoneHandling = DateTimeZoneHandling.Utc };
+    private readonly JsonSerializerSettings _orderRequestJsonSerializerSettings = new()
+    {
+        DateTimeZoneHandling = DateTimeZoneHandling.Utc,
+        ContractResolver = new CamelCasePropertyNamesContractResolver()
+    };
 
     /// <summary>
     /// Initializes a new instance of the <see cref="CharlesSchwabApiClient"/> class.
@@ -349,9 +354,6 @@ public class CharlesSchwabApiClient
                     {
                         switch (contentEncoding)
                         {
-                            case "json":
-                                errorMessage.Append(await GetErrorMessageByJsonContent(responseMessage));
-                                break;
                             case "gzip":
                                 var jsonContent = default(string);
                                 using (var responseStream = await responseMessage.Content.ReadAsStreamAsync())

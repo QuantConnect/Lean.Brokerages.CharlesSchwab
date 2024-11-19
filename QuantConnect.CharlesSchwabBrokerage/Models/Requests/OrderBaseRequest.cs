@@ -1,4 +1,4 @@
-﻿/*
+﻿ /*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -28,37 +28,33 @@ public abstract class OrderBaseRequest
     /// <summary>
     /// The type of the order.
     /// </summary>
-    [JsonProperty("orderType")]
     public abstract OrderType OrderType { get; }
 
     /// <summary>
     /// The session type for the order.
     /// </summary>
-    [JsonProperty("session")]
     public SessionType Session { get; }
 
     /// <summary>
     /// The duration of the order.
     /// </summary>
-    [JsonProperty("duration")]
     public Duration Duration { get; }
 
     /// <summary>
     /// The order strategy type. Defaults to <see cref="OrderStrategyType.Single"/>.
     /// </summary>
-    [JsonProperty("orderStrategyType", Required = Required.Always)]
+    [JsonProperty(Required = Required.Always)]
     public OrderStrategyType OrderStrategyType { get; } = OrderStrategyType.Single;
 
     /// <summary>
     /// The cancel time for the order. 
     /// </summary>
-    [JsonProperty("cancelTime", DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public DateTime CancelTime { get; set; }
 
     /// <summary>
     /// The collection of order legs for the order.
     /// </summary>
-    [JsonProperty("orderLegCollection")]
     public List<OrderLegRequest> OrderLegCollection { get; init; }
 
     /// <summary>
@@ -91,9 +87,9 @@ public abstract class OrderBaseRequest
 /// <param name="Quantity">The quantity for the order leg.</param>
 /// <param name="Instrument">The instrument for the order leg.</param>
 public record OrderLegRequest(
-    [property: JsonProperty("instruction")] Instruction Instruction,
-    [property: JsonProperty("quantity")] decimal Quantity,
-    [property: JsonProperty("instrument")] InstrumentRequest Instrument);
+    Instruction Instruction,
+    decimal Quantity,
+    InstrumentRequest Instrument);
 
 /// <summary>
 /// Represents an instrument request for an order leg.
@@ -101,5 +97,5 @@ public record OrderLegRequest(
 /// <param name="Symbol">The symbol of the instrument.</param>
 /// <param name="AssetType">The asset type of the instrument.</param>
 public record InstrumentRequest(
-    [property: JsonProperty("symbol")] string Symbol,
-    [property: JsonProperty("assetType")] AssetType AssetType);
+    string Symbol,
+    AssetType AssetType);
