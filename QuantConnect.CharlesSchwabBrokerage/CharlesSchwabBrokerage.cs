@@ -317,7 +317,6 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
 
         var orderRequest = CreateBrokerageOrderRequest(order);
 
-        var submitted = default(bool);
         _messageHandler.WithLockedStream(() =>
         {
             var brokerageOrderId = default(string);
@@ -340,10 +339,9 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             {
                 Status = Orders.OrderStatus.Submitted
             });
-            submitted = true;
         });
 
-        return submitted;
+        return true;
     }
 
     /// <summary>
@@ -358,6 +356,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         var orderRequest = CreateBrokerageOrderRequest(order);
 
         var newBrokerageId = default(string);
+        var catchException = default(bool);
         _messageHandler.WithLockedStream(() =>
         {
             try
@@ -366,16 +365,19 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             }
             catch (Exception ex)
             {
-                OnOrderEvent(new OrderEvent(order, DateTime.UtcNow, OrderFee.Zero, $"Charles Schwab: Update Order Event: {ex.Message}")
-                {
-                    Status = Orders.OrderStatus.Invalid
-                });
+                catchException = true;
+                OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, "Charles Schwab.Update Order: " + ex.Message));
                 return;
             }
 
             _tempUpdateBrokerageId[oldBrokerageId] = false;
             _tempUpdateBrokerageId[newBrokerageId] = true;
         });
+
+        if (catchException)
+        {
+            return false;
+        }
 
         var updated = default(bool);
         if (_pendingUpdateOrderEvent.WaitOne(TimeSpan.FromSeconds(5), _cancellationTokenSource.Token))

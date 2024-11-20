@@ -199,11 +199,11 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             {
                 case SecurityType.Equity:
                 case SecurityType.Index:
-                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneEquities(symbols);
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SendLevelOneMessagesByServiceAndCommand(Service.LevelOneEquities, symbols, Command.Add);
                     break;
                 case SecurityType.Option:
                 case SecurityType.IndexOption:
-                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneOptions(symbols);
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SendLevelOneMessagesByServiceAndCommand(Service.LevelOneOptions, symbols, Command.Add);
                     break;
                 default:
                     throw new NotImplementedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: The security type '{securityType}' is not supported subscription process.");
@@ -351,11 +351,11 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             {
                 case SecurityType.Equity:
                 case SecurityType.Index:
-                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneEquity(brokerageSymbol);
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SendLevelOneMessageByServiceAndCommand(Service.LevelOneEquities, brokerageSymbol, Command.Add);
                     break;
                 case SecurityType.Option:
                 case SecurityType.IndexOption:
-                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SubscribeOnLevelOneOption(brokerageSymbol);
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SendLevelOneMessageByServiceAndCommand(Service.LevelOneOptions, brokerageSymbol, Command.Add);
                     break;
                 default:
                     throw new NotImplementedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(Subscribe)}: The security type '{symbol.SecurityType}' is not supported subscription process.");
@@ -381,11 +381,11 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             {
                 case SecurityType.Equity:
                 case SecurityType.Index:
-                    (WebSocket as CharlesSchwabWebSocketClientWrapper).UnSubscribeOnLevelOneEquity(brokerageSymbol);
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SendLevelOneMessageByServiceAndCommand(Service.LevelOneEquities, brokerageSymbol, Command.UnSubscription);
                     break;
                 case SecurityType.Option:
                 case SecurityType.IndexOption:
-                    (WebSocket as CharlesSchwabWebSocketClientWrapper).UnSubscribeOnLevelOneOption(brokerageSymbol);
+                    (WebSocket as CharlesSchwabWebSocketClientWrapper).SendLevelOneMessageByServiceAndCommand(Service.LevelOneOptions, brokerageSymbol, Command.UnSubscription);
                     break;
                 default:
                     throw new NotImplementedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(Unsubscribe)}: The security type '{symbol.SecurityType}' is not supported unSubscription process.");

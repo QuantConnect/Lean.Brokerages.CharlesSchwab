@@ -98,95 +98,35 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
     }
 
     /// <summary>
-    /// Subscribes to the LevelOne data stream for a single equity symbol.
+    /// Subscribes to the LevelOne data stream for a single symbol based on the specified service type (Equities or Options).
     /// </summary>
-    /// <param name="symbol">The symbol of the equity to subscribe to for LevelOne market data.</param>
-    public void SubscribeOnLevelOneEquity(string symbol)
-        => SubscribeOnLevelOneEquities(new[] { symbol });
+    /// <param name="service">The service type indicating the stream data (Equities or Options).</param>
+    /// <param name="symbol">The symbol of the equity or option to subscribe to for LevelOne market data.</param>
+    /// <param name="command">The command indicating the action to be taken (e.g., subscribe or unsubscribe).</param>
+    public void SendLevelOneMessageByServiceAndCommand(Service service, string symbol, Command command)
+        => SendLevelOneMessagesByServiceAndCommand(service, new[] { symbol }, command);
 
     /// <summary>
-    /// Subscribes to the LevelOne data stream for multiple equity symbols.
+    /// Subscribes to the LevelOne data stream for multiple symbols based on the specified service type (Equities or Options).
+    /// This method processes symbols in chunks to ensure efficient handling of large symbol lists.
     /// </summary>
-    /// <param name="symbols">An array of symbols representing the equities to subscribe to for LevelOne market data.</param>
-    public void SubscribeOnLevelOneEquities(string[] symbols)
+    /// <param name="service">The service type indicating the stream data (Equities or Options).</param>
+    /// <param name="symbols">An array of symbols representing the equities or options to subscribe to for LevelOne market data.</param>
+    /// <param name="command">The command indicating the action to be taken (e.g., subscribe or unsubscribe).</param>
+    public void SendLevelOneMessagesByServiceAndCommand(Service service, string[] symbols, Command command)
     {
-        var levelOneEquity = new LevelOneEquitiesStreamRequest(
-            _idRequestCount,
-            Command.Add,
-            _streamInfo.SchwabClientCustomerId,
-            _streamInfo.SchwabClientCorrelId,
-            symbols);
-        SendMessage(levelOneEquity);
-    }
-
-    /// <summary>
-    /// Unsubscribes from the LevelOne data stream for a single equity symbol.
-    /// </summary>
-    /// <param name="symbol">The symbol of the equity to unsubscribe from LevelOne market data.</param>
-    public void UnSubscribeOnLevelOneEquity(string symbol)
-        => UnSubscribeOnLevelOneEquities(new[] { symbol });
-
-    /// <summary>
-    /// Unsubscribes from the LevelOne data stream for multiple equity symbols.
-    /// </summary>
-    /// <param name="symbols">An array of symbols representing the equities to unsubscribe from LevelOne market data.</param>
-    public void UnSubscribeOnLevelOneEquities(string[] symbols)
-    {
-        var levelOneEquity = new LevelOneEquitiesStreamRequest(
-            _idRequestCount,
-            Command.UnSubscription,
-            _streamInfo.SchwabClientCustomerId,
-            _streamInfo.SchwabClientCorrelId,
-            symbols);
-        SendMessage(levelOneEquity);
-    }
-
-    /// <summary>
-    /// Subscribes to the LevelOne data stream for a single option symbol.
-    /// </summary>
-    /// <param name="symbol">The symbol of the option to subscribe to for LevelOne market data.</param>
-    public void SubscribeOnLevelOneOption(string symbol)
-        => SubscribeOnLevelOneOptions(new[] { symbol });
-
-    /// <summary>
-    /// Subscribes to the LevelOne data stream for multiple option symbols.
-    /// </summary>
-    /// <param name="symbols">An array of symbols representing the options to subscribe to for LevelOne market data.</param>
-    public void SubscribeOnLevelOneOptions(string[] symbols)
-    {
-        foreach (var chunk in symbols.Chunk(500))
+        foreach (var symbolsChunk in symbols.Chunk(500))
         {
-            var levelOneOption = new LevelOneOptionsStreamRequest(
-                _idRequestCount,
-                Command.Add,
-                _streamInfo.SchwabClientCustomerId,
-                _streamInfo.SchwabClientCorrelId,
-                chunk);
-            SendMessage(levelOneOption);
+            var streamRequest = default(StreamRequest);
+            streamRequest = service switch
+            {
+                Service.LevelOneEquities => new LevelOneEquitiesStreamRequest(_idRequestCount, command, _streamInfo.SchwabClientCustomerId, _streamInfo.SchwabClientCorrelId, symbolsChunk),
+                Service.LevelOneOptions => new LevelOneOptionsStreamRequest(_idRequestCount, command, _streamInfo.SchwabClientCustomerId, _streamInfo.SchwabClientCorrelId, symbolsChunk),
+                _ => throw new NotSupportedException($"{nameof(CharlesSchwabWebSocketClientWrapper)}.{nameof(SendLevelOneMessagesByServiceAndCommand)}: Service '{service}' is not supported.")
+            };
+
+            SendMessage(streamRequest);
         }
-    }
-
-    /// <summary>
-    /// Unsubscribes from the LevelOne data stream for a single option symbol.
-    /// </summary>
-    /// <param name="symbol">The symbol of the option to unsubscribe from LevelOne market data.</param>
-
-    public void UnSubscribeOnLevelOneOption(string symbol)
-    => UnSubscribeOnLevelOneOptions(new[] { symbol });
-
-    /// <summary>
-    /// Unsubscribes from the LevelOne data stream for multiple option symbols.
-    /// </summary>
-    /// <param name="symbols">An array of symbols representing the options to unsubscribe from LevelOne market data.</param>
-    public void UnSubscribeOnLevelOneOptions(string[] symbols)
-    {
-        var levelOneOption = new LevelOneOptionsStreamRequest(
-            _idRequestCount,
-            Command.UnSubscription,
-            _streamInfo.SchwabClientCustomerId,
-            _streamInfo.SchwabClientCorrelId,
-            symbols);
-        SendMessage(levelOneOption);
     }
 
     /// <summary>
