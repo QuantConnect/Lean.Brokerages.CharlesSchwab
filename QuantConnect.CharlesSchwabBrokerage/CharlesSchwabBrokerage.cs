@@ -191,9 +191,6 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             SubscribeImpl = (symbols, _) => Subscribe(symbols),
             UnsubscribeImpl = (symbols, _) => Unsubscribe(symbols)
         };
-
-        // Rate gate limiter useful for API/WS calls
-        // _connectionRateLimiter = new RateGate();
     }
 
     #region Brokerage
@@ -242,7 +239,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                     leanOrder = new StopMarketOrder(leanSymbol, orderQuantity, brokerageOrder.StopPrice, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
                     break;
                 default:
-                    Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(GetOpenOrders)}: Skipping unsupported order type '{brokerageOrder.OrderType}'. Order details: {brokerageOrder}.");
+                    OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Skipping unsupported order type '{brokerageOrder.OrderType}'. Order details: {brokerageOrder}."));
                     continue;
             }
             leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? Orders.OrderStatus.PartiallyFilled : Orders.OrderStatus.Submitted;
@@ -370,7 +367,9 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                 return;
             }
 
+            // Temporarily track the old brokerage ID to ignore UROutCompleted events for it
             _tempUpdateBrokerageId[oldBrokerageId] = false;
+            // Track the new brokerage ID to ensure proper handling of potential exceptions if the order update fails
             _tempUpdateBrokerageId[newBrokerageId] = true;
         });
 

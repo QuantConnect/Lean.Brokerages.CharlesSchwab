@@ -273,7 +273,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                     // Log the error and skip triggering update events.
                     if (isNewBrokerageId && leanOrderStatus == OrderStatus.Invalid)
                     {
-                        Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Failed to update order with SchwabOrderID '{orderUROut.SchwabOrderID}'. Additional details: {message}. Order detail: {accountContent.MessageData}");
+                        OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Failed to update order with SchwabOrderID '{orderUROut.SchwabOrderID}'. Additional details: {message}. Order detail: {accountContent.MessageData}"));
                         break;
                     }
                     // If an existing (old) brokerage ID was removed, it means the order update process completed successfully.
@@ -286,7 +286,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
 
                 if (!TryGetLeanOrderByBrokerageId(orderUROut.SchwabOrderID, out var leanOrder))
                 {
-                    Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {orderUROut.SchwabOrderID}. Order detail: {accountContent.MessageData}");
+                    OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Order not found: {orderUROut.SchwabOrderID}. Order detail: {accountContent.MessageData}"));
                     break;
                 }
 
@@ -513,7 +513,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             return;
         }
 
-        var tradeTick = new Tick(DateTime.UtcNow.ConvertFromUtc(exchangeTimeZone), symbol, saleCondition: string.Empty, exchange: string.Empty, size, price);
+        var tradeTick = new Tick(tradeTime.ConvertFromUtc(exchangeTimeZone), symbol, saleCondition: string.Empty, exchange: string.Empty, size, price);
 
         lock (_synchronizationContext)
         {
