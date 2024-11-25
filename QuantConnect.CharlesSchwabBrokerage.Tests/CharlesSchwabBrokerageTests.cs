@@ -26,7 +26,7 @@ using QuantConnect.Tests.Brokerages;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests;
 
-[TestFixture]
+[TestFixture, Explicit("This safeguards against accidental execution since the tests involve live accounts, real currency transactions, and potentially impactful buy/sell operations.")]
 public partial class CharlesSchwabBrokerageTests : BrokerageTests
 {
     protected override Symbol Symbol { get; } = Symbol.Create("F", SecurityType.Equity, Market.USA);

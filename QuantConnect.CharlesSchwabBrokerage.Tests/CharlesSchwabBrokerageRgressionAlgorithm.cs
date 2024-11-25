@@ -15,9 +15,9 @@
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests
 {
-    public class BybitBrokerageRegressionAlgorithm : CharlesSchwabFeatureRegressionAlgorithm
+    public class CharlesSchwabBrokerageRgressionAlgorithm : CharlesSchwabFeatureRegressionAlgorithm
     {
-        public override BrokerageName Brokerage { get; set; } = BrokerageName.Bybit;
-        protected override string BrokerageSettingsURL { get; set; } = "https://raw.githubusercontent.com/QuantConnect/Lean.Brokerages.ByBit/master/bybit.json";
+        public override BrokerageName Brokerage { get; set; } = BrokerageName.CharlesSchwab;
+        protected override string BrokerageSettingsURL { get; set; } = "https://raw.githubusercontent.com/QuantConnect/Lean.Brokerages.CharlesSchwab/refs/heads/master/charlesschwab.json";
     }
 }

@@ -48,7 +48,7 @@ public class CharlesSchwabApiClientMockTests
 
         var mockHandler = GetMockHttpMessageHandler();
 
-        _apiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, _accountNumber, redirectUrl, string.Empty, string.Empty, mockHandler.Object);
+        _apiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, _accountNumber, redirectUrl, string.Empty, refreshToken: "111", mockHandler.Object);
     }
 
     [Test]
@@ -99,6 +99,13 @@ public class CharlesSchwabApiClientMockTests
                     return new HttpResponseMessage(HttpStatusCode.OK)
                     {
                         Content = new StringContent(GetAccountNumbers())
+                    };
+                }
+                else if (requestUriAbsolutePath.StartsWith("/v1/oauth/token"))
+                {
+                    return new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = new StringContent(GetAccessTokenMetaData())
                     };
                 }
                 return new HttpResponseMessage(HttpStatusCode.BadRequest);
@@ -314,5 +321,17 @@ public class CharlesSchwabApiClientMockTests
     ""accountNumber"": ""{_accountNumber.Replace("-", "")}"",
     ""hashValue"": ""{_hashAccountNumber}""
 }}]";
+    }
+
+    private string GetAccessTokenMetaData()
+    {
+        return @"
+{
+""expires_in"":1800,
+""token_type"":""Bearer"",
+""scope"":""api"",
+""refresh_token"":""111@"",
+""access_token"":""222@"",
+""id_token"":""zxcvb123""}";
     }
 }

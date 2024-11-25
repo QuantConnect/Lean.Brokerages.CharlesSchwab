@@ -182,10 +182,10 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     /// </summary>
     private void OnReSubscriptionProcess()
     {
-        Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Starting re-subscription process...");
+        Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Starting re-subscription process...");
         if (_orderBooks.IsEmpty)
         {
-            Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: No active subscriptions found. Skipping the re-subscription process.");
+            Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: No active subscriptions found. Skipping the re-subscription process.");
             return;
         }
 
@@ -194,7 +194,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
 
         foreach (var (securityType, symbols) in symbolsBySecurityType)
         {
-            Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Initiating subscription for {symbols.Length} symbol(s) under {securityType}...");
+            Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Initiating subscription for {symbols.Length} symbol(s) under {securityType}...");
             switch (securityType)
             {
                 case SecurityType.Equity:
@@ -209,7 +209,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                     throw new NotImplementedException($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: The security type '{securityType}' is not supported subscription process.");
             }
         }
-        Log.Trace($"${nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Re-subscription process completed successfully.");
+        Log.Trace($"{nameof(CharlesSchwabBrokerage)}.{nameof(OnReSubscriptionProcess)}: Re-subscription process completed successfully.");
     }
 
     /// <summary>
@@ -496,14 +496,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             return;
         }
 
-        var tradeTick = new Tick
-        {
-            Value = price,
-            Time = tradeTime.ConvertFromUtc(exchangeTimeZone),
-            Symbol = symbol,
-            TickType = TickType.Trade,
-            Quantity = size
-        };
+        var tradeTick = new Tick(DateTime.UtcNow.ConvertFromUtc(exchangeTimeZone), symbol, saleCondition: string.Empty, exchange: string.Empty, size, price);
 
         lock (_synchronizationContext)
         {
