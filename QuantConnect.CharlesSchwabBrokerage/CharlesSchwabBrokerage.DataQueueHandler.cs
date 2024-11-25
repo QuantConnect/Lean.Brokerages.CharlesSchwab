@@ -59,6 +59,13 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     private readonly ConcurrentDictionary<Symbol, DateTimeZone> _exchangeTimeZoneByLeanSymbol = new();
 
     /// <summary>
+    /// Indicates whether the subscription limit exceeded message has already been displayed.
+    /// Prevents the message from being shown multiple times.
+    /// </summary>
+    /// <remarks>A limit of 1 Streamer connection at any given time from a given user is available.</remarks>
+    private static bool _isSubscriptionLimitExceededMessageShown;
+
+    /// <summary>
     /// Sets the job we're subscribing for
     /// </summary>
     /// <param name="job">Job we're subscribing for</param>
@@ -92,6 +99,16 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
     {
         if (!CanSubscribe(dataConfig.Symbol))
         {
+            return null;
+        }
+
+        if (_orderBooks.Count > 3000)
+        {
+            if (!_isSubscriptionLimitExceededMessageShown)
+            {
+                _isSubscriptionLimitExceededMessageShown = true;
+                OnMessage(new(BrokerageMessageType.Error, 19, "Subscription limit exceeded: You have attempted to subscribe to more than the maximum allowed 3000 symbols."));
+            }
             return null;
         }
 
