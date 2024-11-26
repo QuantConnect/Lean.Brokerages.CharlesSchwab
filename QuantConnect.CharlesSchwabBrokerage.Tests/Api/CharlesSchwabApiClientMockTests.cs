@@ -29,7 +29,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
 [TestFixture]
 public class CharlesSchwabApiClientMockTests
 {
-    private string _accountNumber = Config.Get("charles-schwab-account-number", "123");
+    private string _accountNumber = "123-456";
     private string _hashAccountNumber = "X7V7W7";
     private CharlesSchwabApiClient _apiClient;
 
