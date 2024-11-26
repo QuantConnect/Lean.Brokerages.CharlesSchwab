@@ -54,4 +54,4 @@ jobs:
         run: dotnet build /p:Configuration=Release /v:quiet /p:WarningLevel=1 QuantConnect.CharlesSchwabBrokerage.sln
 
       - name: Run Tests
-        run: dotnet test ./QuantConnect.CharlesSchwabBrokerage.Tests/bin/Release/QuantConnect.Brokerages.Template.Tests.dll
+        run: dotnet test ./QuantConnect.CharlesSchwabBrokerage.Tests/bin/Release/QuantConnect.Brokerages.CharlesSchwab.Tests.dll
