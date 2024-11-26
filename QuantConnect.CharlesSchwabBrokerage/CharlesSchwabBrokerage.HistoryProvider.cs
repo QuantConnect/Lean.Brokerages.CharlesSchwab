@@ -71,7 +71,7 @@ public partial class CharlesSchwabBrokerage
     public override IEnumerable<BaseData> GetHistory(HistoryRequest request)
     {
         // Charles Schwab does not retain price history for Option or IndexOption contracts.
-        if (!CanSubscribe(request.Symbol) || request.Symbol.SecurityType.IsOption())
+        if (!CanSubscribe(request.Symbol))
         {
             if (!_unsupportedSecurityTypeWarningFired)
             {

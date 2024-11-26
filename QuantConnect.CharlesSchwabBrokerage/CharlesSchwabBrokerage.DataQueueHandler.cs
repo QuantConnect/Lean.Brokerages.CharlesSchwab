@@ -513,7 +513,18 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             return;
         }
 
-        var tradeTick = new Tick(tradeTime.ConvertFromUtc(exchangeTimeZone), symbol, saleCondition: string.Empty, exchange: string.Empty, size, price);
+        var localizedTradeTime = default(DateTime);
+        try
+        {
+            localizedTradeTime = tradeTime.ConvertFromUtc(exchangeTimeZone);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(EmitTradeTick)}: Error converting trade time: {tradeTime} (UTC) to exchange time zone. Exception: {ex.Message}.");
+            localizedTradeTime = DateTime.UtcNow.ConvertFromUtc(exchangeTimeZone);
+        }
+
+        var tradeTick = new Tick(localizedTradeTime, symbol, saleCondition: string.Empty, exchange: string.Empty, size, price);
 
         lock (_synchronizationContext)
         {
