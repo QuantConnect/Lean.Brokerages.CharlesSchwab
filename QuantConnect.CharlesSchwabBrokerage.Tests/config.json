@@ -1,0 +1,10 @@
+{
+  "data-folder": "../../../../Lean/Data/",
+  "charles-schwab-api-url": "https://api.schwabapi.com",
+  "charles-schwab-app-key": "",
+  "charles-schwab-secret": "",
+  "charles-schwab-account-number": "",
+  "charles-schwab-authorization-code-from-url": "",
+  "charles-schwab-refresh-token": "",
+  "charles-schwab-redirect-url": "https://127.0.0.1"
+}

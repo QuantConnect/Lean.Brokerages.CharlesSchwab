@@ -1,0 +1,45 @@
+{
+	"description": "Charles Schwab offers low-cost trading, robust platforms, and diverse investment options, fully supported on the QuantConnect platform.",
+	"platforms-features": [
+		{
+			"Platforms": ["Cloud Platform", "Local Platform", "LEAN CLI"],
+			"Download Data": [1,1,1],
+			"Backtesting": [1,1,1],
+			"Optimization": [1,1,1],
+			"Live Trading": [1,1,1]
+		}
+	],
+	"order-types": [
+		"Market",
+		"Limit",
+		"Stop Market"
+	],
+	"assets": [
+		"Equity",
+		"Equity Options",
+		"Index Options"
+	],
+	"brokerage-url": "https://www.schwab.com/",
+	"documentation": "/docs/v2/cloud-platform/live-trading/brokerages/charles-schwab",
+	"module-specification": {
+		"download": {
+			"data-types": [
+				"Trade"
+			],
+			"resolutions": [
+				"Minute",
+				"Hour",
+				"Daily"
+			],
+			"security-types": [
+				"Equity",
+				"Option",
+				"Index",
+				"IndexOption"
+			],
+			"markets": [
+				"USA"
+			]
+		}
+	}
+}
