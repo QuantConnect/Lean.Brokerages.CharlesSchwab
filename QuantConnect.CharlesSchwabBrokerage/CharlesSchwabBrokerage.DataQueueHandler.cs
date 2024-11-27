@@ -163,7 +163,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                 orderBook.RemoveBidRow(levelOneContent.BidPrice);
             }
 
-            if (levelOneContent.LastSize > 0 && levelOneContent.LastPrice > 0)
+            if (levelOneContent.LastSize > 0 && levelOneContent.LastPrice > 0 && levelOneContent.TradeTime != default)
             {
                 EmitTradeTick(orderBook.Symbol, levelOneContent.LastPrice, levelOneContent.LastSize, levelOneContent.TradeTime);
             }
@@ -305,7 +305,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
 
                 if (!TryGetLeanOrderByBrokerageId(orderFill.SchwabOrderID, out leanOrder))
                 {
-                    Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(TryGetLeanOrderByBrokerageId)}: Order not found: {orderFill.SchwabOrderID}. Order detail: {accountContent.MessageData}");
+                    OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Order not found: {orderFill.SchwabOrderID}. Order detail: {accountContent.MessageData}"));
                     break;
                 }
 
@@ -513,18 +513,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             return;
         }
 
-        var localizedTradeTime = default(DateTime);
-        try
-        {
-            localizedTradeTime = tradeTime.ConvertFromUtc(exchangeTimeZone);
-        }
-        catch (Exception ex)
-        {
-            Log.Error($"{nameof(CharlesSchwabBrokerage)}.{nameof(EmitTradeTick)}: Error converting trade time: {tradeTime} (UTC) to exchange time zone. Exception: {ex.Message}.");
-            localizedTradeTime = DateTime.UtcNow.ConvertFromUtc(exchangeTimeZone);
-        }
-
-        var tradeTick = new Tick(localizedTradeTime, symbol, saleCondition: string.Empty, exchange: string.Empty, size, price);
+        var tradeTick = new Tick(tradeTime.ConvertFromUtc(exchangeTimeZone), symbol, saleCondition: string.Empty, exchange: string.Empty, size, price);
 
         lock (_synchronizationContext)
         {
