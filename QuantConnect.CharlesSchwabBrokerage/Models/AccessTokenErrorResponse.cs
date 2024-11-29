@@ -25,13 +25,13 @@ public class AccessTokenErrorResponse
     /// <summary>
     /// The error message returned by the API.
     /// </summary>
-    [property: JsonProperty("error")]
+    [JsonProperty("error")]
     public string Error { get; }
 
     /// <summary>
     /// A detailed error description returned by the API.
     /// </summary>
-    [property: JsonProperty("error_description")] 
+    [JsonProperty("error_description")]
     public string ErrorDescription { get; }
 
     /// <summary>

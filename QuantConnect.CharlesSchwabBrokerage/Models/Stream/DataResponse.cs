@@ -57,7 +57,7 @@ public class Data
     /// <summary>
     /// The Unix timestamp representing when the data was generated.
     /// </summary>
-    [property: JsonProperty("timestamp")] 
+    [property: JsonProperty("timestamp")]
     public long Timestamp { get; }
 
     /// <summary>
@@ -328,7 +328,7 @@ public class LevelOneOptionContent : LevelOneContent
     /// The total number of outstanding contracts that have not been exercised or closed.
     /// </summary>
     [JsonProperty("9")]
-    public  decimal OpenInterest { get; }
+    public decimal OpenInterest { get; }
 
     /// <summary>
     /// The size of the bid (number of contracts available for purchase).
