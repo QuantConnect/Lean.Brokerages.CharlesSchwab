@@ -184,6 +184,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
         WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate, OnReSubscriptionProcess);
+        WebSocket.Error += HandleWebSocketError;
         _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
 
         SubscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager()
@@ -610,6 +611,16 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             exceptionMessage = ex.Message;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Handles errors occurring in the WebSocket connection and raises a message event.
+    /// </summary>
+    /// <param name="_">The source of the error event, typically the WebSocket client.</param>
+    /// <param name="webSocketError">The <see cref="WebSocketError"/> containing details about the error.</param>
+    private void HandleWebSocketError(object _, WebSocketError webSocketError)
+    {
+        OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, -1, webSocketError.Message));
     }
 
     #region ValidateSubscription
