@@ -26,43 +26,36 @@ public class Instrument
     /// <summary>
     /// The type of asset (e.g., stock, bond) associated with the instrument.
     /// </summary>
-    [JsonProperty("assetType")]
     public AssetType AssetType { get; }
 
     /// <summary>
     /// The CUSIP (Committee on Uniform Securities Identification Procedures) identifier for the instrument, which uniquely identifies a financial security.
     /// </summary>
-    [JsonProperty("cusip")]
     public string Cusip { get; }
 
     /// <summary>
     /// The ticker symbol of the instrument, representing the trading identifier used on exchanges.
     /// </summary>
-    [JsonProperty("symbol")]
     public string Symbol { get; }
 
     /// <summary>
     /// A brief description of the instrument, providing additional context or details.
     /// </summary>
-    [JsonProperty("description")]
     public string Description { get; }
 
     /// <summary>
     /// A unique identifier for the instrument, used for tracking and management purposes.
     /// </summary>
-    [JsonProperty("instrumentId")]
     public int InstrumentId { get; }
 
     /// <summary>
     /// The net change in value of the instrument since the previous trading session, indicating the price movement.
     /// </summary>
-    [JsonProperty("netChange")]
     public decimal NetChange { get; }
 
     /// <summary>
     /// The specific type of financial instrument (e.g., SWEEP_VEHICLE), indicating its functionality or category.
     /// </summary>
-    [JsonProperty("type")]
     public string Type { get; }
 
     /// <summary>

@@ -27,7 +27,6 @@ public class OptionChainResponse
     /// <summary>
     /// The symbol of the option chain.
     /// </summary>
-    [JsonProperty("symbol")]
     public string Symbol { get; }
 
     /// <summary>
@@ -40,14 +39,12 @@ public class OptionChainResponse
     /// The call option expiration date map.
     /// The map is structured with expiration dates as keys and a nested dictionary containing strike prices and collections of option metadata.
     /// </summary>
-    [JsonProperty("callExpDateMap")]
     public IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> CallExpDateMap { get; }
 
     /// <summary>
     /// The put option expiration date map.
     /// The map is structured similarly to the call map, with expiration dates as keys and strike price dictionaries.
     /// </summary>
-    [JsonProperty("putExpDateMap")]
     public IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> PutExpDateMap { get; }
 
     /// <summary>
@@ -85,13 +82,11 @@ public readonly struct OptionMetaData
     /// <summary>
     /// The symbol for the specific option contract.
     /// </summary>
-    [JsonProperty("symbol")]
     public string Symbol { get; }
 
     /// <summary>
     /// The name of the exchange where the option is listed.
     /// </summary>
-    [JsonProperty("exchangeName")]
     public string ExchangeName { get; }
 
     /// <summary>

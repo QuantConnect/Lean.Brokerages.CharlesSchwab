@@ -25,7 +25,6 @@ public class AccessTokenErrorResponse
     /// <summary>
     /// The error message returned by the API.
     /// </summary>
-    [JsonProperty("error")]
     public string Error { get; }
 
     /// <summary>

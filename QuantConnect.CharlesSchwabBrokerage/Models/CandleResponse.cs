@@ -28,19 +28,16 @@ public class CandleResponse
     /// <summary>
     /// The list of candlestick data for the symbol.
     /// </summary>
-    [JsonProperty("candles")]
     public IReadOnlyCollection<Candle> Candles { get; }
 
     /// <summary>
     /// The symbol for which the candlestick data is retrieved.
     /// </summary>
-    [JsonProperty("symbol")]
     public string Symbol { get; }
 
     /// <summary>
     /// Indicates whether the candlestick data is empty or not.
     /// </summary>
-    [JsonProperty("empty")]
     public bool Empty { get; }
 
     /// <summary>
@@ -61,37 +58,32 @@ public class Candle
     /// <summary>
     /// The opening price of the candle.
     /// </summary>
-    [JsonProperty("open")]
     public decimal Open { get; }
 
     /// <summary>
     /// The highest price reached during the candle period.
     /// </summary>
-    [JsonProperty("high")]
     public decimal High { get; }
 
     /// <summary>
     /// The lowest price reached during the candle period.
     /// </summary>
-    [JsonProperty("low")]
     public decimal Low { get; }
 
     /// <summary>
     /// The closing price of the candle.
     /// </summary>
-    [JsonProperty("close")]
     public decimal Close { get; }
 
     /// <summary>
     /// The total volume of transactions during the candle period.
     /// </summary>
-    [JsonProperty("volume")]
     public decimal Volume { get; }
 
     /// <summary>
     /// The timestamp of the candlestick, in Unix time converted to <see cref="DateTime"/>.
     /// </summary>
-    [JsonProperty("datetime"), JsonConverter(typeof(CharlesSchwabUnixMillisecondsConverter))]
+    [JsonConverter(typeof(CharlesSchwabUnixMillisecondsConverter))]
     public DateTime DateTime { get; }
 
     /// <summary>

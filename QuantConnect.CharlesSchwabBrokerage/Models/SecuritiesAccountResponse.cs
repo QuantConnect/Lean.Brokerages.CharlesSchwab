@@ -26,13 +26,11 @@ public class SecuritiesAccountResponse
     /// <summary>
     /// Metadata of the securities account, including details such as account type, positions, and trading-related attributes.
     /// </summary>
-    [JsonProperty("securitiesAccount")]
     public SecuritiesAccount SecuritiesAccount { get; }
 
     /// <summary>
     /// The aggregated balance of the account, which includes liquidation values and other high-level account balance information.
     /// </summary>
-    [JsonProperty("aggregatedBalance")]
     public AggregatedBalance AggregatedBalance { get; }
 
     /// <summary>
@@ -58,13 +56,11 @@ public class AggregatedBalance
     /// <summary>
     /// The current liquidation value of the account, representing the immediate value if all holdings were sold.
     /// </summary>
-    [JsonProperty("currentLiquidationValue")]
     public decimal CurrentLiquidationValue { get; }
 
     /// <summary>
     /// The overall liquidation value of the account, which may include adjustments or future expectations.
     /// </summary>
-    [JsonProperty("liquidationValue")]
     public decimal LiquidationValue { get; }
 
     /// <summary>
@@ -89,61 +85,51 @@ public class SecuritiesAccount
     /// <summary>
     /// The type of the account, such as "CASH" or "MARGIN".
     /// </summary>
-    [JsonProperty("type")]
     public string Type { get; }
 
     /// <summary>
     /// The unique identifier for the account.
     /// </summary>
-    [JsonProperty("accountNumber")]
     public string AccountNumber { get; }
 
     /// <summary>
     /// The total number of round trips (buy and sell transactions completed within the same day).
     /// </summary>
-    [JsonProperty("roundTrips")]
     public int RoundTrips { get; }
 
     /// <summary>
     /// Indicates whether the account holder is classified as a day trader.
     /// </summary>
-    [JsonProperty("isDayTrader")]
     public bool IsDayTrader { get; }
 
     /// <summary>
     /// Indicates whether the account is restricted to closing only (no new positions can be opened).
     /// </summary>
-    [JsonProperty("isClosingOnlyRestricted")]
     public bool IsClosingOnlyRestricted { get; }
 
     /// <summary>
     /// Indicates if the Pattern Day Trader (PDT) flag is set on the account.
     /// </summary>
-    [JsonProperty("pfcbFlag")]
     public bool PfcbFlag { get; }
 
     /// <summary>
     /// A collection of financial positions (such as stocks, bonds, etc.) held in the account.
     /// </summary>
-    [JsonProperty("positions")]
     public IReadOnlyCollection<Position> Positions { get; }
 
     /// <summary>
     /// The initial balance details of the account, including available funds and margin values.
     /// </summary>
-    [JsonProperty("initialBalances")]
     public InitialBalance InitialBalances { get; }
 
     /// <summary>
     /// The current balance details, such as available funds, buying power, and equity.
     /// </summary>
-    [JsonProperty("currentBalances")]
     public CurrentBalance CurrentBalances { get; }
 
     /// <summary>
     /// The projected balance details, including future buying power and maintenance calls.
     /// </summary>
-    [JsonProperty("projectedBalances")]
     public ProjectedBalance ProjectedBalances { get; }
 
     /// <summary>
@@ -184,193 +170,161 @@ public class InitialBalance
     /// <summary>
     /// The amount of interest that has been accrued but not yet paid.
     /// </summary>
-    [JsonProperty("accruedInterest")]
     public decimal AccruedInterest { get; }
 
     /// <summary>
     /// Available funds that can be used for non-marginable trades.
     /// </summary>
-    [JsonProperty("availableFundsNonMarginableTrade")]
     public decimal AvailableFundsNonMarginableTrade { get; }
 
     /// <summary>
     /// The total value of bonds held in the account.
     /// </summary>
-    [JsonProperty("bondValue")]
     public decimal BondValue { get; }
 
     /// <summary>
     /// The amount of buying power available in the account.
     /// </summary>
-    [JsonProperty("buyingPower")]
     public decimal BuyingPower { get; }
 
     /// <summary>
     /// The total cash balance in the account.
     /// </summary>
-    [JsonProperty("cashBalance")]
     public decimal CashBalance { get; }
 
     /// <summary>
     /// The amount of cash available for trading activities.
     /// </summary>
-    [JsonProperty("cashAvailableForTrading")]
     public decimal CashAvailableForTrading { get; }
 
     /// <summary>
     /// The total cash receipts in the account.
     /// </summary>
-    [JsonProperty("cashReceipts")]
     public decimal CashReceipts { get; }
 
     /// <summary>
     /// The buying power available for day trading purposes.
     /// </summary>
-    [JsonProperty("dayTradingBuyingPower")]
     public decimal DayTradingBuyingPower { get; }
 
     /// <summary>
     /// The call amount related to day trading buying power.
     /// </summary>
-    [JsonProperty("dayTradingBuyingPowerCall")]
     public decimal DayTradingBuyingPowerCall { get; }
 
     /// <summary>
     /// The call amount related to day trading equity.
     /// </summary>
-    [JsonProperty("dayTradingEquityCall")]
     public decimal DayTradingEquityCall { get; }
 
     /// <summary>
     /// The total equity in the account.
     /// </summary>
-    [JsonProperty("equity")]
     public decimal Equity { get; }
 
     /// <summary>
     /// The percentage of the account that is equity.
     /// </summary>
-    [JsonProperty("equityPercentage")]
     public decimal EquityPercentage { get; }
 
     /// <summary>
     /// The value of the account if all positions were liquidated.
     /// </summary>
-    [JsonProperty("liquidationValue")]
     public decimal LiquidationValue { get; }
 
     /// <summary>
     /// The margin value of long positions.
     /// </summary>
-    [JsonProperty("longMarginValue")]
     public decimal LongMarginValue { get; }
 
     /// <summary>
     /// The market value of long options in the account.
     /// </summary>
-    [JsonProperty("longOptionMarketValue")]
     public decimal LongOptionMarketValue { get; }
 
     /// <summary>
     /// The market value of long stock positions in the account.
     /// </summary>
-    [JsonProperty("longStockValue")]
     public decimal LongStockValue { get; }
 
     /// <summary>
     /// The amount of maintenance call in the account.
     /// </summary>
-    [JsonProperty("maintenanceCall")]
     public decimal MaintenanceCall { get; }
 
     /// <summary>
     /// The minimum maintenance requirement for the account.
     /// </summary>
-    [JsonProperty("maintenanceRequirement")]
     public decimal MaintenanceRequirement { get; }
 
     /// <summary>
     /// The total margin balance in the account.
     /// </summary>
-    [JsonProperty("margin")]
     public decimal Margin { get; }
 
     /// <summary>
     /// The equity portion of the margin balance.
     /// </summary>
-    [JsonProperty("marginEquity")]
     public decimal MarginEquity { get; }
 
     /// <summary>
     /// The total value of the money market fund in the account.
     /// </summary>
-    [JsonProperty("moneyMarketFund")]
     public decimal MoneyMarketFund { get; }
 
     /// <summary>
     /// The total value of mutual fund holdings in the account.
     /// </summary>
-    [JsonProperty("mutualFundValue")]
     public decimal MutualFundValue { get; }
 
     /// <summary>
     /// The Regulation T call amount for the account.
     /// </summary>
-    [JsonProperty("regTCall")]
     public decimal RegTCall { get; }
 
     /// <summary>
     /// The margin value of short positions.
     /// </summary>
-    [JsonProperty("shortMarginValue")]
     public decimal ShortMarginValue { get; }
 
     /// <summary>
     /// The market value of short options in the account.
     /// </summary>
-    [JsonProperty("shortOptionMarketValue")]
     public decimal ShortOptionMarketValue { get; }
 
     /// <summary>
     /// The market value of short stock positions in the account.
     /// </summary>
-    [JsonProperty("shortStockValue")]
     public decimal ShortStockValue { get; }
 
     /// <summary>
     /// The total cash value in the account.
     /// </summary>
-    [JsonProperty("totalCash")]
     public decimal TotalCash { get; }
 
     /// <summary>
     /// Indicates whether the account is in a call status (typically due to margin or other obligations).
     /// </summary>
-    [JsonProperty("isInCall")]
     public bool IsInCall { get; }
 
     /// <summary>
     /// The amount of pending deposits that have not yet cleared in the account.
     /// </summary>
-    [JsonProperty("pendingDeposits")]
     public decimal PendingDeposits { get; }
 
     /// <summary>
     /// The total margin balance in the account.
     /// </summary>
-    [JsonProperty("marginBalance")]
     public decimal MarginBalance { get; }
 
     /// <summary>
     /// The total short balance in the account.
     /// </summary>
-    [JsonProperty("shortBalance")]
     public decimal ShortBalance { get; }
 
     /// <summary>
     /// The overall value of the account, including cash and positions.
     /// </summary>
-    [JsonProperty("accountValue")]
     public decimal AccountValue { get; }
 
     /// <summary>
@@ -455,169 +409,141 @@ public class CurrentBalance
     /// <summary>
     /// The amount of interest accrued but not yet paid.
     /// </summary>
-    [JsonProperty("accruedInterest")]
     public decimal AccruedInterest { get; }
 
     /// <summary>
     /// The total cash balance available in the account.
     /// </summary>
-    [JsonProperty("cashBalance")]
     public decimal CashBalance { get; }
 
     /// <summary>
     /// The total cash receipts in the account.
     /// </summary>
-    [JsonProperty("cashReceipts")]
     public decimal CashReceipts { get; }
 
     /// <summary>
     /// The market value of long options held in the account.
     /// </summary>
-    [JsonProperty("longOptionMarketValue")]
     public decimal LongOptionMarketValue { get; }
 
     /// <summary>
     /// The value of the account if all positions were liquidated.
     /// </summary>
-    [JsonProperty("liquidationValue")]
     public decimal LiquidationValue { get; }
 
     /// <summary>
     /// The total market value of long positions in the account.
     /// </summary>
-    [JsonProperty("longMarketValue")]
     public decimal LongMarketValue { get; }
 
     /// <summary>
     /// The total value of money market funds in the account.
     /// </summary>
-    [JsonProperty("moneyMarketFund")]
     public decimal MoneyMarketFund { get; }
 
     /// <summary>
     /// The amount saved in savings or similar accounts.
     /// </summary>
-    [JsonProperty("savings")]
     public decimal Savings { get; }
 
     /// <summary>
     /// The total market value of short positions in the account.
     /// </summary>
-    [JsonProperty("shortMarketValue")]
     public decimal ShortMarketValue { get; }
 
     /// <summary>
     /// The total amount of deposits that are pending or not yet cleared.
     /// </summary>
-    [JsonProperty("pendingDeposits")]
     public decimal PendingDeposits { get; }
 
     /// <summary>
     /// The total market value of mutual fund holdings in the account.
     /// </summary>
-    [JsonProperty("mutualFundValue")]
     public decimal MutualFundValue { get; }
 
     /// <summary>
     /// The total market value of bond holdings in the account.
     /// </summary>
-    [JsonProperty("bondValue")]
     public decimal BondValue { get; }
 
     /// <summary>
     /// The market value of short options held in the account.
     /// </summary>
-    [JsonProperty("shortOptionMarketValue")]
     public decimal ShortOptionMarketValue { get; }
 
     /// <summary>
     /// The total funds currently available in the account for trading or withdrawal.
     /// </summary>
-    [JsonProperty("availableFunds")]
     public decimal AvailableFunds { get; }
 
     /// <summary>
     /// The amount of available funds for non-marginable trades.
     /// </summary>
-    [JsonProperty("availableFundsNonMarginableTrade")]
     public decimal AvailableFundsNonMarginableTrade { get; }
 
     /// <summary>
     /// The total buying power available in the account.
     /// </summary>
-    [JsonProperty("buyingPower")]
     public decimal BuyingPower { get; }
 
     /// <summary>
     /// The buying power available for non-marginable trades.
     /// </summary>
-    [JsonProperty("buyingPowerNonMarginableTrade")]
     public decimal BuyingPowerNonMarginableTrade { get; }
 
     /// <summary>
     /// The buying power specifically available for day trading.
     /// </summary>
-    [JsonProperty("dayTradingBuyingPower")]
     public decimal DayTradingBuyingPower { get; }
 
     /// <summary>
     /// The total equity in the account.
     /// </summary>
-    [JsonProperty("equity")]
     public decimal Equity { get; }
 
     /// <summary>
     /// The percentage of the account value that is equity.
     /// </summary>
-    [JsonProperty("equityPercentage")]
     public decimal EquityPercentage { get; }
 
     /// <summary>
     /// The margin value of long positions held in the account.
     /// </summary>
-    [JsonProperty("longMarginValue")]
     public decimal LongMarginValue { get; }
 
     /// <summary>
     /// The total maintenance call amount in the account.
     /// </summary>
-    [JsonProperty("maintenanceCall")]
     public decimal MaintenanceCall { get; }
 
     /// <summary>
     /// The minimum maintenance requirement for the account.
     /// </summary>
-    [JsonProperty("maintenanceRequirement")]
     public decimal MaintenanceRequirement { get; }
 
     /// <summary>
     /// The total margin balance in the account.
     /// </summary>
-    [JsonProperty("marginBalance")]
     public decimal MarginBalance { get; }
 
     /// <summary>
     /// The Regulation T call amount in the account.
     /// </summary>
-    [JsonProperty("regTCall")]
     public decimal RegTCall { get; }
 
     /// <summary>
     /// The short balance in the account.
     /// </summary>
-    [JsonProperty("shortBalance")]
     public decimal ShortBalance { get; }
 
     /// <summary>
     /// The margin value of short positions held in the account.
     /// </summary>
-    [JsonProperty("shortMarginValue")]
     public decimal ShortMarginValue { get; }
 
     /// <summary>
     /// The Special Memorandum Account (SMA) value.
     /// </summary>
-    [JsonProperty("sma")]
     public decimal Sma { get; }
 
     /// <summary>
@@ -698,55 +624,46 @@ public class ProjectedBalance
     /// <summary>
     /// The projected amount of funds that will be available for trading or withdrawal.
     /// </summary>
-    [JsonProperty("availableFunds")]
     public decimal AvailableFunds { get; }
 
     /// <summary>
     /// The projected amount of funds available for non-marginable trades.
     /// </summary>
-    [JsonProperty("availableFundsNonMarginableTrade")]
     public decimal AvailableFundsNonMarginableTrade { get; }
 
     /// <summary>
     /// The projected buying power available in the account.
     /// </summary>
-    [JsonProperty("buyingPower")]
     public decimal BuyingPower { get; }
 
     /// <summary>
     /// The projected buying power specifically available for day trading.
     /// </summary>
-    [JsonProperty("dayTradingBuyingPower")]
     public decimal DayTradingBuyingPower { get; }
 
     /// <summary>
     /// The projected call amount for day trading buying power.
     /// </summary>
-    [JsonProperty("dayTradingBuyingPowerCall")]
     public decimal DayTradingBuyingPowerCall { get; }
 
     /// <summary>
     /// The projected maintenance call amount in the account.
     /// </summary>
-    [JsonProperty("maintenanceCall")]
     public decimal MaintenanceCall { get; }
 
     /// <summary>
     /// The projected Regulation T call amount in the account.
     /// </summary>
-    [JsonProperty("regTCall")]
     public decimal RegTCall { get; }
 
     /// <summary>
     /// Indicates if the account is projected to be in a call status.
     /// </summary>
-    [JsonProperty("isInCall")]
     public bool IsInCall { get; }
 
     /// <summary>
     /// The projected buying power for stock purchases.
     /// </summary>
-    [JsonProperty("stockBuyingPower")]
     public decimal StockBuyingPower { get; }
 
     /// <summary>
@@ -785,121 +702,101 @@ public class Position
     /// <summary>
     /// The short quantity held in the position.
     /// </summary>
-    [JsonProperty("shortQuantity")]
     public decimal ShortQuantity { get; }
 
     /// <summary>
     /// The average price of the position.
     /// </summary>
-    [JsonProperty("averagePrice")]
     public decimal AveragePrice { get; }
 
     /// <summary>
     /// The profit or loss for the current day.
     /// </summary>
-    [JsonProperty("currentDayProfitLoss")]
     public decimal CurrentDayProfitLoss { get; }
 
     /// <summary>
     /// The percentage profit or loss for the current day.
     /// </summary>
-    [JsonProperty("currentDayProfitLossPercentage")]
     public decimal CurrentDayProfitLossPercentage { get; }
 
     /// <summary>
     /// The long quantity held in the position.
     /// </summary>
-    [JsonProperty("longQuantity")]
     public decimal LongQuantity { get; }
 
     /// <summary>
     /// The settled long quantity in the position.
     /// </summary>
-    [JsonProperty("settledLongQuantity")]
     public decimal SettledLongQuantity { get; }
 
     /// <summary>
     /// The settled short quantity in the position.
     /// </summary>
-    [JsonProperty("settledShortQuantity")]
     public decimal SettledShortQuantity { get; }
 
     /// <summary>
     /// The aged quantity of the position.
     /// </summary>
-    [JsonProperty("agedQuantity")]
     public decimal AgedQuantity { get; }
 
     /// <summary>
     /// The financial instrument associated with this position.
     /// </summary>
-    [JsonProperty("instrument")]
     public Instrument Instrument { get; }
 
     /// <summary>
     /// The market value of the position.
     /// </summary>
-    [JsonProperty("marketValue")]
     public decimal MarketValue { get; }
 
     /// <summary>
     /// The maintenance requirement for the position.
     /// </summary>
-    [JsonProperty("maintenanceRequirement")]
     public decimal MaintenanceRequirement { get; }
 
     /// <summary>
     /// The average price for the long position.
     /// </summary>
-    [JsonProperty("averageLongPrice")]
     public decimal AverageLongPrice { get; }
 
     /// <summary>
     /// The average price for the short position.
     /// </summary>
-    [JsonProperty("averageShortPrice")]
     public decimal AverageShortPrice { get; }
 
     /// <summary>
     /// The tax lot average price for the long position.
     /// </summary>
-    [JsonProperty("taxLotAverageLongPrice")]
     public decimal TaxLotAverageLongPrice { get; }
 
     /// <summary>
     /// The tax lot average price for the short position.
     /// </summary>
-    [JsonProperty("taxLotAverageShortPrice")]
     public decimal TaxLotAverageShortPrice { get; }
 
     /// <summary>
     /// The open profit or loss for the long position.
     /// </summary>
-    [JsonProperty("longOpenProfitLoss")]
     public decimal LongOpenProfitLoss { get; }
 
     /// <summary>
     /// The open profit or loss for the short position.
     /// </summary>
-    [JsonProperty("shortOpenProfitLoss")]
     public decimal ShortOpenProfitLoss { get; }
 
     /// <summary>
     /// The previous session's long quantity.
     /// </summary>
-    [JsonProperty("previousSessionLongQuantity")]
     public decimal PreviousSessionLongQuantity { get; }
 
     /// <summary>
     /// The previous session's short quantity.
     /// </summary>
-    [JsonProperty("previousSessionShortQuantity")]
     public decimal PreviousSessionShortQuantity { get; }
 
     /// <summary>
     /// The cost incurred for the position on the current day.
     /// </summary>
-    [JsonProperty("currentDayCost")]
     public decimal CurrentDayCost { get; }
 
     /// <summary>

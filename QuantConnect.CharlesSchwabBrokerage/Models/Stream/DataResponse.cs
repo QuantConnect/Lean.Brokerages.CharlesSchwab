@@ -31,7 +31,6 @@ public class DataResponse : IStreamBaseResponse
     /// <summary>
     /// A collection of <see cref="Data"/> objects that contain market data details.
     /// </summary>
-    [JsonProperty("data")]
     public IReadOnlyCollection<Data> Data { get; }
 
     /// <summary>
@@ -51,25 +50,21 @@ public class Data
     /// <summary>
     /// The type of service providing the market data.
     /// </summary>
-    [property: JsonProperty("service")]
     public Service Service { get; }
 
     /// <summary>
     /// The Unix timestamp representing when the data was generated.
     /// </summary>
-    [property: JsonProperty("timestamp")]
     public long Timestamp { get; }
 
     /// <summary>
     /// The command associated with the data, such as an update or response type.
     /// </summary>
-    [property: JsonProperty("command")]
     public Command Command { get; }
 
     /// <summary>
     /// A collection of <see cref="BaseContent"/> objects containing account-specific details.
     /// </summary>
-    [property: JsonProperty("content")]
     public IReadOnlyCollection<BaseContent> Content { get; }
 
     /// <summary>
@@ -92,7 +87,6 @@ public class BaseContent
     /// <summary>
     /// A unique identifier for the content, passed back to the client to identify the subscription this response belongs to.
     /// </summary>
-    [property: JsonProperty("key")]
     public string Key { get; }
 
     /// <summary>

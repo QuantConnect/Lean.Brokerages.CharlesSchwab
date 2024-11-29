@@ -52,7 +52,6 @@ public class ErrorsResponse
     /// <summary>
     /// A collection of <see cref="ErrorMetaData"/> objects that provide details about each error.
     /// </summary>
-    [JsonProperty("errors")]
     public IReadOnlyCollection<ErrorMetaData> Errors { get; }
 
     /// <summary>
@@ -71,31 +70,26 @@ public class ErrorMetaData
     /// <summary>
     /// The unique identifier for the error.
     /// </summary>
-    [JsonProperty("id")]
     public string Id { get; }
 
     /// <summary>
     /// The HTTP status code associated with the error.
     /// </summary>
-    [JsonProperty("status")]
     public string Status { get; }
 
     /// <summary>
     /// A short, human-readable summary of the error.
     /// </summary>
-    [JsonProperty("title")]
     public string Title { get; }
 
     /// <summary>
     /// A detailed description of the error.
     /// </summary>
-    [JsonProperty("detail")]
     public string Detail { get; }
 
     /// <summary>
     /// The source of the error, providing additional context.
     /// </summary>
-    [JsonProperty("source")]
     public Source Source { get; }
 
     /// <summary>
@@ -119,7 +113,6 @@ public readonly struct Source
     /// <summary>
     /// The parameter that caused the error.
     /// </summary>
-    [JsonProperty("parameter")]
     public string Parameter { get; }
 
     /// <summary>

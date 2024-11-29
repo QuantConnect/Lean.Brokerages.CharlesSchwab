@@ -26,7 +26,6 @@ public class NotifyResponse : IStreamBaseResponse
     /// <summary>
     /// Gets the collection of heartbeat notifications.
     /// </summary>
-    [property: JsonProperty("notify")]
     public IReadOnlyCollection<HeartbeatResponse> Notify { get; }
 
     /// <summary>
@@ -44,7 +43,6 @@ public readonly struct HeartbeatResponse
     /// <summary>
     /// Gets the timestamp or identifier of the heartbeat notification.
     /// </summary>
-    [property: JsonProperty("heartbeat")]
     public string Heartbeat { get; }
 
     /// <summary>

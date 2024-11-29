@@ -25,13 +25,11 @@ public class AccountNumberResponse
     /// <summary>
     /// The account number.
     /// </summary>
-    [JsonProperty("accountNumber")]
     public string AccountNumber { get; }
 
     /// <summary>
     /// The hash value associated with the account number.
     /// </summary>
-    [JsonProperty("hashValue")]
     public string HashValue { get; }
 
     /// <summary>

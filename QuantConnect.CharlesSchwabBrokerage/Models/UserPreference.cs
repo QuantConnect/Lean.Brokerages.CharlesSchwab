@@ -26,19 +26,16 @@ public class UserPreference
     /// <summary>
     /// The collection of accounts associated with the user.
     /// </summary>
-    [JsonProperty("accounts")]
     public IReadOnlyCollection<Account> Accounts { get; }
 
     /// <summary>
     /// The collection of streamer information associated with the user.
     /// </summary>
-    [JsonProperty("streamerInfo")]
     public IReadOnlyCollection<StreamerInfo> StreamerInfo { get; }
 
     /// <summary>
     /// The collection of offers available to the user.
     /// </summary>
-    [JsonProperty("offers")]
     public IReadOnlyCollection<Offer> Offers { get; }
 
     /// <summary>
@@ -60,13 +57,11 @@ public readonly struct Offer
     /// <summary>
     /// Gets a value indicating whether Level 2 permissions are granted.
     /// </summary>
-    [JsonProperty("level2Permissions")]
     public bool Level2Permissions { get; }
 
     /// <summary>
     /// Gets the market data permission level.
     /// </summary>
-    [JsonProperty("mktDataPermission")]
     public string MktDataPermission { get; }
 
     /// <summary>
@@ -86,31 +81,26 @@ public class StreamerInfo
     /// <summary>
     /// Gets the URL for the streamer socket.
     /// </summary>
-    [JsonProperty("streamerSocketUrl")]
     public string StreamerSocketUrl { get; }
 
     /// <summary>
     /// Gets the Schwab client customer ID.
     /// </summary>
-    [JsonProperty("schwabClientCustomerId")]
     public string SchwabClientCustomerId { get; }
 
     /// <summary>
     /// Gets the Schwab client correlation ID.
     /// </summary>
-    [JsonProperty("schwabClientCorrelId")]
     public string SchwabClientCorrelId { get; }
 
     /// <summary>
     /// Gets the Schwab client channel.
     /// </summary>
-    [JsonProperty("schwabClientChannel")]
     public string SchwabClientChannel { get; }
 
     /// <summary>
     /// Gets the Schwab client function ID.
     /// </summary>
-    [JsonProperty("schwabClientFunctionId")]
     public string SchwabClientFunctionId { get; }
 
     /// <summary>
@@ -140,43 +130,36 @@ public class Account
     /// <summary>
     /// Gets the account number.
     /// </summary>
-    [JsonProperty("accountNumber")]
     public string AccountNumber { get; }
 
     /// <summary>
     /// Gets a value indicating whether this is the primary account.
     /// </summary>
-    [JsonProperty("primaryAccount")]
     public bool PrimaryAccount { get; }
 
     /// <summary>
     /// Gets the type of the account.
     /// </summary>
-    [JsonProperty("type")]
     public string Type { get; }
 
     /// <summary>
     /// Gets the nickname of the account.
     /// </summary>
-    [JsonProperty("nickName")]
     public string NickName { get; }
 
     /// <summary>
     /// Gets the display account ID.
     /// </summary>
-    [JsonProperty("displayAcctId")]
     public string DisplayAcctId { get; }
 
     /// <summary>
     /// Gets the auto position effect setting for the account.
     /// </summary>
-    [JsonProperty("autoPositionEffect")]
     public string AutoPositionEffect { get; }
 
     /// <summary>
     /// Gets the color associated with the account.
     /// </summary>
-    [JsonProperty("accountColor")]
     public string AccountColor { get; }
 
     /// <summary>
