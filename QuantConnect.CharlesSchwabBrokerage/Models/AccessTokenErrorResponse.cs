@@ -18,11 +18,27 @@ using Newtonsoft.Json;
 namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 
 /// <summary>
-/// Represents an token error response from the Charles Schwab API.
+/// Represents a token error response from the Charles Schwab API.
 /// </summary>
-/// <param name="Error">The error message returned by the API.</param>
-/// <param name="ErrorDescription">A detailed error descriptions returned by the API.</param>
-public record AccessTokenErrorResponse(
-    [property: JsonProperty("error")] string Error,
-    [property: JsonProperty("error_description")] string ErrorDescription
-    );
+public class AccessTokenErrorResponse
+{
+    /// <summary>
+    /// The error message returned by the API.
+    /// </summary>
+    [property: JsonProperty("error")]
+    public string Error { get; }
+
+    /// <summary>
+    /// A detailed error description returned by the API.
+    /// </summary>
+    [property: JsonProperty("error_description")] 
+    public string ErrorDescription { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AccessTokenErrorResponse"/> struct.
+    /// </summary>
+    /// <param name="error">The error message returned by the API.</param>
+    /// <param name="errorDescription">A detailed error description returned by the API.</param>
+    [JsonConstructor]
+    public AccessTokenErrorResponse(string error, string errorDescription) => (Error, ErrorDescription) = (error, errorDescription);
+}

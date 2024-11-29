@@ -21,12 +21,36 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 /// <summary>
 /// Represents a response containing <b>notifications of heartbeats</b>.
 /// </summary>
-/// <param name="Notify">A collection of <see cref="HeartbeatResponse"/> objects representing heartbeat notifications.</param>
-public record NotifyResponse(
-    [property: JsonProperty("notify")] IReadOnlyCollection<HeartbeatResponse> Notify) : IStreamBaseResponse;
+public class NotifyResponse : IStreamBaseResponse
+{
+    /// <summary>
+    /// Gets the collection of heartbeat notifications.
+    /// </summary>
+    [property: JsonProperty("notify")]
+    public IReadOnlyCollection<HeartbeatResponse> Notify { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NotifyResponse"/> class.
+    /// </summary>
+    /// <param name="notify">A collection of <see cref="HeartbeatResponse"/> objects representing heartbeat notifications.</param>
+    public NotifyResponse(IReadOnlyCollection<HeartbeatResponse> notify) => Notify = notify;
+}
 
 /// <summary>
 /// Represents a single heartbeat notification.
 /// </summary>
-/// <param name="Heartbeat">The timestamp or identifier of the heartbeat notification.</param>
-public record struct HeartbeatResponse([property: JsonProperty("heartbeat")] string Heartbeat);
+public readonly struct HeartbeatResponse
+{
+    /// <summary>
+    /// Gets the timestamp or identifier of the heartbeat notification.
+    /// </summary>
+    [property: JsonProperty("heartbeat")]
+    public string Heartbeat { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HeartbeatResponse"/> struct.
+    /// </summary>
+    /// <param name="heartbeat">The timestamp or identifier of the heartbeat notification.</param>
+
+    public HeartbeatResponse(string heartbeat) => Heartbeat = heartbeat;
+}

@@ -22,5 +22,17 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 /// <summary>
 /// Represents the timestamp of an execution event.
 /// </summary>
-/// <param name="DateTime">The date and time of the execution in the format "yyyy-MM-dd HH:mm:ss.fff".</param>
-public record ExecutionTimeStamp([JsonProperty("DateTimeString"), JsonConverter(typeof(DateTimeJsonConverter), "yyyy-MM-dd HH:mm:ss.fff")] DateTime DateTime);
+public class ExecutionTimeStamp
+{
+    /// <summary>
+    /// Gets the date and time of the execution.
+    /// </summary>
+    [JsonProperty("DateTimeString"), JsonConverter(typeof(DateTimeJsonConverter), "yyyy-MM-dd HH:mm:ss.fff")]
+    public DateTime DateTime { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExecutionTimeStamp"/> struct.
+    /// </summary>
+    /// <param name="dateTime">The date and time of the execution in the format "yyyy-MM-dd HH:mm:ss.fff".</param>
+    public ExecutionTimeStamp(DateTime dateTime) => DateTime = dateTime;
+}

@@ -21,41 +21,110 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 /// <summary>
 /// Represents an "OrderUROutCompleted" activity, including specific event data.
 /// </summary>
-/// <param name="SchwabOrderID">The Schwab order ID associated with this activity.</param>
-/// <param name="AccountNumber">The account number associated with this activity.</param>
-/// <param name="BaseEvent">The event associated with this account activity.</param>
-public record OrderUROutCompleted(
-    string SchwabOrderID,
-    string AccountNumber,
-    OrderUROutCompletedBaseEvent BaseEvent) : BaseAccountActivity<OrderUROutCompletedBaseEvent>(SchwabOrderID, AccountNumber, BaseEvent);
+public class OrderUROutCompleted : BaseAccountActivity<OrderUROutCompletedBaseEvent>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OrderUROutCompleted"/> class.
+    /// </summary>
+    /// <param name="schwabOrderID">The Schwab order ID associated with this activity.</param>
+    /// <param name="accountNumber">The account number associated with this activity.</param>
+    /// <param name="baseEvent">The event associated with this account activity.</param>
+    public OrderUROutCompleted(string schwabOrderID, string accountNumber, OrderUROutCompletedBaseEvent baseEvent) : base(schwabOrderID, accountNumber, baseEvent)
+    {
+    }
+}
 
 /// <summary>
 /// Represents the base event information specifically for an "OrderUROutCompleted" event.
 /// </summary>
-/// <param name="EventType">The type of event, e.g., "OrderUROutCompleted".</param>
-/// <param name="OrderUROutCompletedEvent">The details of the "OrderUROutCompleted" event.</param>
-public record OrderUROutCompletedBaseEvent(
-    string EventType,
-    OrderUROutCompletedEvent OrderUROutCompletedEvent);
+public class OrderUROutCompletedBaseEvent
+{
+    /// <summary>
+    /// The type of event, e.g., "OrderUROutCompleted".
+    /// </summary>
+    public string EventType { get; }
+
+    /// <summary>
+    /// The details of the "OrderUROutCompleted" event.
+    /// </summary>
+    public OrderUROutCompletedEvent OrderUROutCompletedEvent { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OrderUROutCompletedBaseEvent"/> class.
+    /// </summary>
+    /// <param name="eventType">The type of event, e.g., "OrderUROutCompleted".</param>
+    /// <param name="orderUROutCompletedEvent">The details of the "OrderUROutCompleted" event.</param>
+    public OrderUROutCompletedBaseEvent(string eventType, OrderUROutCompletedEvent orderUROutCompletedEvent)
+    {
+        EventType = eventType;
+        OrderUROutCompletedEvent = orderUROutCompletedEvent;
+    }
+}
 
 /// <summary>
 /// Represents the details of an "OrderUROutCompleted" event.
 /// </summary>
-/// <param name="ExecutionTimeStamp">The timestamp of the execution event.</param>
-/// <param name="OutCancelType">The type of cancel operation associated with this event.</param>
-/// <param name="ValidationDetail">A collection of validation details associated with this event.</param>
-public record OrderUROutCompletedEvent(
-    ExecutionTimeStamp ExecutionTimeStamp,
-    OrderOutCancelType OutCancelType,
-    IReadOnlyCollection<ValidationDetail> ValidationDetail);
+public class OrderUROutCompletedEvent
+{
+    /// <summary>
+    /// The timestamp of the execution event.
+    /// </summary>
+    public ExecutionTimeStamp? ExecutionTimeStamp { get; }
+
+    /// <summary>
+    /// The type of cancel operation associated with this event.
+    /// </summary>
+    public OrderOutCancelType OutCancelType { get; }
+
+    /// <summary>
+    /// A collection of validation details associated with this event.
+    /// </summary>
+    public IReadOnlyCollection<ValidationDetail> ValidationDetail { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OrderUROutCompletedEvent"/> class.
+    /// </summary>
+    /// <param name="executionTimeStamp">The timestamp of the execution event.</param>
+    /// <param name="outCancelType">The type of cancel operation associated with this event.</param>
+    /// <param name="validationDetail">A collection of validation details associated with this event.</param>
+    public OrderUROutCompletedEvent(ExecutionTimeStamp executionTimeStamp, OrderOutCancelType outCancelType, IReadOnlyCollection<ValidationDetail> validationDetail)
+    {
+        ExecutionTimeStamp = executionTimeStamp;
+        OutCancelType = outCancelType;
+        ValidationDetail = validationDetail;
+    }
+}
 
 /// <summary>
 /// Represents the validation details related to a specific order, including rule information.
 /// </summary>
-/// <param name="SchwabOrderID">The Schwab order ID associated with the validation.</param>
-/// <param name="NgOMSRuleName">The rule name in the NGOMS (Next Generation Order Management System) that applied to this order.</param>
-/// <param name="NgOMSRuleDescription">A description of the NGOMS rule that applied to this order.</param>
-public record ValidationDetail(
-    string SchwabOrderID,
-    string NgOMSRuleName,
-    string NgOMSRuleDescription);
+public readonly struct ValidationDetail
+{
+    /// <summary>
+    /// The Schwab order ID associated with the validation.
+    /// </summary>
+    public string SchwabOrderID { get; }
+
+    /// <summary>
+    /// The rule name in the NGOMS (Next Generation Order Management System) that applied to this order.
+    /// </summary>
+    public string NgOMSRuleName { get; }
+
+    /// <summary>
+    /// A description of the NGOMS rule that applied to this order.
+    /// </summary>
+    public string NgOMSRuleDescription { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ValidationDetail"/> struct.
+    /// </summary>
+    /// <param name="schwabOrderID">The Schwab order ID associated with the validation.</param>
+    /// <param name="ngOMSRuleName">The rule name in NGOMS that applied to this order.</param>
+    /// <param name="ngOMSRuleDescription">A description of the NGOMS rule that applied to this order.</param>
+    public ValidationDetail(string schwabOrderID, string ngOMSRuleName, string ngOMSRuleDescription)
+    {
+        SchwabOrderID = schwabOrderID;
+        NgOMSRuleName = ngOMSRuleName;
+        NgOMSRuleDescription = ngOMSRuleDescription;
+    }
+}

@@ -20,34 +20,98 @@ using QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 
 /// <summary>
-/// Represents the <b>response to a client request</b>, containing a collection of response data.
+/// Represents the response to a client request, containing a collection of response data.
 /// </summary>
-/// <param name="Responses">A collection of <see cref="Response"/> objects representing individual service responses.</param>
-public record StreamResponse(
-    [property: JsonProperty("response")] IReadOnlyCollection<Response> Responses) : IStreamBaseResponse;
+public class StreamResponse : IStreamBaseResponse
+{
+    /// <summary>
+    /// Gets a collection of <see cref="Response"/> objects representing individual service responses.
+    /// </summary>
+    [JsonProperty("response")]
+    public IReadOnlyCollection<Response> Responses { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StreamResponse"/> class.
+    /// </summary>
+    /// <param name="responses">A collection of <see cref="Response"/> objects.</param>
+    public StreamResponse(IReadOnlyCollection<Response> responses) => Responses = responses;
+}
 
 /// <summary>
 /// Represents a single response within a <see cref="StreamResponse"/>.
 /// </summary>
-/// <param name="Service">The service providing this response.</param>
-/// <param name="Command">The command issued by the service (e.g., update or status type).</param>
-/// <param name="SchwabClientCorrelId">A client correlation identifier, allowing clients to match this response to a request.</param>
-/// <param name="Timestamp">The Unix timestamp representing when the response was generated.</param>
-/// <param name="Content">The <see cref="Content"/> associated with this response, containing status and message details.</param>
-public record Response(
-    [property: JsonProperty("service")] Service Service,
-    [property: JsonProperty("command")] Command Command,
-    [property: JsonProperty("SchwabClientCorrelId")] string SchwabClientCorrelId,
-    [property: JsonProperty("timestamp")] long Timestamp,
-    [property: JsonProperty("content")] Content Content
-    );
+public class Response
+{
+    /// <summary>
+    /// Gets the service providing this response.
+    /// </summary>
+    [JsonProperty("service")]
+    public Service Service { get; }
+
+    /// <summary>
+    /// Gets the command issued by the service (e.g., update or status type).
+    /// </summary>
+    [JsonProperty("command")]
+    public Command Command { get; }
+
+    /// <summary>
+    /// Gets the client correlation identifier, allowing clients to match this response to a request.
+    /// </summary>
+    [JsonProperty("SchwabClientCorrelId")]
+    public string SchwabClientCorrelId { get; }
+
+    /// <summary>
+    /// Gets the Unix timestamp representing when the response was generated.
+    /// </summary>
+    [JsonProperty("timestamp")]
+    public long Timestamp { get; }
+
+    /// <summary>
+    /// Gets the <see cref="Content"/> associated with this response, containing status and message details.
+    /// </summary>
+    [JsonProperty("content")]
+    public Content Content { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Response"/> class.
+    /// </summary>
+    /// <param name="service">The service providing this response.</param>
+    /// <param name="command">The command issued by the service.</param>
+    /// <param name="schwabClientCorrelId">The client correlation identifier.</param>
+    /// <param name="timestamp">The Unix timestamp of the response generation.</param>
+    /// <param name="content">The <see cref="Content"/> of the response.</param>
+    public Response(Service service, Command command, string schwabClientCorrelId, long timestamp, Content content)
+    {
+        Service = service;
+        Command = command;
+        SchwabClientCorrelId = schwabClientCorrelId;
+        Timestamp = timestamp;
+        Content = content;
+    }
+}
 
 /// <summary>
 /// Represents the content of a response message, including status code and message details.
 /// </summary>
-/// <param name="Code">The status code associated with the response, indicating success, failure, or other status.</param>
-/// <param name="Message">A message providing details about the response, such as error information or descriptive text.</param>
-public record Content(
-    [property: JsonProperty("code")] int Code,
-    [property: JsonProperty("msg")] string Message);
+public readonly struct Content
+{
+    /// <summary>
+    /// Gets the status code associated with the response, indicating success, failure, or other status.
+    /// </summary>
+    [JsonProperty("code")]
+    public int Code { get; }
+
+    /// <summary>
+    /// Gets a message providing details about the response, such as error information or descriptive text.
+    /// </summary>
+    [JsonProperty("msg")]
+    public string Message { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Content"/> struct.
+    /// </summary>
+    /// <param name="code">The status code associated with the response.</param>
+    /// <param name="message">The message providing details about the response.</param>
+    public Content(int code, string message) => (Code, Message) = (code, message);
+}
 
