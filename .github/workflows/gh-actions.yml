@@ -14,6 +14,7 @@ on:
 
 jobs:
   build:
+    if: github.event_name == 'push' && github.event.pull_request != null && github.repository == 'QuantConnect/Lean.Brokerages.CharlesSchwab'
     runs-on: ubuntu-20.04
     env:
       QC_CHARLES_SCHWAB_APP_KEY: ${{ secrets.QC_CHARLES_SCHWAB_APP_KEY }}
