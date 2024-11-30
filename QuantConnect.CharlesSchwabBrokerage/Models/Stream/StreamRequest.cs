@@ -27,31 +27,26 @@ public abstract class StreamRequest
     /// <summary>
     /// The unique identifier for the request.
     /// </summary>
-    [JsonProperty("requestid")]
     public string RequestId { get; }
 
     /// <summary>
     /// The service associated with the request.
     /// </summary>
-    [JsonProperty("service")]
     public abstract Service Service { get; }
 
     /// <summary>
     /// The command to be executed, indicating the specific action required.
     /// </summary>
-    [JsonProperty("command")]
     public Command Command { get; }
 
     /// <summary>
     /// The client customer ID associated with the request.
     /// </summary>
-    [JsonProperty("SchwabClientCustomerId")]
     public string SchwabClientCustomerId { get; }
 
     /// <summary>
     /// The client correlation ID, allowing clients to track individual requests.
     /// </summary>
-    [JsonProperty("SchwabClientCorrelId")]
     public string SchwabClientCorrelId { get; }
 
     /// <summary>

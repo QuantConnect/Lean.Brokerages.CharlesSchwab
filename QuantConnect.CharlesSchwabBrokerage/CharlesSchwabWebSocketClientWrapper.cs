@@ -15,11 +15,13 @@
 
 using System;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json;
 using System.Threading;
 using Newtonsoft.Json.Linq;
 using QuantConnect.Logging;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using QuantConnect.Brokerages.CharlesSchwab.Api;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
@@ -218,7 +220,18 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
                 case Service.LevelOneOptions when response.Content.Code == 0:
                     continue;
                 default:
-                    throw new NotSupportedException($"{nameof(CharlesSchwabWebSocketClientWrapper)}.{nameof(HandleStreamResponse)}: {response.Content.Code} - {response.Content.Message}");
+                    var str = new StringBuilder();
+                    str.Append($"{nameof(CharlesSchwabWebSocketClientWrapper)}.{nameof(HandleStreamResponse)}: ");
+
+                    if (response.Content.Code == 9)
+                    {
+                        str.Append($"Code: 9, Name: UNKNOWN_FAILURE, Description: Error of last-resort when no specific error was caught, Connection Severed: TBD, " +
+                            $"Error Notes: Should be investigated by Trader API team. Please contact TraderAPI@Schwab.com if you see this with the `schwabClientCorrelId` of subscription." +
+                            $"\nResponse Details: {streamResponse}");
+                        throw new ExternalException(str.ToString());
+                    }
+                    str.Append($"Response Details: {streamResponse}");
+                    throw new NotSupportedException(str.ToString());
             }
         }
     }
