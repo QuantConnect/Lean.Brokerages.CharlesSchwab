@@ -188,7 +188,7 @@ public class OrderResponse
     /// <summary>
     /// A collection of order activities.
     /// </summary>
-    [property: JsonProperty("orderActivityCollection")]
+    [JsonProperty("orderActivityCollection")]
     public IReadOnlyCollection<OrderActivity> OrderActivity { get; }
 
     /// <summary>

@@ -105,25 +105,25 @@ public class AccountContent : BaseContent
     /// <summary>
     /// Identifies the message sequence number. If the client reconnects and receives the same sequence number again, it can ignore the duplicate message.
     /// </summary>
-    [property: JsonProperty("seq")]
+    [JsonProperty("seq")]
     public int Sequence { get; }
 
     /// <summary>
     /// The account number associated with the activity.
     /// </summary>
-    [property: JsonProperty("1")]
+    [JsonProperty("1")]
     public string Account { get; }
 
     /// <summary>
     /// The type of the message, which dictates the format of the <see cref="MessageData"/> field.
     /// </summary>
-    [property: JsonProperty("2")]
+    [JsonProperty("2")]
     public MessageType MessageType { get; }
 
     /// <summary>
     /// The core data of the message. This can be JSON-formatted data, plain text (in case of an error), or NULL in certain cases.
     /// </summary>
-    [property: JsonProperty("3")]
+    [JsonProperty("3")]
     public string MessageData { get; }
 
     /// <summary>
@@ -147,19 +147,17 @@ public class LevelOneContent : BaseContent
     /// <summary>
     /// The symbol (ticker symbol in uppercase) representing the equity instrument.
     /// </summary>
-    [property: JsonProperty("key")]
+    [JsonProperty("key")]
     public string Symbol { get; }
 
     /// <summary>
     /// Indicates whether the data is delayed. A value of 'true' means the data is delayed.
     /// </summary>
-    [property: JsonProperty("delayed")]
     public bool Delayed { get; }
 
     /// <summary>
     /// The <see cref="AssetType"/> representing the type of asset, such as stocks, options, etc.
     /// </summary>
-    [property: JsonProperty("assetMainType")]
     public AssetType AssetMainType { get; }
 
     /// <summary>
