@@ -23,7 +23,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 /// <summary>
 /// Represents the response to a client request, containing a collection of response data.
 /// </summary>
-public class StreamResponse : IStreamBaseResponse
+public sealed class StreamResponse : IStreamBaseResponse
 {
     /// <summary>
     /// Gets a collection of <see cref="Response"/> objects representing individual service responses.
@@ -57,7 +57,7 @@ public class StreamResponse : IStreamBaseResponse
 /// <summary>
 /// Represents a single response within a <see cref="StreamResponse"/>.
 /// </summary>
-public class Response
+public sealed class Response
 {
     /// <summary>
     /// Gets the service providing this response.
