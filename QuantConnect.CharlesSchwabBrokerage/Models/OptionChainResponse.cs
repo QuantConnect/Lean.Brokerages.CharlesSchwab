@@ -22,27 +22,79 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <summary>
 /// Represents the response for an option chain request.
 /// </summary>
-/// <param name="symbol">The symbol of the option chain.</param>
-/// <param name="AssetType">The main type of the asset (e.g., "Equity", "Option").</param>
-/// <param name="CallExpDateMap">
-/// The call option expiration date map.
-/// The map is structured with expiration dates as keys and a nested dictionary containing strike prices and collections of option metadata.</param>
-/// <param name="PutExpDateMap">
-/// the put option expiration date map.
-/// The map is structured similarly to the call map, with expiration dates as keys and strike price dictionaries.
-/// </param>
-public record OptionChainResponse(
-   [JsonProperty("symbol")] string symbol,
-   [JsonProperty("assetMainType")] AssetType AssetType,
-   [JsonProperty("callExpDateMap")] IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> CallExpDateMap,
-   [JsonProperty("putExpDateMap")] IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> PutExpDateMap);
+public class OptionChainResponse
+{
+    /// <summary>
+    /// The symbol of the option chain.
+    /// </summary>
+    public string Symbol { get; }
+
+    /// <summary>
+    /// The main type of the asset (e.g., "Equity", "Option").
+    /// </summary>
+    [JsonProperty("assetMainType")]
+    public AssetType AssetType { get; }
+
+    /// <summary>
+    /// The call option expiration date map.
+    /// The map is structured with expiration dates as keys and a nested dictionary containing strike prices and collections of option metadata.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> CallExpDateMap { get; }
+
+    /// <summary>
+    /// The put option expiration date map.
+    /// The map is structured similarly to the call map, with expiration dates as keys and strike price dictionaries.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> PutExpDateMap { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OptionChainResponse"/> class with the specified parameters.
+    /// </summary>
+    /// <param name="symbol">The symbol of the option chain.</param>
+    /// <param name="assetType">The main type of the asset (e.g., "Equity", "Option").</param>
+    /// <param name="callExpDateMap">
+    /// The call option expiration date map. 
+    /// The map is structured with expiration dates as keys and a nested dictionary containing strike prices and collections of option metadata.
+    /// </param>
+    /// <param name="putExpDateMap">
+    /// The put option expiration date map. 
+    /// The map is structured similarly to the call map, with expiration dates as keys and strike price dictionaries.
+    /// </param>
+    [JsonConstructor]
+    public OptionChainResponse(
+        string symbol,
+        AssetType assetType,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> callExpDateMap,
+        IReadOnlyDictionary<string, IReadOnlyDictionary<decimal, IReadOnlyCollection<OptionMetaData>>> putExpDateMap)
+    {
+        Symbol = symbol;
+        AssetType = assetType;
+        CallExpDateMap = callExpDateMap;
+        PutExpDateMap = putExpDateMap;
+    }
+}
 
 /// <summary>
 /// Represents metadata for an individual option.
 /// </summary>
-/// <param name="Symbol">The symbol for the specific option contract.</param>
-/// <param name="ExchangeName">The name of the exchange where the option is listed.</param>
-public record struct OptionMetaData(
-    [JsonProperty("symbol")] string Symbol,
-    [JsonProperty("exchangeName")] string ExchangeName);
+public readonly struct OptionMetaData
+{
+    /// <summary>
+    /// The symbol for the specific option contract.
+    /// </summary>
+    public string Symbol { get; }
+
+    /// <summary>
+    /// The name of the exchange where the option is listed.
+    /// </summary>
+    public string ExchangeName { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OptionMetaData"/> struct with the specified parameters.
+    /// </summary>
+    /// <param name="symbol">The symbol for the specific option contract.</param>
+    /// <param name="exchangeName">The name of the exchange where the option is listed.</param>
+    [JsonConstructor]
+    public OptionMetaData(string symbol, string exchangeName) => (Symbol, ExchangeName) = (symbol, exchangeName);
+}
 

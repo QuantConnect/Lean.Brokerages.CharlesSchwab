@@ -18,34 +18,74 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 /// <summary>
 /// Represents the base event for an "OrderFillCompletedEvent" activity, containing the event type and quantity information.
 /// </summary>
-/// <param name="EventType">The type of event, typically "OrderFillCompletedEvent".</param>
-/// <param name="OrderFillCompletedEventOrderLegQuantityInfo">Information about the quantity for each leg of the order fill event.</param>
-public record OrderFillCompletedBaseEvent(
-    string EventType,
-    OrderFillCompletedEventOrderLegQuantityInfo OrderFillCompletedEventOrderLegQuantityInfo);
+public class OrderFillCompletedBaseEvent
+{
+    /// <summary>
+    /// Gets the type of event, typically "OrderFillCompletedEvent".
+    /// </summary>
+    public string EventType { get; }
+
+    /// <summary>
+    /// Gets information about the quantity for each leg of the order fill event.
+    /// </summary>
+    public OrderFillCompletedEventOrderLegQuantityInfo OrderFillCompletedEventOrderLegQuantityInfo { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OrderFillCompletedBaseEvent"/> class.
+    /// </summary>
+    /// <param name="eventType">The type of event, typically "OrderFillCompletedEvent".</param>
+    /// <param name="orderFillCompletedEventOrderLegQuantityInfo">Information about the quantity for each leg of the order fill event.</param>
+    public OrderFillCompletedBaseEvent(string eventType, OrderFillCompletedEventOrderLegQuantityInfo orderFillCompletedEventOrderLegQuantityInfo)
+        => (EventType, OrderFillCompletedEventOrderLegQuantityInfo) = (eventType, orderFillCompletedEventOrderLegQuantityInfo);
+
+}
 
 /// <summary>
 /// Represents an "OrderFillCompletedEvent" activity, including event details specific to order fills.
 /// </summary>
-/// <param name="SchwabOrderID">The Schwab order ID associated with this fill completion activity.</param>
-/// <param name="AccountNumber">The account number associated with this fill completion activity.</param>
-/// <param name="BaseEvent">The event details specific to the order fill completion.</param>
-public record OrderFillCompletedEvent(
-    string SchwabOrderID,
-    string AccountNumber,
-    OrderFillCompletedBaseEvent BaseEvent) : BaseAccountActivity<OrderFillCompletedBaseEvent>(SchwabOrderID, AccountNumber, BaseEvent);
+public class OrderFillCompletedEvent : BaseAccountActivity<OrderFillCompletedBaseEvent>
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OrderFillCompletedEvent"/> class.
+    /// </summary>
+    /// <param name="schwabOrderID">The Schwab order ID associated with this fill completion activity.</param>
+    /// <param name="accountNumber">The account number associated with this fill completion activity.</param>
+    /// <param name="baseEvent">The event details specific to the order fill completion.</param>
+    public OrderFillCompletedEvent(string schwabOrderID, string accountNumber, OrderFillCompletedBaseEvent baseEvent) : base(schwabOrderID, accountNumber, baseEvent)
+    { }
+}
 
 /// <summary>
 /// Represents information about the quantity for each leg of an "OrderFillCompletedEvent" event.
 /// </summary>
-/// <param name="ExecutionInfo">Execution information, including the timestamp for the order fill.</param>
-public record OrderFillCompletedEventOrderLegQuantityInfo(
-    ExecutionInfo ExecutionInfo);
+public readonly struct OrderFillCompletedEventOrderLegQuantityInfo
+{
+    /// <summary>
+    /// Gets the execution information, including the timestamp for the order fill.
+    /// </summary>
+    public ExecutionInfo ExecutionInfo { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OrderFillCompletedEventOrderLegQuantityInfo"/> struct.
+    /// </summary>
+    /// <param name="executionInfo">The execution information, including the timestamp for the order fill.</param>
+    public OrderFillCompletedEventOrderLegQuantityInfo(ExecutionInfo executionInfo) => ExecutionInfo = executionInfo;
+}
 
 /// <summary>
 /// Represents the timestamp of an execution event.
 /// </summary>
-/// <param name="ExecutionTimeStamp">The date and time of the execution in a specified format.</param>
-public record ExecutionInfo(
-    ExecutionTimeStamp ExecutionTimeStamp);
+public readonly struct ExecutionInfo
+{
+    /// <summary>
+    /// Gets the timestamp of the execution event.
+    /// </summary>
+    public ExecutionTimeStamp ExecutionTimeStamp { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ExecutionInfo"/> struct.
+    /// </summary>
+    /// <param name="executionTimeStamp">The date and time of the execution in a specified format.</param>
+    public ExecutionInfo(ExecutionTimeStamp executionTimeStamp) => ExecutionTimeStamp = executionTimeStamp;
+}
 

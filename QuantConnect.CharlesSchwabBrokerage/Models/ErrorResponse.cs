@@ -21,39 +21,104 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <summary>
 /// Represents an error response from the Charles Schwab API.
 /// </summary>
-/// <param name="Error">The error message returned by the API.</param>
-/// <param name="ErrorDescription">A collection of detailed error descriptions returned by the API.</param>
-public record ErrorResponse(
-    [JsonProperty("message")] string Error,
-    [JsonProperty("errors")] IReadOnlyCollection<string> ErrorDescription
-    );
+public class ErrorResponse
+{
+    /// <summary>
+    /// The error message returned by the API.
+    /// </summary>
+    [JsonProperty("message")]
+    public string Error { get; }
+
+    /// <summary>
+    /// A collection of detailed error descriptions returned by the API.
+    /// </summary>
+    [JsonProperty("errors")]
+    public IReadOnlyCollection<string> ErrorDescription { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ErrorResponse"/> class with specified error details.
+    /// </summary>
+    /// <param name="error">The error message returned by the API.</param>
+    /// <param name="errorDescription">A collection of detailed error descriptions returned by the API.</param>
+    [JsonConstructor]
+    public ErrorResponse(string error, IReadOnlyCollection<string> errorDescription) => (Error, ErrorDescription) = (error, errorDescription);
+}
 
 /// <summary>
 /// Represents a response containing a collection of errors with metadata from the Charles Schwab API.
 /// </summary>
-/// <param name="Errors">A collection of <see cref="ErrorMetaData"/> objects that provide details about each error.</param>
-public record ErrorsResponse(
-    [JsonProperty("errors")] IReadOnlyCollection<ErrorMetaData> Errors
-    );
+public class ErrorsResponse
+{
+    /// <summary>
+    /// A collection of <see cref="ErrorMetaData"/> objects that provide details about each error.
+    /// </summary>
+    public IReadOnlyCollection<ErrorMetaData> Errors { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ErrorsResponse"/> class with the specified error metadata.
+    /// </summary>
+    /// <param name="errors">A collection of <see cref="ErrorMetaData"/> objects that contain information about the errors.</param>
+    [JsonConstructor]
+    public ErrorsResponse(IReadOnlyCollection<ErrorMetaData> errors) => Errors = errors;
+}
 
 /// <summary>
 /// Represents detailed metadata about an individual error returned by the Charles Schwab API.
 /// </summary>
-/// <param name="Id">The unique identifier for the error.</param>
-/// <param name="Status">The HTTP status code associated with the error.</param>
-/// <param name="Title">A short, human-readable summary of the error.</param>
-/// <param name="Detail">A detailed description of the error.</param>
-/// <param name="Source">The source of the error, providing additional context.</param>
-public record ErrorMetaData(
-    [JsonProperty("id")] string Id,
-    [JsonProperty("status")] string Status,
-    [JsonProperty("title")] string Title,
-    [JsonProperty("detail")] string Detail,
-    [JsonProperty("source")] Source Source
-    );
+public class ErrorMetaData
+{
+    /// <summary>
+    /// The unique identifier for the error.
+    /// </summary>
+    public string Id { get; }
+
+    /// <summary>
+    /// The HTTP status code associated with the error.
+    /// </summary>
+    public string Status { get; }
+
+    /// <summary>
+    /// A short, human-readable summary of the error.
+    /// </summary>
+    public string Title { get; }
+
+    /// <summary>
+    /// A detailed description of the error.
+    /// </summary>
+    public string Detail { get; }
+
+    /// <summary>
+    /// The source of the error, providing additional context.
+    /// </summary>
+    public Source Source { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ErrorMetaData"/> class with the specified details.
+    /// </summary>
+    /// <param name="id">The unique identifier for the error.</param>
+    /// <param name="status">The HTTP status code associated with the error.</param>
+    /// <param name="title">A short, human-readable summary of the error.</param>
+    /// <param name="detail">A detailed description of the error.</param>
+    /// <param name="source">The source of the error, providing additional context.</param>
+    [JsonConstructor]
+    public ErrorMetaData(string id, string status, string title, string detail, Source source)
+        => (Id, Status, Title, Detail, Source) = (id, status, title, detail, source);
+}
 
 /// <summary>
 /// Represents the source of an error in an API response, indicating where the error originated.
 /// </summary>
-/// <param name="Parameter">The parameter that caused the error.</param>
-public record struct Source([JsonProperty("parameter")] string Parameter);
+public readonly struct Source
+{
+    /// <summary>
+    /// The parameter that caused the error.
+    /// </summary>
+    public string Parameter { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Source"/> struct with the specified parameter.
+    /// </summary>
+    /// <param name="parameter">The parameter that caused the error.</param>
+    [JsonConstructor]
+    public Source(string parameter) => Parameter = parameter;
+}

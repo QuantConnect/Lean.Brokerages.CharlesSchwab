@@ -1,16 +1,16 @@
-﻿ /*
- * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
- * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+﻿/*
+* QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
+* Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
 */
 
 using System;
@@ -83,19 +83,54 @@ public abstract class OrderBaseRequest
 /// <summary>
 /// Represents a single leg of an order.
 /// </summary>
-/// <param name="Instruction">The instruction for the order leg.</param>
-/// <param name="Quantity">The quantity for the order leg.</param>
-/// <param name="Instrument">The instrument for the order leg.</param>
-public record OrderLegRequest(
-    Instruction Instruction,
-    decimal Quantity,
-    InstrumentRequest Instrument);
+public class OrderLegRequest
+{
+    /// <summary>
+    /// Gets the instruction for the order leg (e.g., buy, sell, etc.).
+    /// </summary>
+    public Instruction Instruction { get; }
+
+    /// <summary>
+    /// Gets the quantity for the order leg.
+    /// </summary>
+    public decimal Quantity { get; }
+
+    /// <summary>
+    /// Gets the instrument associated with the order leg.
+    /// </summary>
+    public InstrumentRequest Instrument { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OrderLegRequest"/> class.
+    /// </summary>
+    /// <param name="instruction">The instruction for the order leg.</param>
+    /// <param name="quantity">The quantity for the order leg.</param>
+    /// <param name="instrument">The instrument associated with the order leg.</param>
+    [JsonConstructor]
+    public OrderLegRequest(Instruction instruction, decimal quantity, InstrumentRequest instrument)
+        => (Instruction, Quantity, Instrument) = (instruction, quantity, instrument);
+}
 
 /// <summary>
 /// Represents an instrument request for an order leg.
 /// </summary>
-/// <param name="Symbol">The symbol of the instrument.</param>
-/// <param name="AssetType">The asset type of the instrument.</param>
-public record InstrumentRequest(
-    string Symbol,
-    AssetType AssetType);
+public readonly struct InstrumentRequest
+{
+    /// <summary>
+    /// Gets the symbol of the instrument.
+    /// </summary>
+    public string Symbol { get; }
+
+    /// <summary>
+    /// Gets the asset type of the instrument.
+    /// </summary>
+    public AssetType AssetType { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="InstrumentRequest"/> struct.
+    /// </summary>
+    /// <param name="symbol">The symbol of the instrument.</param>
+    /// <param name="assetType">The asset type of the instrument.</param>
+    [JsonConstructor]
+    public InstrumentRequest(string symbol, AssetType assetType) => (Symbol, AssetType) = (symbol, assetType);
+}
