@@ -184,8 +184,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
-        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate, OnReSubscriptionProcess);
-        WebSocket.Error += HandleWebSocketError;
+        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate, OnReSubscriptionProcess, HandleWebSocketError);
         _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
 
         SubscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager()
@@ -615,19 +614,13 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     }
 
     /// <summary>
-    /// Handles errors occurring in the WebSocket connection and raises a message event.
+    /// Handles WebSocket errors by encapsulating the details in a message event and raising the appropriate event.
     /// </summary>
-    /// <param name="_">The source of the error event, typically the WebSocket client.</param>
-    /// <param name="webSocketError">The <see cref="WebSocketError"/> containing details about the error.</param>
-    private void HandleWebSocketError(object _, WebSocketError webSocketError)
+    /// <param name="_">The source of the error event, typically the WebSocket client. This parameter is not used.</param>
+    /// <param name="charlesSchwabWebSocketException">The <see cref="Exception"/> representing the error that occurred in the WebSocket connection.</param>
+    private void HandleWebSocketError(object _, Exception charlesSchwabWebSocketException)
     {
-        if (webSocketError.Exception is WebSocketException)
-        {
-            // Ignore WebSocketException to facilitate smooth reconnection
-            return;
-        }
-
-        OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, -1, webSocketError.Message));
+        OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, -1, charlesSchwabWebSocketException.Message));
     }
 
     #region ValidateSubscription

@@ -71,6 +71,11 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
     private event EventHandler<LevelOneContent> MarketDataUpdate;
 
     /// <summary>
+    /// Occurs when a WebSocket exception is encountered, providing the exception details.
+    /// </summary>
+    private event EventHandler<Exception> WebSocketException;
+
+    /// <summary>
     /// Event triggered to initiate the re-subscription process.
     /// </summary>
     private event Action ReSubscriptionProcess;
@@ -82,11 +87,12 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
     /// <param name="orderUpdateHandler">An event handler to handle account content updates (order updates).</param>
     /// <param name="marketDataUpdateHandler">An event handler to handle market data updates (level one content).</param>
     /// <param name="reSubscriptionHandler">An event handler for re-subscribing to data streams when needed.</param>
+    /// <param name="webSocketExceptionHandler">The event handler invoked when a WebSocket exception occurs, providing details about the exception.</param>
     /// <remarks>
     /// This constructor initializes the WebSocket connection, sets up event handlers, and logs in asynchronously.
     /// </remarks>
     public CharlesSchwabWebSocketClientWrapper(CharlesSchwabApiClient charlesSchwabApiClient, EventHandler<AccountContent> orderUpdateHandler,
-        EventHandler<LevelOneContent> marketDataUpdateHandler, Action reSubscriptionHandler)
+        EventHandler<LevelOneContent> marketDataUpdateHandler, Action reSubscriptionHandler, EventHandler<Exception> webSocketExceptionHandler)
     {
         _charlesSchwabApiClient = charlesSchwabApiClient;
         _streamInfo = charlesSchwabApiClient.GetUserPreference().SynchronouslyAwaitTaskResult().StreamerInfo.First();
@@ -97,6 +103,7 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
         OrderUpdate += orderUpdateHandler;
         MarketDataUpdate += marketDataUpdateHandler;
         ReSubscriptionProcess += reSubscriptionHandler;
+        WebSocketException += webSocketExceptionHandler;
     }
 
     /// <summary>
@@ -143,21 +150,27 @@ public class CharlesSchwabWebSocketClientWrapper : WebSocketClientWrapper
     /// </exception>
     private void HandleWebSocketMessage(object _, WebSocketMessage webSocketMessage)
     {
-        var parsedResponse = ParseResponse(webSocketMessage);
-
-        switch (parsedResponse)
+        try
         {
-            case NotifyResponse:
-                break;
-            case StreamResponse streamResponse:
-                HandleStreamResponse(streamResponse);
-                break;
-            case DataResponse dataResponse:
-                HandleDataResponse(dataResponse);
-                break;
-            default:
-                throw new InvalidOperationException($"{nameof(CharlesSchwabWebSocketClientWrapper)}.{nameof(HandleWebSocketMessage)}: Unknown stream response type. {(webSocketMessage.Data as TextMessage).Message}");
+            var parsedResponse = ParseResponse(webSocketMessage);
 
+            switch (parsedResponse)
+            {
+                case NotifyResponse:
+                    break;
+                case StreamResponse streamResponse:
+                    HandleStreamResponse(streamResponse);
+                    break;
+                case DataResponse dataResponse:
+                    HandleDataResponse(dataResponse);
+                    break;
+                default:
+                    throw new InvalidOperationException($"{nameof(CharlesSchwabWebSocketClientWrapper)}.{nameof(HandleWebSocketMessage)}: Unknown stream response type. {(webSocketMessage.Data as TextMessage).Message}");
+            }
+        }
+        catch (Exception ex)
+        {
+            WebSocketException?.Invoke(this, ex);
         }
     }
 
