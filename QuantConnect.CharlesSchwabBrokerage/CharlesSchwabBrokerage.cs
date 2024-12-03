@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -27,6 +27,7 @@ using QuantConnect.Util;
 using QuantConnect.Orders;
 using Newtonsoft.Json.Linq;
 using QuantConnect.Logging;
+using System.Net.WebSockets;
 using QuantConnect.Securities;
 using QuantConnect.Interfaces;
 using QuantConnect.Orders.Fees;
@@ -620,6 +621,12 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     /// <param name="webSocketError">The <see cref="WebSocketError"/> containing details about the error.</param>
     private void HandleWebSocketError(object _, WebSocketError webSocketError)
     {
+        if (webSocketError.Exception is WebSocketException)
+        {
+            // Ignore WebSocketException to facilitate smooth reconnection
+            return;
+        }
+
         OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, -1, webSocketError.Message));
     }
 
