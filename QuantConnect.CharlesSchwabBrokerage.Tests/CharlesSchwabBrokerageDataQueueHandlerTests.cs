@@ -58,13 +58,13 @@ public partial class CharlesSchwabBrokerageTests
             yield return new TestCaseData(new[] { AAPL, DJI_Index, NVDA, DJT, TSLA }, Resolution.Second);
             yield return new TestCaseData(new[] { AAPL, DJI_Index, NVDA, DJT, TSLA }, Resolution.Minute);
 
-            var AAPL_Option = Symbol.CreateOption(AAPL, AAPL.ID.Market, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 230m, new DateTime(2024, 11, 29));
+            var AAPL_Option = Symbol.CreateOption(AAPL, AAPL.ID.Market, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 240m, new DateTime(2024, 12, 06));
             yield return new TestCaseData(new[] { AAPL_Option }, Resolution.Tick);
 
             yield return new TestCaseData(new[] { AAPL, AAPL_Option }, Resolution.Tick);
 
             var SPX = Symbol.Create("SPX", SecurityType.Index, Market.USA);
-            var SPX_IndexOption = Symbol.CreateOption(SPX, SPX.ID.Market, SecurityType.IndexOption.DefaultOptionStyle(), OptionRight.Put, 5000m, new DateTime(2024, 11, 29));
+            var SPX_IndexOption = Symbol.CreateOption(SPX, SPX.ID.Market, SecurityType.IndexOption.DefaultOptionStyle(), OptionRight.Put, 6045m, new DateTime(2024, 12, 20));
             yield return new TestCaseData(new[] { SPX, SPX_IndexOption }, Resolution.Tick);
         }
     }
