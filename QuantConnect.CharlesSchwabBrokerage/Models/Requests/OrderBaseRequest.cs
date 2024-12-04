@@ -28,33 +28,37 @@ public abstract class OrderBaseRequest
     /// <summary>
     /// The type of the order.
     /// </summary>
+    [JsonProperty("orderType")]
     public abstract OrderType OrderType { get; }
 
     /// <summary>
     /// The session type for the order.
     /// </summary>
+    [JsonProperty("session")]
     public SessionType Session { get; }
 
     /// <summary>
     /// The duration of the order.
     /// </summary>
+    [JsonProperty("duration")]
     public Duration Duration { get; }
 
     /// <summary>
     /// The order strategy type. Defaults to <see cref="OrderStrategyType.Single"/>.
     /// </summary>
-    [JsonProperty(Required = Required.Always)]
+    [JsonProperty("orderStrategyType", Required = Required.Always)]
     public OrderStrategyType OrderStrategyType { get; } = OrderStrategyType.Single;
 
     /// <summary>
     /// The cancel time for the order. 
     /// </summary>
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+    [JsonProperty("cancelTime", DefaultValueHandling = DefaultValueHandling.Ignore)]
     public DateTime CancelTime { get; set; }
 
     /// <summary>
     /// The collection of order legs for the order.
     /// </summary>
+    [JsonProperty("orderLegCollection")]
     public List<OrderLegRequest> OrderLegCollection { get; init; }
 
     /// <summary>
@@ -88,16 +92,19 @@ public class OrderLegRequest
     /// <summary>
     /// Gets the instruction for the order leg (e.g., buy, sell, etc.).
     /// </summary>
+    [JsonProperty("instruction")]
     public Instruction Instruction { get; }
 
     /// <summary>
     /// Gets the quantity for the order leg.
     /// </summary>
+    [JsonProperty("quantity")]
     public decimal Quantity { get; }
 
     /// <summary>
     /// Gets the instrument associated with the order leg.
     /// </summary>
+    [JsonProperty("instrument")]
     public InstrumentRequest Instrument { get; }
 
     /// <summary>
@@ -119,11 +126,13 @@ public readonly struct InstrumentRequest
     /// <summary>
     /// Gets the symbol of the instrument.
     /// </summary>
+    [JsonProperty("symbol")]
     public string Symbol { get; }
 
     /// <summary>
     /// Gets the asset type of the instrument.
     /// </summary>
+    [JsonProperty("assetType")]
     public AssetType AssetType { get; }
 
     /// <summary>
