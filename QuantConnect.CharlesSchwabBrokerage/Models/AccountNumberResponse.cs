@@ -18,11 +18,25 @@ using Newtonsoft.Json;
 namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 
 /// <summary>
-/// Represents the response containing the account number and its hash value.
+/// Represents the response containing the account number and its associated hash value.
 /// </summary>
-/// <param name="AccountNumber">The account number</param>
-/// <param name="HashValue">The hash value associated with the account number.</param>
-public record AccountNumberResponse(
-    [JsonProperty("accountNumber")] string AccountNumber,
-    [JsonProperty("hashValue")] string HashValue
-    );
+public class AccountNumberResponse
+{
+    /// <summary>
+    /// The account number.
+    /// </summary>
+    public string AccountNumber { get; }
+
+    /// <summary>
+    /// The hash value associated with the account number.
+    /// </summary>
+    public string HashValue { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AccountNumberResponse"/> struct.
+    /// </summary>
+    /// <param name="accountNumber">The account number.</param>
+    /// <param name="hashValue">The hash value associated with the account number.</param>
+    [JsonConstructor]
+    public AccountNumberResponse(string accountNumber, string hashValue) => (AccountNumber, HashValue) = (accountNumber, hashValue);
+}

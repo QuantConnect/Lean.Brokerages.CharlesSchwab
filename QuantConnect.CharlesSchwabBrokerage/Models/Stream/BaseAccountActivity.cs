@@ -19,10 +19,29 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 /// Represents a base account activity with general information such as Schwab Order ID and Account Number.
 /// </summary>
 /// <typeparam name="T">The type of event associated with the account activity.</typeparam>
-/// <param name="SchwabOrderID">The Schwab order ID associated with this activity.</param>
-/// <param name="AccountNumber">The account number associated with this activity.</param>
-/// <param name="BaseEvent">The event associated with this account activity.</param>
-public record BaseAccountActivity<T>(
-    string SchwabOrderID,
-    string AccountNumber,
-    T BaseEvent);
+public class BaseAccountActivity<T>
+{
+    /// <summary>
+    /// The Schwab order ID associated with this activity.
+    /// </summary>
+    public string SchwabOrderID { get; }
+
+    /// <summary>
+    /// The account number associated with this activity.
+    /// </summary>
+    public string AccountNumber { get; }
+
+    /// <summary>
+    /// The event associated with this account activity.
+    /// </summary>
+    public T BaseEvent { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BaseAccountActivity{T}"/> class.
+    /// </summary>
+    /// <param name="schwabOrderID">The Schwab order ID associated with this activity.</param>
+    /// <param name="accountNumber">The account number associated with this activity.</param>
+    /// <param name="baseEvent">The event associated with this account activity.</param>
+    public BaseAccountActivity(string schwabOrderID, string accountNumber, T baseEvent)
+        => (SchwabOrderID, AccountNumber, BaseEvent) = (schwabOrderID, accountNumber, baseEvent);
+}

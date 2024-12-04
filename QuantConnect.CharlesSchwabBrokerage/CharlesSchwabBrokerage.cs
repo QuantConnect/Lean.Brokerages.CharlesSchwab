@@ -27,6 +27,7 @@ using QuantConnect.Util;
 using QuantConnect.Orders;
 using Newtonsoft.Json.Linq;
 using QuantConnect.Logging;
+using System.Net.WebSockets;
 using QuantConnect.Securities;
 using QuantConnect.Interfaces;
 using QuantConnect.Orders.Fees;
@@ -183,7 +184,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
         _symbolMapper = new CharlesSchwabBrokerageSymbolMapper();
         _charlesSchwabApiClient = new CharlesSchwabApiClient(baseUrl, appKey, secret, accountNumber, redirectUrl, authorizationCodeFromUrl, refreshToken);
 
-        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate, OnReSubscriptionProcess);
+        WebSocket = new CharlesSchwabWebSocketClientWrapper(_charlesSchwabApiClient, OnOrderUpdate, OnLevelOneMarketDataUpdate, OnReSubscriptionProcess, HandleWebSocketError);
         _messageHandler = new BrokerageConcurrentMessageHandler<AccountContent>(OnUserMessage);
 
         SubscriptionManager = new EventBasedDataQueueHandlerSubscriptionManager()
@@ -610,6 +611,16 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             exceptionMessage = ex.Message;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Handles WebSocket errors by encapsulating the details in a message event and raising the appropriate event.
+    /// </summary>
+    /// <param name="_">The source of the error event, typically the WebSocket client. This parameter is not used.</param>
+    /// <param name="charlesSchwabWebSocketException">The <see cref="Exception"/> representing the error that occurred in the WebSocket connection.</param>
+    private void HandleWebSocketError(object _, Exception charlesSchwabWebSocketException)
+    {
+        OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Error, -1, charlesSchwabWebSocketException.Message));
     }
 
     #region ValidateSubscription

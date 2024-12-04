@@ -23,27 +23,79 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models;
 /// <summary>
 /// Represents a collection of candlestick data for a given symbol from Charles Schwab's API.
 /// </summary>
-/// <param name="Candles">The list of candlestick data.</param>
-/// <param name="Symbol">The symbol for which the data is retrieved.</param>
-/// <param name="Empty">Indicates if the candle data is empty or not.</param>
-public record CandleResponse(
-    [JsonProperty("candles")] IReadOnlyCollection<Candle> Candles,
-    [JsonProperty("symbol")] string Symbol,
-    [JsonProperty("empty")] bool Empty);
+public class CandleResponse
+{
+    /// <summary>
+    /// The list of candlestick data for the symbol.
+    /// </summary>
+    public IReadOnlyCollection<Candle> Candles { get; }
+
+    /// <summary>
+    /// The symbol for which the candlestick data is retrieved.
+    /// </summary>
+    public string Symbol { get; }
+
+    /// <summary>
+    /// Indicates whether the candlestick data is empty or not.
+    /// </summary>
+    public bool Empty { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CandleResponse"/> class.
+    /// </summary>
+    /// <param name="candles">The list of candlestick data.</param>
+    /// <param name="symbol">The symbol for which the data is retrieved.</param>
+    /// <param name="empty">Indicates if the candle data is empty.</param>
+    [JsonConstructor]
+    public CandleResponse(IReadOnlyCollection<Candle> candles, string symbol, bool empty) => (Candles, Symbol, Empty) = (candles, symbol, empty);
+}
 
 /// <summary>
 /// Represents a single candlestick entry in a financial chart.
 /// </summary>
-/// <param name="Open">The opening price of the candle.</param>
-/// <param name="High">The highest price reached during the candle period.</param>
-/// <param name="Low">The lowest price reached during the candle period.</param>
-/// <param name="Close">The closing price of the candle.</param>
-/// <param name="Volume">The total volume of transactions during the candle period.</param>
-/// <param name="DateTime">The timestamp of the candlestick, in Unix time converted to <see cref="DateTime"/>.</param>
-public record Candle(
-    [JsonProperty("open")] decimal Open,
-    [JsonProperty("high")] decimal High,
-    [JsonProperty("low")] decimal Low,
-    [JsonProperty("close")] decimal Close,
-    [JsonProperty("volume")] decimal Volume,
-    [JsonProperty("datetime"), JsonConverter(typeof(CharlesSchwabUnixMillisecondsConverter))] DateTime DateTime);
+public class Candle
+{
+    /// <summary>
+    /// The opening price of the candle.
+    /// </summary>
+    public decimal Open { get; }
+
+    /// <summary>
+    /// The highest price reached during the candle period.
+    /// </summary>
+    public decimal High { get; }
+
+    /// <summary>
+    /// The lowest price reached during the candle period.
+    /// </summary>
+    public decimal Low { get; }
+
+    /// <summary>
+    /// The closing price of the candle.
+    /// </summary>
+    public decimal Close { get; }
+
+    /// <summary>
+    /// The total volume of transactions during the candle period.
+    /// </summary>
+    public decimal Volume { get; }
+
+    /// <summary>
+    /// The timestamp of the candlestick, in Unix time converted to <see cref="DateTime"/>.
+    /// </summary>
+    [JsonConverter(typeof(CharlesSchwabUnixMillisecondsConverter))]
+    public DateTime DateTime { get; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Candle"/> class with specified values.
+    /// </summary>
+    /// <param name="open">The opening price of the candle.</param>
+    /// <param name="high">The highest price reached during the candle period.</param>
+    /// <param name="low">The lowest price reached during the candle period.</param>
+    /// <param name="close">The closing price of the candle.</param>
+    /// <param name="volume">The total volume of transactions during the candle period.</param>
+    /// <param name="dateTime">The timestamp of the candlestick, converted from Unix time to <see cref="DateTime"/>.</param>
+    [JsonConstructor]
+    public Candle(decimal open, decimal high, decimal low, decimal close, decimal volume, DateTime dateTime)
+        => (Open, High, Low, Close, Volume, DateTime) = (open, high, low, close, volume, dateTime);
+}

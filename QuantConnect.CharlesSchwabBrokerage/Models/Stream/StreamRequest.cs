@@ -45,13 +45,11 @@ public abstract class StreamRequest
     /// <summary>
     /// The client customer ID associated with the request.
     /// </summary>
-    [JsonProperty("SchwabClientCustomerId")]
     public string SchwabClientCustomerId { get; }
 
     /// <summary>
     /// The client correlation ID, allowing clients to track individual requests.
     /// </summary>
-    [JsonProperty("SchwabClientCorrelId")]
     public string SchwabClientCorrelId { get; }
 
     /// <summary>

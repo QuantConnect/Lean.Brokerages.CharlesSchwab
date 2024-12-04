@@ -72,6 +72,7 @@ public class AccessTokenMetaData
     /// <param name="refreshToken">The refresh token used to obtain a new access token (valid for 7 days).</param>
     /// <param name="accessToken">The access token used to access a user's protected resources (valid for 30 minutes).</param>
     /// <param name="idToken">The JSON Web Token (JWT) containing user information and claims.</param>
+    [JsonConstructor]
     public AccessTokenMetaData(int expiresInSec, string tokenType, string scope, string refreshToken, string accessToken, string idToken)
     {
         ExpiresInSec = expiresInSec;

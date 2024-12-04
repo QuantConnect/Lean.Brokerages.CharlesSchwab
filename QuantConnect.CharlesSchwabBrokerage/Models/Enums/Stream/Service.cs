@@ -46,4 +46,70 @@ public enum Service
     /// </summary>
     [EnumMember(Value = "LEVELONE_OPTIONS")]
     LevelOneOptions = 3,
+
+    /// <summary>
+    /// Service for streaming Level 1 market data for future options.
+    /// </summary>
+    [EnumMember(Value = "LEVELONE_FUTURES_OPTIONS")]
+    LevelOneFutureOptions = 4,
+
+    /// <summary>
+    /// Service for streaming chart candle for equities.
+    /// </summary>
+    [EnumMember(Value = "CHART_EQUITY")]
+    ChartEquity = 5,
+
+    /// <summary>
+    /// Service for streaming Level 2 book for equities.
+    /// </summary>
+    [EnumMember(Value = "NASDAQ_BOOK")]
+    NasdaqBook = 6,
+
+    /// <summary>
+    /// Service for streaming Level 2 book for equities.
+    /// </summary>
+    [EnumMember(Value = "NYSE_BOOK")]
+    NyseBook = 7,
+
+    /// <summary>
+    /// Service for streaming Level 1 market data for forex.
+    /// </summary>
+    [EnumMember(Value = "LEVELONE_FOREX")]
+    LevelOneForex = 8,
+
+    /// <summary>
+    /// Service for streaming Level 1 market data for futures.
+    /// </summary>
+    [EnumMember(Value = "LEVELONE_FUTURES")]
+    LevelOneFutures = 9,
+
+    /// <summary>
+    /// Service for streaming Level 2 book for equities.
+    /// </summary>
+    [EnumMember(Value = "OPTIONS_BOOK")]
+    OptionsBook = 10,
+
+    /// <summary>
+    /// Service for streaming chart candle for futures.
+    /// </summary>
+    [EnumMember(Value = "CHART_FUTURES")]
+    ChartFutures = 11,
+
+    /// <summary>
+    /// Advances and Decliners for Equities.
+    /// </summary>
+    [EnumMember(Value = "SCREENER_EQUITY")]
+    ScreenerEquity = 12,
+
+    /// <summary>
+    /// Advances and Decliners for Options.
+    /// </summary>
+    [EnumMember(Value = "SCREENER_OPTION")]
+    ScreenerOption = 13,
+
+    /// <summary>
+    ///  Service for streaming quotes.
+    /// </summary>
+    [EnumMember(Value = "QUOTE")]
+    Quote = 14,
 }
