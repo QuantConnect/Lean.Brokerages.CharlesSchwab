@@ -15,10 +15,13 @@
 
 using Newtonsoft.Json;
 using NUnit.Framework;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Stream;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
+using QuantConnect.Brokerages.CharlesSchwab.Models.Enums.Stream;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Tests.Api;
 
@@ -97,5 +100,38 @@ public class CharlesSchwabApiResponseJsonConverterTests
 
         Assert.IsNotNull(json);
         Assert.IsNotEmpty(json);
+    }
+
+    [TestCase(1, "Someone", "2be0b7e7-5b8b-4fd3-9bed-7f49106cfe1", "PN", "IO", "Tradeticket")]
+    public void LoginRequestShouldEqualAsDocs(int requestId, string schwabClientCustomerId, string schwabClientCorrelId, string accessToken, string schwabClientChannel, string schwabClientFunctionId)
+    {
+        var adminLoginRequest = new AdminStreamRequest(
+            requestId,
+            Command.Login,
+            schwabClientCustomerId,
+            schwabClientCorrelId,
+            accessToken,
+            schwabClientChannel,
+            schwabClientFunctionId);
+
+        var userJsonMessage = JsonConvert.SerializeObject(adminLoginRequest);
+
+        var docsAdmingLoginExample = @"{
+    ""service"": ""ADMIN"",
+    ""requestid"": ""1"",
+    ""command"": ""LOGIN"",
+    ""SchwabClientCustomerId"": ""Someone"",
+    ""SchwabClientCorrelId"": ""2be0b7e7-5b8b-4fd3-9bed-7f49106cfe1"",
+    ""parameters"": {
+     ""Authorization"": ""PN"",
+     ""SchwabClientChannel"": ""IO"",
+     ""SchwabClientFunctionId"": ""Tradeticket""
+    }
+   }";
+
+        var expected = JToken.Parse(docsAdmingLoginExample);
+        var actual = JToken.Parse(userJsonMessage);
+
+        Assert.AreEqual(expected, actual);
     }
 }
