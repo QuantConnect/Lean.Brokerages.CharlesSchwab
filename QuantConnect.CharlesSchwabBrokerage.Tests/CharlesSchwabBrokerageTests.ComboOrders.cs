@@ -19,8 +19,8 @@ public partial class CharlesSchwabBrokerageTests
             var F_Equity = Symbol.Create("F", SecurityType.Equity, Market.USA);
             var options = new List<OptionContractByQuantity>
             {
-                new (Symbol.CreateOption(F_Equity, Market.USA, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 9m, new DateTime(2024, 12, 13)), 1),
-                new (Symbol.CreateOption(F_Equity, Market.USA, SecurityType.Option.DefaultOptionStyle(), OptionRight.Put, 13.5m, new DateTime(2024, 12, 13)), 1),
+                new (Symbol.CreateOption(F_Equity, Market.USA, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 7m, new DateTime(2024, 12, 20)), 1),
+                new (Symbol.CreateOption(F_Equity, Market.USA, SecurityType.Option.DefaultOptionStyle(), OptionRight.Put, 13.5m, new DateTime(2024, 12, 20)), 1),
             };
             yield return new(0.02m, options);
 
@@ -34,6 +34,29 @@ public partial class CharlesSchwabBrokerageTests
             yield return new(0.01m, indexOptions);
 
         }
+    }
+
+
+    [Test]
+    public void PlaceComboMarketOrder()
+    {
+        var F_Equity = Symbol.Create("F", SecurityType.Equity, Market.USA);
+        var options = new List<OptionContractByQuantity>
+            {
+                new (Symbol.CreateOption(F_Equity, Market.USA, SecurityType.Option.DefaultOptionStyle(), OptionRight.Call, 11m, new DateTime(2024, 12, 20)), 1),
+                new (Symbol.CreateOption(F_Equity, Market.USA, SecurityType.Option.DefaultOptionStyle(), OptionRight.Put, 10m, new DateTime(2024, 12, 20)), 1),
+            };
+
+        var groupOrderManager = new GroupOrderManager(1, legCount: options.Count, quantity: 2);
+
+        var comboOrders = PlaceComboOrder(
+            options,
+            null,
+            (optionContract, quantity, price, groupOrderManager) =>
+            new ComboMarketOrder(optionContract, quantity, DateTime.UtcNow, groupOrderManager),
+            groupOrderManager);
+
+        AssertComboOrderPlacedSuccessfully(comboOrders);
     }
 
     [TestCaseSource(nameof(ComboOrderTestParameters))]

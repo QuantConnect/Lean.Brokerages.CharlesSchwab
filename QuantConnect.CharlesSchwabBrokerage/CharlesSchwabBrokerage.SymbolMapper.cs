@@ -14,6 +14,7 @@
 */
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Collections.Concurrent;
 
@@ -56,7 +57,11 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// <exception cref="NotImplementedException">The lean security type is not implemented.</exception>
     public string GetBrokerageSymbol(Symbol symbol)
     {
-        var brokerageSymbol = default(string);
+        if (TryGetBrokerageSymbol(symbol, out var brokerageSymbol))
+        {
+            return brokerageSymbol;
+        }
+
         switch (symbol.SecurityType)
         {
             case SecurityType.Equity:
@@ -170,5 +175,17 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     private string GenerateBrokerageIndex(Symbol symbol)
     {
         return IndexSymbol + symbol.Value;
+    }
+
+    /// <summary>
+    /// Attempts to retrieve the brokerage symbol associated with a given <see cref="Symbol"/>.
+    /// </summary>
+    /// <param name="symbol">The <see cref="Symbol"/> for which the brokerage symbol is to be retrieved.</param>
+    /// <param name="brokerageSymbol">The brokerage symbol corresponding to the given <see cref="Symbol"/> if found; otherwise, an empty string.</param>
+    /// <returns>True if the brokerage symbol is found; otherwise, false.</returns>
+    private bool TryGetBrokerageSymbol(Symbol symbol, out string brokerageSymbol)
+    {
+        brokerageSymbol = _leanSymbolByBrokerageSymbol.FirstOrDefault(k => k.Value == symbol).Key;
+        return string.IsNullOrEmpty(brokerageSymbol) ? false : true;
     }
 }

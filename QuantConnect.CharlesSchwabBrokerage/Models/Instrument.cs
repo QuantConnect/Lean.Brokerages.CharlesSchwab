@@ -65,6 +65,12 @@ public class Instrument
     public IReadOnlyCollection<OptionDeliverables> OptionDeliverables { get; }
 
     /// <summary>
+    /// Gets the symbol representing the underlying asset for this instrument.
+    /// The underlying symbol typically refers to the main security or asset associated with an option or derivative.
+    /// </summary>
+    public string UnderlyingSymbol { get; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Instrument"/> class with the specified parameters.
     /// </summary>
     /// <param name="assetType">The type of asset (e.g., stock, bond) associated with the instrument.</param>
@@ -75,8 +81,9 @@ public class Instrument
     /// <param name="netChange">The net change in value of the instrument since the previous trading session.</param>
     /// <param name="type">The specific type of financial instrument (e.g., SWEEP_VEHICLE), indicating its category or functionality.</param>
     /// <param name="optionDeliverables">The collection of option deliverables associated with this instrument.</param>
+    /// <param name="underlyingSymbol">The symbol representing the underlying asset for the instrument, typically used in options or derivative products.</param>
     [JsonConstructor]
     public Instrument(AssetType assetType, string cusip, string symbol, string description, int instrumentId, decimal netChange, string type,
-        IReadOnlyCollection<OptionDeliverables> optionDeliverables)
-        => (AssetType, Cusip, Symbol, Description, InstrumentId, NetChange, Type, OptionDeliverables) = (assetType, cusip, symbol, description, instrumentId, netChange, type, optionDeliverables);
+        IReadOnlyCollection<OptionDeliverables> optionDeliverables, string underlyingSymbol)
+        => (AssetType, Cusip, Symbol, Description, InstrumentId, NetChange, Type, OptionDeliverables, UnderlyingSymbol) = (assetType, cusip, symbol, description, instrumentId, netChange, type, optionDeliverables, underlyingSymbol);
 }

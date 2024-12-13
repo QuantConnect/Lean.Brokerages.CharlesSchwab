@@ -304,7 +304,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
             case MessageType.OrderFillCompleted:
                 var orderFill = JsonConvert.DeserializeObject<OrderFillCompletedEvent>(accountContent.MessageData);
 
-                if (!TryGetLeanOrderByBrokerageId(orderFill.SchwabOrderID, out leanOrder))
+                if (!TryGetLeanOrderByBrokerageId(orderFill.BaseEvent.OrderFillCompletedEventOrderLegQuantityInfo.LegId, out leanOrder))
                 {
                     OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Order not found: {orderFill.SchwabOrderID}. Order detail: {accountContent.MessageData}"));
                     break;

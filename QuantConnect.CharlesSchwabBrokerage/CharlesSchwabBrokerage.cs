@@ -236,10 +236,10 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                 var groupOrderManager = new GroupOrderManager(brokerageOrder.OrderLegCollection.Count, groupQuantity, brokerageOrder.Price);
 
                 var tempLegOrders = new List<Order>(brokerageOrder.OrderLegCollection.Count);
-                var newLegId = brokerageOrder.OrderId;
+                var legId = brokerageOrder.OrderId;
                 foreach (var leg in brokerageOrder.OrderLegCollection)
                 {
-                    if (TryCreateLeanOrder(brokerageOrder, leg, newLegId.ToStringInvariant(), orderProperties, out var leanOrder, groupOrderManager))
+                    if (TryCreateLeanOrder(brokerageOrder, leg, legId.ToStringInvariant(), orderProperties, out var leanOrder, groupOrderManager))
                     {
                         tempLegOrders.Add(leanOrder);
                     }
@@ -249,7 +249,8 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                         tempLegOrders.Clear();
                         break;
                     }
-                    newLegId += 1;
+
+                    ProcessOrderId(ref legId);
                 }
 
                 if (tempLegOrders.Count > 0)
@@ -259,56 +260,6 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             }
         }
         return leanOrders;
-    }
-
-    private bool TryCreateLeanOrder(Models.OrderResponse brokerageOrder, OrderLeg orderLeg, string brokerageOrderId, CharlesSchwabOrderProperties orderProperties, out Order leanOrder,
-        GroupOrderManager groupOrderManager = null)
-    {
-        leanOrder = default;
-        if (!TryGetLeanSymbol(orderLeg.Instrument.Symbol, orderLeg.Instrument.AssetType, out var leanSymbol, out var exceptionMessage, orderLeg.Instrument.OptionDeliverables?.First().Symbol))
-        {
-            OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, 1, $"{exceptionMessage}. Order details: {brokerageOrder}."));
-            return false;
-        }
-
-        var legQuantity = orderLeg.Instruction.IsShort() ? decimal.Negate(orderLeg.Quantity) : orderLeg.Quantity;
-        switch (brokerageOrder.OrderType)
-        {
-            case CharlesSchwabOrderType.Market:
-                if (groupOrderManager == null)
-                {
-                    leanOrder = new MarketOrder(leanSymbol, legQuantity, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
-                }
-                else
-                {
-                    leanOrder = new ComboMarketOrder(leanSymbol, legQuantity, brokerageOrder.EnteredTime, groupOrderManager, brokerageOrder.Tag, properties: orderProperties);
-                }
-                break;
-            case CharlesSchwabOrderType.Limit:
-                leanOrder = new LimitOrder(leanSymbol, legQuantity, brokerageOrder.Price, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
-                break;
-            case CharlesSchwabOrderType.Stop:
-                leanOrder = new StopMarketOrder(leanSymbol, legQuantity, brokerageOrder.StopPrice, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
-                break;
-            case CharlesSchwabOrderType.NetCredit:
-            case CharlesSchwabOrderType.NetDebit:
-                if (groupOrderManager != null)
-                {
-                    leanOrder = new ComboLimitOrder(leanSymbol, legQuantity, brokerageOrder.Price, brokerageOrder.EnteredTime, groupOrderManager, brokerageOrder.Tag, orderProperties);
-                }
-                break;
-        }
-
-        if (leanOrder == default)
-        {
-            OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Skipping unsupported order type '{brokerageOrder.OrderType}'. Order details: {brokerageOrder}."));
-            return false;
-        }
-
-        leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? Orders.OrderStatus.PartiallyFilled : Orders.OrderStatus.Submitted;
-        leanOrder.BrokerId.Add(brokerageOrderId);
-
-        return true;
     }
 
     /// <summary>
@@ -327,7 +278,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
 
         foreach (var position in positions)
         {
-            if (!TryGetLeanSymbol(position.Instrument.Symbol, position.Instrument.AssetType, out var leanSymbol, out var exceptionMessage))
+            if (!TryGetLeanSymbol(position.Instrument.Symbol, position.Instrument.AssetType, out var leanSymbol, out var exceptionMessage, position.Instrument.UnderlyingSymbol))
             {
                 OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, 1, $"{exceptionMessage}. Position details: {position}."));
                 continue;
@@ -411,7 +362,7 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
                     Status = Orders.OrderStatus.Submitted
                 });
 
-                orderId += 1;
+                ProcessOrderId(ref orderId);
             }
         });
 
@@ -500,20 +451,20 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             return true;
         }
 
-        if (order.Status == Orders.OrderStatus.Filled)
+        if (orders.All(o => o.Status == Orders.OrderStatus.Filled))
         {
             OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, "Charles Schwab.Cancel Order: Order already filled"));
             return false;
         }
 
-        if (order.Status == Orders.OrderStatus.Canceled)
+        if (orders.All(o => o.Status == Orders.OrderStatus.Canceled))
         {
             OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, "Charles Schwab.Cancel Order: Order already canceled"));
             return false;
         }
 
+        // For combo orders, the main BrokerId is always kept in the first order of the collection. 
         var brokerageId = orders.First().BrokerId.First();
-
         var canceled = default(bool);
         _messageHandler.WithLockedStream(() =>
         {
@@ -589,6 +540,18 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
     private bool CanSubmitOrder(Symbol symbol)
     {
         return symbol.SecurityType != SecurityType.Index && CanSubscribe(symbol);
+    }
+
+    /// <summary>
+    /// Increments the <paramref name="initialOrderId"/> by 1. 
+    /// This method is used to handle the order IDs in a scenario where a combo order contains several legs.
+    /// Each leg order has an order ID incremented by 1 from the previous one, with the parent general order ID always in the first combo leg order.
+    /// The incremented order ID helps track the relationship between the leg orders and the parent order when processing responses from a WebSocket.
+    /// </summary>
+    /// <param name="initialOrderId">The order ID that will be incremented by 1.</param>
+    private void ProcessOrderId(ref long initialOrderId)
+    {
+        initialOrderId += 1;
     }
 
     /// <summary>
@@ -706,6 +669,67 @@ public partial class CharlesSchwabBrokerage : BaseWebsocketsBrokerage
             exceptionMessage = ex.Message;
             return false;
         }
+    }
+
+    /// <summary>
+    /// Attempts to create a lean order based on the provided brokerage order, order leg, and order properties.
+    /// It also manages the relationship between a combo order's legs and the parent order.
+    /// </summary>
+    /// <param name="brokerageOrder">The brokerage order response, containing details like price, quantity, and entered time.</param>
+    /// <param name="orderLeg">The individual leg of a combo order, which contains the symbol, asset type, and quantity.</param>
+    /// <param name="brokerageOrderId">The unique identifier for the brokerage order.</param>
+    /// <param name="orderProperties">The properties associated with the order, such as execution conditions and order limits.</param>
+    /// <param name="leanOrder">The resulting lean order that will be created (output parameter).</param>
+    /// <param name="groupOrderManager">An optional manager for handling group orders (e.g., for combo orders). If null, a simple order will be created.</param>
+    /// <returns>True if the lean order was successfully created, otherwise false.</returns>
+    private bool TryCreateLeanOrder(Models.OrderResponse brokerageOrder, OrderLeg orderLeg, string brokerageOrderId, CharlesSchwabOrderProperties orderProperties, out Order leanOrder,
+        GroupOrderManager groupOrderManager = null)
+    {
+        leanOrder = default;
+        if (!TryGetLeanSymbol(orderLeg.Instrument.Symbol, orderLeg.Instrument.AssetType, out var leanSymbol, out var exceptionMessage, orderLeg.Instrument.OptionDeliverables?.First().Symbol))
+        {
+            OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, 1, $"{exceptionMessage}. Order details: {brokerageOrder}."));
+            return false;
+        }
+
+        var legQuantity = orderLeg.Instruction.IsShort() ? decimal.Negate(orderLeg.Quantity) : orderLeg.Quantity;
+        switch (brokerageOrder.OrderType)
+        {
+            case CharlesSchwabOrderType.Market:
+                if (groupOrderManager == null)
+                {
+                    leanOrder = new MarketOrder(leanSymbol, legQuantity, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
+                }
+                else
+                {
+                    leanOrder = new ComboMarketOrder(leanSymbol, legQuantity, brokerageOrder.EnteredTime, groupOrderManager, brokerageOrder.Tag, properties: orderProperties);
+                }
+                break;
+            case CharlesSchwabOrderType.Limit:
+                leanOrder = new LimitOrder(leanSymbol, legQuantity, brokerageOrder.Price, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
+                break;
+            case CharlesSchwabOrderType.Stop:
+                leanOrder = new StopMarketOrder(leanSymbol, legQuantity, brokerageOrder.StopPrice, brokerageOrder.EnteredTime, brokerageOrder.Tag, orderProperties);
+                break;
+            case CharlesSchwabOrderType.NetCredit:
+            case CharlesSchwabOrderType.NetDebit:
+                if (groupOrderManager != null)
+                {
+                    leanOrder = new ComboLimitOrder(leanSymbol, legQuantity, brokerageOrder.Price, brokerageOrder.EnteredTime, groupOrderManager, brokerageOrder.Tag, orderProperties);
+                }
+                break;
+        }
+
+        if (leanOrder == default)
+        {
+            OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Skipping unsupported order type '{brokerageOrder.OrderType}'. Order details: {brokerageOrder}."));
+            return false;
+        }
+
+        leanOrder.Status = brokerageOrder.FilledQuantity > 0m && brokerageOrder.FilledQuantity != brokerageOrder.Quantity ? Orders.OrderStatus.PartiallyFilled : Orders.OrderStatus.Submitted;
+        leanOrder.BrokerId.Add(brokerageOrderId);
+
+        return true;
     }
 
     /// <summary>
