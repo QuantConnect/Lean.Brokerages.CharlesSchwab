@@ -83,16 +83,21 @@ public class CharlesSchwabApiResponseJsonConverterTests
 
     [TestCase(OrderType.Market, "AAPL", Instruction.Buy)]
     [TestCase(OrderType.Limit, "AAPL", Instruction.Sell)]
+    [TestCase(OrderType.Stop, "AAPL", Instruction.Sell)]
     public void SerializePlaceOrderRequest(OrderType orderType, string symbol, Instruction instruction)
     {
         var orderRequest = default(OrderBaseRequest);
         switch (orderType)
         {
             case OrderType.Market:
-                orderRequest = new MarketOrderRequest(instruction, 1m, symbol, AssetType.Equity);
+                orderRequest = new MarketOrderRequest(new List<OrderLegRequest> { new(instruction, 1m, new InstrumentRequest(symbol, AssetType.Equity)) });
                 break;
             case OrderType.Limit:
-                orderRequest = new LimitOrderRequest(SessionType.Normal, Duration.GoodTillCancel, instruction, 1m, symbol, AssetType.Equity, 22.222m);
+                orderRequest = new LimitOrderRequest(SessionType.Normal, Duration.GoodTillCancel,
+                    new List<OrderLegRequest> { new(instruction, 1m, new InstrumentRequest(symbol, AssetType.Equity)) }, 22.222m);
+                break;
+            case OrderType.Stop:
+                orderRequest = new StopMarketOrderRequest(Duration.GoodTillCancel, new List<OrderLegRequest> { new(instruction, 1m, new InstrumentRequest(symbol, AssetType.Equity)) }, 22.222m);
                 break;
         }
 

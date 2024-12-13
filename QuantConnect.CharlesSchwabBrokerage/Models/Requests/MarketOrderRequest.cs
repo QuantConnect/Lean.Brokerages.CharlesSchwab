@@ -14,6 +14,7 @@
 */
 
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
+using System.Collections.Generic;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 
@@ -28,17 +29,10 @@ public sealed class MarketOrderRequest : OrderBaseRequest
     public override OrderType OrderType => OrderType.Market;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="MarketOrderRequest"/> class.
+    /// Initializes a new instance of the <see cref="MarketOrderRequest"/> class for an order with multiple legs.
     /// </summary>
-    /// <param name="instruction">The instruction for the order leg.</param>
-    /// <param name="quantity">The quantity for the order leg.</param>
-    /// <param name="symbol">The symbol for the order leg.</param>
-    /// <param name="assetType">The asset type for the order leg.</param>
-    public MarketOrderRequest(
-        Instruction instruction,
-        decimal quantity,
-        string symbol,
-        AssetType assetType) : base(SessionType.Normal, Duration.Day, instruction, quantity, symbol, assetType)
+    /// <param name="orderLegCollections">A list of order legs for the multi-leg order.</param>
+    public MarketOrderRequest(List<OrderLegRequest> orderLegCollections) : base(SessionType.Normal, Duration.Day, orderLegCollections)
     {
     }
 }

@@ -14,7 +14,9 @@
 */
 
 using System;
+using System.Linq;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
@@ -23,6 +25,16 @@ namespace QuantConnect.Brokerages.CharlesSchwab;
 /// </summary>
 public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
 {
+    /// <summary>
+    /// The symbol prefix used to identify index-related securities in Charles Schwab data.
+    /// </summary>
+    public const char IndexSymbol = '$';
+
+    /// <summary>
+    /// A concurrent dictionary that maps brokerage symbols to Lean symbols.
+    /// </summary>
+    private ConcurrentDictionary<string, Symbol> _leanSymbolByBrokerageSymbol = new();
+
     /// <summary>
     /// Represents a set of supported security types.
     /// </summary>
@@ -45,20 +57,33 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// <exception cref="NotImplementedException">The lean security type is not implemented.</exception>
     public string GetBrokerageSymbol(Symbol symbol)
     {
+        if (TryGetBrokerageSymbol(symbol, out var brokerageSymbol))
+        {
+            return brokerageSymbol;
+        }
+
         switch (symbol.SecurityType)
         {
             case SecurityType.Equity:
-                return symbol.Value;
+                brokerageSymbol = symbol.Value;
+                break;
             case SecurityType.Index:
-                return GenerateBrokerageIndex(symbol);
+                brokerageSymbol = GenerateBrokerageIndex(symbol);
+                break;
             case SecurityType.Option:
-                return GenerateBrokerageOption(symbol);
+                brokerageSymbol = GenerateBrokerageOption(symbol);
+                break;
             case SecurityType.IndexOption:
-                return GenerateBrokerageOption(symbol);
+                brokerageSymbol = GenerateBrokerageOption(symbol);
+                break;
             default:
                 throw new NotImplementedException($"{nameof(CharlesSchwabBrokerageSymbolMapper)}.{nameof(GetBrokerageSymbol)}: " +
                     $"The security type '{symbol.SecurityType}' is not supported.");
         }
+
+        _leanSymbolByBrokerageSymbol[brokerageSymbol] = symbol;
+
+        return brokerageSymbol;
     }
 
     /// <summary>
@@ -74,17 +99,27 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// <exception cref="NotImplementedException">The security type is not implemented or not supported.</exception>
     public Symbol GetLeanSymbol(string brokerageSymbol, SecurityType securityType, string market, DateTime expirationDate = default, decimal strike = 0, OptionRight optionRight = OptionRight.Call)
     {
+        if (_leanSymbolByBrokerageSymbol.TryGetValue(brokerageSymbol, out var leanSymbol))
+        {
+            return leanSymbol;
+        }
+
         switch (securityType)
         {
             case SecurityType.Equity:
-                return Symbol.Create(brokerageSymbol, securityType, market);
+                leanSymbol = Symbol.Create(brokerageSymbol, securityType, market);
+                break;
             case SecurityType.Option:
             case SecurityType.IndexOption:
-                return SymbolRepresentation.ParseOptionTickerOSI(brokerageSymbol, securityType, securityType.DefaultOptionStyle(), market);
+                leanSymbol = SymbolRepresentation.ParseOptionTickerOSI(brokerageSymbol, securityType, securityType.DefaultOptionStyle(), market);
+                break;
             default:
                 throw new NotImplementedException($"{nameof(CharlesSchwabBrokerageSymbolMapper)}.{nameof(GetLeanSymbol)}: " +
                     $"The security type '{securityType}' with brokerage symbol '{brokerageSymbol}' is not supported.");
         }
+
+        _leanSymbolByBrokerageSymbol[brokerageSymbol] = leanSymbol;
+        return leanSymbol;
     }
 
     /// <summary>
@@ -139,6 +174,18 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// <example>{$SPX}</example>
     private string GenerateBrokerageIndex(Symbol symbol)
     {
-        return "$" + symbol.Value;
+        return IndexSymbol + symbol.Value;
+    }
+
+    /// <summary>
+    /// Attempts to retrieve the brokerage symbol associated with a given <see cref="Symbol"/>.
+    /// </summary>
+    /// <param name="symbol">The <see cref="Symbol"/> for which the brokerage symbol is to be retrieved.</param>
+    /// <param name="brokerageSymbol">The brokerage symbol corresponding to the given <see cref="Symbol"/> if found; otherwise, an empty string.</param>
+    /// <returns>True if the brokerage symbol is found; otherwise, false.</returns>
+    private bool TryGetBrokerageSymbol(Symbol symbol, out string brokerageSymbol)
+    {
+        brokerageSymbol = _leanSymbolByBrokerageSymbol.FirstOrDefault(k => k.Value == symbol).Key;
+        return string.IsNullOrEmpty(brokerageSymbol) ? false : true;
     }
 }

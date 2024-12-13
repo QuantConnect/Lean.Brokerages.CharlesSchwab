@@ -285,6 +285,28 @@ public class OrderResponse
         ChildOrderStrategies = childOrderStrategies;
         StatusDescription = statusDescription;
     }
+
+    /// <summary>
+    /// Returns a string representation of the <see cref="OrderResponse"/> instance.
+    /// </summary>
+    /// <remarks>
+    /// The returned string includes all properties of the <see cref="OrderResponse"/> class, 
+    /// providing a complete summary of the object for debugging or logging purposes.
+    /// </remarks>
+    /// <returns>
+    /// A string containing all properties of the <see cref="OrderResponse"/> object.
+    /// </returns>
+    public override string ToString()
+    {
+        return $"OrderResponse: Session={Session}, Duration={Duration}, OrderType={OrderType}, CancelTime={CancelTime}, ComplexOrderStrategyType={ComplexOrderStrategyType}, Quantity={Quantity}, " +
+               $"FilledQuantity={FilledQuantity}, RemainingQuantity={RemainingQuantity}, RequestedDestination={RequestedDestination}, DestinationLinkName={DestinationLinkName}, " +
+               $"ReleaseTime={ReleaseTime}, StopPrice={StopPrice}, StopPriceLinkBasis={StopPriceLinkBasis}, StopPriceLinkType={StopPriceLinkType}, " +
+               $"StopPriceOffset={StopPriceOffset}, StopType={StopType}, PriceLinkBasis={PriceLinkBasis}, PriceLinkType={PriceLinkType}, Price={Price}, TaxLotMethod={TaxLotMethod}, " +
+               $"OrderLegCollection={string.Join(", ", OrderLegCollection)}, ActivationPrice={ActivationPrice}, SpecialInstruction={SpecialInstruction}, OrderStrategyType={OrderStrategyType}," +
+               $"OrderId={OrderId}, Cancelable={Cancelable}, Editable={Editable}, Status={Status}, EnteredTime={EnteredTime}, CloseTime={CloseTime}, Tag={Tag}, AccountNumber={AccountNumber}, " +
+               $"OrderActivity={string.Join(", ", OrderActivity)}, ReplacingOrderCollection={string.Join(", ", ReplacingOrderCollection)}, " +
+               $"ChildOrderStrategies={string.Join(", ", ChildOrderStrategies)}, StatusDescription={StatusDescription}";
+    }
 }
 
 /// <summary>
@@ -333,6 +355,22 @@ public class OrderActivity
         Quantity = quantity;
         OrderRemainingQuantity = orderRemainingQuantity;
         ExecutionLegs = executionLegs;
+    }
+
+    /// <summary>
+    /// Returns a string representation of the <see cref="OrderActivity"/> instance.
+    /// </summary>
+    /// <remarks>
+    /// The returned string includes all properties of the <see cref="OrderActivity"/> class, 
+    /// providing a complete summary of the object for debugging or logging purposes.
+    /// </remarks>
+    /// <returns>
+    /// A string containing all properties of the <see cref="OrderActivity"/> object.
+    /// </returns>
+    public override string ToString()
+    {
+        return $"OrderActivity: ActivityType={ActivityType}, ExecutionType={ExecutionType}, Quantity={Quantity}, OrderRemainingQuantity={OrderRemainingQuantity}, " +
+               $"ExecutionLegs=[{string.Join(", ", ExecutionLegs)}]";
     }
 }
 
@@ -389,6 +427,21 @@ public class ExecutionLeg
         MismarkedQuantity = mismarkedQuantity;
         InstrumentId = instrumentId;
         Time = time;
+    }
+
+    /// <summary>
+    /// Returns a string representation of the <see cref="ExecutionLeg"/> instance.
+    /// </summary>
+    /// <remarks>
+    /// The returned string provides a summary of all properties in the <see cref="ExecutionLeg"/> class
+    /// for debugging or logging purposes.
+    /// </remarks>
+    /// <returns>
+    /// A string containing all properties of the <see cref="ExecutionLeg"/> object.
+    /// </returns>
+    public override string ToString()
+    {
+        return $"ExecutionLeg: LegId={LegId}, Price={Price}, Quantity={Quantity}, MismarkedQuantity={MismarkedQuantity}, InstrumentId={InstrumentId}, Time={Time}";
     }
 }
 
@@ -466,5 +519,21 @@ public class OrderLeg
         QuantityType = quantityType;
         DivCapGains = divCapGains;
         ToSymbol = toSymbol;
+    }
+
+    /// <summary>
+    /// Returns a string representation of the <see cref="OrderLeg"/> instance.
+    /// </summary>
+    /// <remarks>
+    /// The returned string provides a summary of all properties in the <see cref="OrderLeg"/> class
+    /// for debugging or logging purposes.
+    /// </remarks>
+    /// <returns>
+    /// A string containing all properties of the <see cref="OrderLeg"/> object.
+    /// </returns>
+    public override string ToString()
+    {
+        return $"OrderLeg: OrderLegType={OrderLegType}, LegId={LegId}, Instrument={Instrument}, Instruction={Instruction}, PositionEffect={PositionEffect}, Quantity={Quantity}, " +
+               $"QuantityType={QuantityType}, DivCapGains={DivCapGains}, ToSymbol={ToSymbol}";
     }
 }

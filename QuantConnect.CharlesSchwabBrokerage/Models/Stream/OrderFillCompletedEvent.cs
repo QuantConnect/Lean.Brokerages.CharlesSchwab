@@ -61,15 +61,24 @@ public class OrderFillCompletedEvent : BaseAccountActivity<OrderFillCompletedBas
 public readonly struct OrderFillCompletedEventOrderLegQuantityInfo
 {
     /// <summary>
+    /// The identifier of the execution leg.
+    /// This ID is used to uniquely identify the execution leg in the context of an order fill event.
+    /// </summary>
+    public string LegId { get; }
+
+    /// <summary>
     /// Gets the execution information, including the timestamp for the order fill.
     /// </summary>
     public ExecutionInfo ExecutionInfo { get; }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OrderFillCompletedEventOrderLegQuantityInfo"/> struct.
+    /// This constructor sets the identifier for the execution leg and its associated execution information.
     /// </summary>
+    /// <param name="legId">The identifier of the execution leg.</param>
     /// <param name="executionInfo">The execution information, including the timestamp for the order fill.</param>
-    public OrderFillCompletedEventOrderLegQuantityInfo(ExecutionInfo executionInfo) => ExecutionInfo = executionInfo;
+
+    public OrderFillCompletedEventOrderLegQuantityInfo(string legId, ExecutionInfo executionInfo) => (LegId, ExecutionInfo) = (legId, executionInfo);
 }
 
 /// <summary>

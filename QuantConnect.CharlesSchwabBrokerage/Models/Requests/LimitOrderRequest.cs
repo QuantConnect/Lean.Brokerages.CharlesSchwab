@@ -14,6 +14,7 @@
 */
 
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
@@ -21,7 +22,7 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 /// <summary>
 /// Represents a limit order request.
 /// </summary>
-public sealed class LimitOrderRequest : OrderBaseRequest
+public class LimitOrderRequest : OrderBaseRequest
 {
     /// <summary>
     /// The type of the order, which is <see cref="OrderType.Limit"/>.
@@ -35,23 +36,18 @@ public sealed class LimitOrderRequest : OrderBaseRequest
     public decimal LimitPrice { get; }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="LimitOrderRequest"/> class.
+    /// Initializes a new instance of the <see cref="LimitOrderRequest"/> class
+    /// for an order with multiple legs.
     /// </summary>
     /// <param name="session">The session type for the order.</param>
     /// <param name="duration">The duration of the order.</param>
-    /// <param name="instruction">The instruction for the order leg.</param>
-    /// <param name="quantity">The quantity for the order leg.</param>
-    /// <param name="symbol">The symbol for the order leg.</param>
-    /// <param name="assetType">The asset type for the order leg.</param>
+    /// <param name="orderLegCollections">A list of order legs for the multi-leg order.</param>
     /// <param name="limitPrice">The price for the limit order.</param>
     public LimitOrderRequest(
         SessionType session,
         Duration duration,
-        Instruction instruction,
-        decimal quantity,
-        string symbol,
-        AssetType assetType,
-        decimal limitPrice) : base(session, duration, instruction, quantity, symbol, assetType)
+        List<OrderLegRequest> orderLegCollections,
+        decimal limitPrice) : base(session, duration, orderLegCollections)
     {
         LimitPrice = limitPrice;
     }

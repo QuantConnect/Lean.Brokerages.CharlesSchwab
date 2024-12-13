@@ -67,6 +67,11 @@ public class OrderUROutCompletedBaseEvent
 public class OrderUROutCompletedEvent
 {
     /// <summary>
+    /// The unique identifier for the order leg.
+    /// </summary>
+    public string LegId { get; }
+
+    /// <summary>
     /// The timestamp of the execution event.
     /// </summary>
     public ExecutionTimeStamp? ExecutionTimeStamp { get; }
@@ -84,11 +89,13 @@ public class OrderUROutCompletedEvent
     /// <summary>
     /// Initializes a new instance of the <see cref="OrderUROutCompletedEvent"/> class.
     /// </summary>
+    /// <param name="legId">The unique identifier for the order leg.</param>
     /// <param name="executionTimeStamp">The timestamp of the execution event.</param>
     /// <param name="outCancelType">The type of cancel operation associated with this event.</param>
     /// <param name="validationDetail">A collection of validation details associated with this event.</param>
-    public OrderUROutCompletedEvent(ExecutionTimeStamp executionTimeStamp, OrderOutCancelType outCancelType, IReadOnlyCollection<ValidationDetail> validationDetail)
+    public OrderUROutCompletedEvent(string legId, ExecutionTimeStamp executionTimeStamp, OrderOutCancelType outCancelType, IReadOnlyCollection<ValidationDetail> validationDetail)
     {
+        LegId = legId;
         ExecutionTimeStamp = executionTimeStamp;
         OutCancelType = outCancelType;
         ValidationDetail = validationDetail;
