@@ -25,6 +25,11 @@ namespace QuantConnect.Brokerages.CharlesSchwab;
 public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
 {
     /// <summary>
+    /// The symbol prefix used to identify index-related securities in Charles Schwab data.
+    /// </summary>
+    public const char IndexSymbol = '$';
+
+    /// <summary>
     /// A concurrent dictionary that maps brokerage symbols to Lean symbols.
     /// </summary>
     private ConcurrentDictionary<string, Symbol> _leanSymbolByBrokerageSymbol = new();
@@ -164,6 +169,6 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// <example>{$SPX}</example>
     private string GenerateBrokerageIndex(Symbol symbol)
     {
-        return "$" + symbol.Value;
+        return IndexSymbol + symbol.Value;
     }
 }
