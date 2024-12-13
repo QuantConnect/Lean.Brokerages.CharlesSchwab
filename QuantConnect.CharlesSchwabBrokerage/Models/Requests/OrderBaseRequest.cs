@@ -73,14 +73,11 @@ public abstract class OrderBaseRequest
     protected internal OrderBaseRequest(
         SessionType session,
         Duration duration,
-        Instruction instruction,
-        decimal quantity,
-        string symbol,
-        AssetType assetType)
+        List<OrderLegRequest> orderLegCollections)
     {
         Session = session;
         Duration = duration;
-        OrderLegCollection = new List<OrderLegRequest> { new OrderLegRequest(instruction, quantity, new InstrumentRequest(symbol, assetType)) };
+        OrderLegCollection = orderLegCollections;
     }
 }
 

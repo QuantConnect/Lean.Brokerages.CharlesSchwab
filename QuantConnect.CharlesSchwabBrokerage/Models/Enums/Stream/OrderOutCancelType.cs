@@ -35,4 +35,11 @@ public enum OrderOutCancelType
     /// This occurs when the client manually cancels the order.
     /// </summary>
     ClientCancel = 1,
+
+    /// <summary>
+    /// Represents a venue-initiated cancellation of the order.
+    /// This occurs when the trading venue (e.g., exchange or market maker)
+    /// cancels the order due to its rules, regulations, or conditions.
+    /// </summary>
+    VenuCancel = 3,
 }

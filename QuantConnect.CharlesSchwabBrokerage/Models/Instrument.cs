@@ -14,6 +14,7 @@
 */
 
 using Newtonsoft.Json;
+using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models;
@@ -59,6 +60,11 @@ public class Instrument
     public string Type { get; }
 
     /// <summary>
+    /// The collection of option deliverables associated with this instrument.
+    /// </summary>
+    public IReadOnlyCollection<OptionDeliverables> OptionDeliverables { get; }
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="Instrument"/> class with the specified parameters.
     /// </summary>
     /// <param name="assetType">The type of asset (e.g., stock, bond) associated with the instrument.</param>
@@ -68,7 +74,9 @@ public class Instrument
     /// <param name="instrumentId">A unique identifier used for tracking and managing the instrument.</param>
     /// <param name="netChange">The net change in value of the instrument since the previous trading session.</param>
     /// <param name="type">The specific type of financial instrument (e.g., SWEEP_VEHICLE), indicating its category or functionality.</param>
+    /// <param name="optionDeliverables">The collection of option deliverables associated with this instrument.</param>
     [JsonConstructor]
-    public Instrument(AssetType assetType, string cusip, string symbol, string description, int instrumentId, decimal netChange, string type)
-        => (AssetType, Cusip, Symbol, Description, InstrumentId, NetChange, Type) = (assetType, cusip, symbol, description, instrumentId, netChange, type);
+    public Instrument(AssetType assetType, string cusip, string symbol, string description, int instrumentId, decimal netChange, string type,
+        IReadOnlyCollection<OptionDeliverables> optionDeliverables)
+        => (AssetType, Cusip, Symbol, Description, InstrumentId, NetChange, Type, OptionDeliverables) = (assetType, cusip, symbol, description, instrumentId, netChange, type, optionDeliverables);
 }

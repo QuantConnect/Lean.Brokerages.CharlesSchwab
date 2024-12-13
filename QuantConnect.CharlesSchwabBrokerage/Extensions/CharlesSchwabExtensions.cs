@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -29,17 +29,19 @@ namespace QuantConnect.Brokerages.CharlesSchwab.Extensions;
 public static class CharlesSchwabExtensions
 {
     /// <summary>
-    /// Converts a Charles Schwab asset type to its equivalent Lean SecurityType.
+    /// Converts a Charles Schwab <see cref="AssetType"/> to its equivalent Lean <see cref="SecurityType"/>.
     /// </summary>
     /// <param name="assetType">The Charles Schwab asset type to convert.</param>
+    /// <param name="optionUnderlyingSymbol">
+    /// The underlying symbol for the option asset type. 
+    /// Used to distinguish between regular options and index options.
+    /// </param>
     /// <returns>The equivalent Lean <see cref="SecurityType"/>.</returns>
-    /// <exception cref="NotSupportedException">
-    /// Thrown when the provided <paramref name="assetType"/> is not supported.
-    /// </exception>
-    public static SecurityType ConvertAssetTypeToSecurityType(this AssetType assetType) => assetType switch
+    public static SecurityType ConvertAssetTypeToSecurityType(this AssetType assetType, string optionUnderlyingSymbol = default) => assetType switch
     {
         AssetType.Equity => SecurityType.Equity,
-        AssetType.Option => SecurityType.Option,
+        AssetType.Option when !optionUnderlyingSymbol.StartsWith(CharlesSchwabBrokerageSymbolMapper.IndexSymbol) => SecurityType.Option,
+        AssetType.Option when optionUnderlyingSymbol.StartsWith(CharlesSchwabBrokerageSymbolMapper.IndexSymbol) => SecurityType.IndexOption,
         AssetType.Index => SecurityType.Index,
         _ => throw new NotSupportedException($"{nameof(CharlesSchwabExtensions)}.{nameof(ConvertAssetTypeToSecurityType)}: " +
             $"The AssetType '{assetType}' is not supported.")

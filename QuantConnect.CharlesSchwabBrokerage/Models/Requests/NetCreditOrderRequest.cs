@@ -13,40 +13,35 @@
  * limitations under the License.
 */
 
-using Newtonsoft.Json;
 using System.Collections.Generic;
 using QuantConnect.Brokerages.CharlesSchwab.Models.Enums;
 
 namespace QuantConnect.Brokerages.CharlesSchwab.Models.Requests;
 
 /// <summary>
-/// Represents a stop market order request.
+/// Represents a net credit order request, which is a specific type of limit order
+/// where the trader receives a net credit from the transaction.
 /// </summary>
-public sealed class StopMarketOrderRequest : OrderBaseRequest
+public class NetCreditOrderRequest : LimitOrderRequest
 {
     /// <summary>
-    /// The type of the order, which is <see cref="OrderType.Stop"/>.
+    /// The type of the order, which is <see cref="OrderType.Limit"/>.
     /// </summary>
-    public override OrderType OrderType => OrderType.Stop;
+    public override OrderType OrderType => OrderType.NetCredit;
 
     /// <summary>
-    /// The stop price for the stop market order.
+    /// Initializes a new instance of the <see cref="NetCreditOrderRequest"/> class
+    /// for a multi-leg order with a specified limit price.
     /// </summary>
-    [JsonProperty("stopPrice")]
-    public decimal StopPrice { get; }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="StopMarketOrderRequest"/> class 
-    /// for an order with multiple legs and a specified stop price.
-    /// </summary>
+    /// <param name="session">The session type for the order.</param>
     /// <param name="duration">The duration of the order.</param>
     /// <param name="orderLegCollections">A list of order legs for the multi-leg order.</param>
-    /// <param name="stopPrice">The stop price for the stop market order.</param>
-    public StopMarketOrderRequest(
-    Duration duration,
-    List<OrderLegRequest> orderLegCollections,
-    decimal stopPrice) : base(SessionType.Normal, duration, orderLegCollections)
+    /// <param name="limitPrice">The price for the limit order.</param>
+    public NetCreditOrderRequest(
+        SessionType session,
+        Duration duration,
+        List<OrderLegRequest> orderLegCollections,
+        decimal limitPrice) : base(session, duration, orderLegCollections, limitPrice)
     {
-        StopPrice = stopPrice;
     }
 }

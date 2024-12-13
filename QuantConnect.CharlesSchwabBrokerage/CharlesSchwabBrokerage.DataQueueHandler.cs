@@ -1,4 +1,4 @@
-﻿/*
+/*
  * QUANTCONNECT.COM - Democratizing Finance, Empowering Individuals.
  * Lean Algorithmic Trading Engine v2.0. Copyright 2014 QuantConnect Corporation.
  *
@@ -259,6 +259,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                 switch (orderUROut.BaseEvent.OrderUROutCompletedEvent.OutCancelType)
                 {
                     case OrderOutCancelType.SystemReject:
+                    case OrderOutCancelType.VenuCancel:
                         leanOrderStatus = OrderStatus.Invalid;
                         message = string.Join('\n', orderUROut.BaseEvent.OrderUROutCompletedEvent.ValidationDetail.Select(x => new { Name = x.NgOMSRuleName, Description = x.NgOMSRuleDescription }));
                         break;
@@ -284,7 +285,7 @@ public partial class CharlesSchwabBrokerage : IDataQueueHandler
                     }
                 }
 
-                if (!TryGetLeanOrderByBrokerageId(orderUROut.SchwabOrderID, out var leanOrder))
+                if (!TryGetLeanOrderByBrokerageId(orderUROut.BaseEvent.OrderUROutCompletedEvent.LegId, out var leanOrder))
                 {
                     OnMessage(new BrokerageMessageEvent(BrokerageMessageType.Warning, -1, $"Order not found: {orderUROut.SchwabOrderID}. Order detail: {accountContent.MessageData}"));
                     break;

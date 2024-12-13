@@ -15,6 +15,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 
 namespace QuantConnect.Brokerages.CharlesSchwab;
 
@@ -23,6 +24,11 @@ namespace QuantConnect.Brokerages.CharlesSchwab;
 /// </summary>
 public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
 {
+    /// <summary>
+    /// A concurrent dictionary that maps brokerage symbols to Lean symbols.
+    /// </summary>
+    private ConcurrentDictionary<string, Symbol> _leanSymbolByBrokerageSymbol = new();
+
     /// <summary>
     /// Represents a set of supported security types.
     /// </summary>
@@ -45,20 +51,29 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// <exception cref="NotImplementedException">The lean security type is not implemented.</exception>
     public string GetBrokerageSymbol(Symbol symbol)
     {
+        var brokerageSymbol = default(string);
         switch (symbol.SecurityType)
         {
             case SecurityType.Equity:
-                return symbol.Value;
+                brokerageSymbol = symbol.Value;
+                break;
             case SecurityType.Index:
-                return GenerateBrokerageIndex(symbol);
+                brokerageSymbol = GenerateBrokerageIndex(symbol);
+                break;
             case SecurityType.Option:
-                return GenerateBrokerageOption(symbol);
+                brokerageSymbol = GenerateBrokerageOption(symbol);
+                break;
             case SecurityType.IndexOption:
-                return GenerateBrokerageOption(symbol);
+                brokerageSymbol = GenerateBrokerageOption(symbol);
+                break;
             default:
                 throw new NotImplementedException($"{nameof(CharlesSchwabBrokerageSymbolMapper)}.{nameof(GetBrokerageSymbol)}: " +
                     $"The security type '{symbol.SecurityType}' is not supported.");
         }
+
+        _leanSymbolByBrokerageSymbol[brokerageSymbol] = symbol;
+
+        return brokerageSymbol;
     }
 
     /// <summary>
@@ -74,17 +89,27 @@ public class CharlesSchwabBrokerageSymbolMapper : ISymbolMapper
     /// <exception cref="NotImplementedException">The security type is not implemented or not supported.</exception>
     public Symbol GetLeanSymbol(string brokerageSymbol, SecurityType securityType, string market, DateTime expirationDate = default, decimal strike = 0, OptionRight optionRight = OptionRight.Call)
     {
+        if (_leanSymbolByBrokerageSymbol.TryGetValue(brokerageSymbol, out var leanSymbol))
+        {
+            return leanSymbol;
+        }
+
         switch (securityType)
         {
             case SecurityType.Equity:
-                return Symbol.Create(brokerageSymbol, securityType, market);
+                leanSymbol = Symbol.Create(brokerageSymbol, securityType, market);
+                break;
             case SecurityType.Option:
             case SecurityType.IndexOption:
-                return SymbolRepresentation.ParseOptionTickerOSI(brokerageSymbol, securityType, securityType.DefaultOptionStyle(), market);
+                leanSymbol = SymbolRepresentation.ParseOptionTickerOSI(brokerageSymbol, securityType, securityType.DefaultOptionStyle(), market);
+                break;
             default:
                 throw new NotImplementedException($"{nameof(CharlesSchwabBrokerageSymbolMapper)}.{nameof(GetLeanSymbol)}: " +
                     $"The security type '{securityType}' with brokerage symbol '{brokerageSymbol}' is not supported.");
         }
+
+        _leanSymbolByBrokerageSymbol[brokerageSymbol] = leanSymbol;
+        return leanSymbol;
     }
 
     /// <summary>
